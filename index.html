@@ -1685,10 +1685,56 @@ function setupRealtime(){
       });
       if(found)renderCSList();
     })
+    // ── STORIES — instant strip update when anyone posts a moment ──────
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'stories'},function(payload){
+      var r=payload.new;
+      if(!r||!r.user_id)return;
+      var uid=r.user_id;
+      var newItem={id:r.id,text:r.text||'',img:r.img_url||null,ts:r.created_at,bg:r.bg||'#2C2C2C',tc:r.tc||'#fff',fi:r.fi||1,audience:r.audience||'followers'};
+      // Own story — add to own group instantly
+      if(profile&&uid===profile.id){
+        var ownIdx=getOwnGroupIndex();
+        if(ownIdx>=0){
+          var ownG=svGroups[ownIdx];
+          if(!ownG.items.find(function(s){return s.id===r.id;})){ownG.items.push(newItem);}
+        } else {
+          svGroups.unshift({user:{id:'demo',username:profile.username||'you',display_name:profile.display_name||'You',avatar_url:profPhotoUrl||profile.avatar_url||null},items:[newItem],seen:true});
+        }
+        renderStrip();
+        return;
+      }
+      // Someone else's story — check audience & following before showing
+      var aud=r.audience||'followers';
+      var canSee=false;
+      if(aud==='everyone')canSee=true;
+      else if(aud==='followers')canSee=following.has(uid);
+      else if(aud==='close_friends')canSee=CF.has(uid);
+      if(!canSee)return;
+      // Find or create group for this user
+      var gi=svGroups.findIndex(function(g){return g.user.id===uid;});
+      if(gi>=0){
+        var g=svGroups[gi];
+        if(!g.items.find(function(s){return s.id===r.id;})){g.items.push(newItem);g.seen=false;}
+      } else {
+        var uObj=USERS.find(function(x){return x.id===uid;})||null;
+        if(uObj){
+          svGroups.push({user:{id:uObj.id,username:uObj.username||'',display_name:uObj.display_name||uObj.username||'User',avatar_url:uObj.avatar_url||null},items:[newItem],seen:false});
+        } else {
+          _sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',uid).single().then(function(pr){
+            var u=pr.data||{id:uid,username:'user',display_name:'User',avatar_url:null};
+            if(!USERS.find(function(x){return x.id===uid;}))USERS.push(u);
+            svGroups.push({user:{id:u.id,username:u.username||'',display_name:u.display_name||u.username||'User',avatar_url:u.avatar_url||null},items:[newItem],seen:false});
+            renderStrip();
+          });
+          return;
+        }
+      }
+      renderStrip();
+    })
 
     .subscribe();
 }
-var S={pushNotifs:true,talkNotifs:true,private:false,hideLikes:false,cmtPerm:'everyone',storyAudience:'followers',activityVisible:'everyone'};
+var S={pushNotifs:true,talkNotifs:true,private:false,hideLikes:false,cmtPerm:'everyone',storyAudience:'followers',activityVisible:'followers'};
 var scBg='#2C2C2C',scFontOpen=false,scFI=1,scAudience='followers';
 var scheduled=[],_schedListEl=null,_schedEditIdx=-1,_schedImgUrl=null;
 var soStack=[];
@@ -3344,10 +3390,14 @@ function getPostGroup(p){
 }
 var _suggestedOrder=null;
 var _suggestedTs=0;
-function getSuggestedOrder(posts){
-  // shuffle every 2 hours
+// Session-level seen tracking for suggested posts.
+// Once all are seen, cycle resets so feed never goes empty.
+var _seenSuggested=new Set();
+
+function getSuggestedOrder(allPosts){
+  // Rebuild shuffled order every 2 hours or when order is missing
   if(!_suggestedOrder||Date.now()-_suggestedTs>7200000){
-    var ids=posts.filter(function(p){return getPostGroup(p)===4;}).map(function(p){return p.id;});
+    var ids=allPosts.filter(function(p){return getPostGroup(p)===4;}).map(function(p){return p.id;});
     for(var i=ids.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ids[i];ids[i]=ids[j];ids[j]=t;}
     _suggestedOrder=ids;
     _suggestedTs=Date.now();
@@ -3362,10 +3412,30 @@ function rankFeed(raw){
   live.forEach(function(p){var g=getPostGroup(p);if(g>=0)groups[g].push(p);});
   // within each group sort newest first
   [0,1,2,3].forEach(function(g){groups[g].sort(function(a,b){return new Date(b.ts)-new Date(a.ts);});});
-  // suggested: use stable shuffle order
+
+  // ── Suggested: soft rotation ──────────────────────────────────────
+  // Show unseen posts first. When all have been seen, reset cycle
+  // so the feed never empties on a small platform.
   var sugOrder=getSuggestedOrder(live);
-  groups[4].sort(function(a,b){return sugOrder.indexOf(a.id)-sugOrder.indexOf(b.id);});
+  var sugPosts=groups[4];
+  if(sugPosts.length){
+    var unseen=sugPosts.filter(function(p){return!_seenSuggested.has(p.id);});
+    if(!unseen.length){
+      // Full cycle done — reset and start again
+      _seenSuggested=new Set();
+      unseen=sugPosts.slice();
+    }
+    // Sort unseen by shuffle order, then seen (as fallback tail)
+    unseen.sort(function(a,b){return sugOrder.indexOf(a.id)-sugOrder.indexOf(b.id);});
+    groups[4]=unseen;
+  }
+
   return[].concat(groups[0],groups[1],groups[2],groups[3],groups[4]);
+}
+
+// Mark a suggested post as seen (called when it enters the viewport)
+function markSuggestedSeen(postId){
+  _seenSuggested.add(postId);
 }
 
 var GROUP_LABELS={1:'Close Friends',2:'People you follow',4:'Suggested'};
@@ -3403,15 +3473,19 @@ function renderFeed(){
   _feedOffset=0;
   _feedExhausted=false;
   _feedLoading=false;
-  posts=[];
   // Tear down previous sentinel observer
   if(_feedSentinelObs){_feedSentinelObs.disconnect();_feedSentinelObs=null;}
-  // Show skeleton placeholders
-  var skHTML='';
-  for(var si=0;si<4;si++){
-    skHTML+='<div class="skeleton-post" style="opacity:'+(1-si*0.18)+'"><div class="skeleton-post-hd"><div class="skeleton skeleton-avatar" style="width:42px;height:42px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="skeleton skeleton-text" style="width:36%"></div><div class="skeleton skeleton-text" style="width:20%"></div></div></div>'+(si%2===0?'<div class="skeleton skeleton-img" style="width:100%;aspect-ratio:4/5"></div>':'<div class="skeleton skeleton-text" style="width:78%"></div><div class="skeleton skeleton-text" style="width:58%"></div>')+'<div style="display:flex;gap:16px;padding-top:2px"><div class="skeleton skeleton-round" style="width:52px;height:20px"></div><div class="skeleton skeleton-round" style="width:52px;height:20px"></div></div></div>';
+  // Only show skeleton on cold load (no existing posts in DOM).
+  // On refresh/pull-to-refresh keep existing content visible — no blink.
+  var hasPosts=posts.length>0;
+  if(!hasPosts){
+    var skHTML='';
+    for(var si=0;si<4;si++){
+      skHTML+='<div class="skeleton-post" style="opacity:'+(1-si*0.18)+'"><div class="skeleton-post-hd"><div class="skeleton skeleton-avatar" style="width:42px;height:42px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="skeleton skeleton-text" style="width:36%"></div><div class="skeleton skeleton-text" style="width:20%"></div></div></div>'+(si%2===0?'<div class="skeleton skeleton-img" style="width:100%;aspect-ratio:4/5"></div>':'<div class="skeleton skeleton-text" style="width:78%"></div><div class="skeleton skeleton-text" style="width:58%"></div>')+'<div style="display:flex;gap:16px;padding-top:2px"><div class="skeleton skeleton-round" style="width:52px;height:20px"></div><div class="skeleton skeleton-round" style="width:52px;height:20px"></div></div></div>';
+    }
+    f.innerHTML=skHTML;
   }
-  f.innerHTML=skHTML;
+  posts=[];
   _loadFeedPage(true);
 }
 
@@ -3502,6 +3576,15 @@ function renderFeedRows(rows,likedIds,isFirst){
       if(p.liked){
         var h=document.getElementById('hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
         var lb=document.getElementById('lb-'+p.id);if(lb)lb.classList.add('liked');
+      }
+      // Mark suggested posts as seen when they scroll into view
+      if(g===4){
+        (function(pid,postEl){
+          var obs=new IntersectionObserver(function(entries){
+            if(entries[0].isIntersecting){markSuggestedSeen(pid);obs.disconnect();}
+          },{threshold:0.5});
+          obs.observe(postEl);
+        })(p.id,el);
       }
     });
   } else {
@@ -4188,6 +4271,7 @@ function svSend(){
     tc:item.tc||'#fff',
     text:item.text||'',
     authorName:user.display_name||user.username||'User',
+    authorId:user.id||null,
     storyId:item.id
   };
   // Encode preview into content so it persists in DB and renders for both users
@@ -5324,46 +5408,116 @@ function appendBubble(m){
 }
 function makeBadge(m,isMine,bs){var badge=document.createElement('div');badge.className='rxn-badge '+(isMine?'me':'them');badge.textContent=m.reaction;badge.addEventListener('click',function(e){e.stopPropagation();openReactSheet(m,bs,isMine);});return badge;}
 function buildSRC(p){
-  // Outer wrapper — label + story preview card
-  var wrap=document.createElement('div');
-  wrap.style.cssText='max-width:220px;margin-bottom:6px';
+  // Resolve author — prefer authorId, fallback to name match
+  var authorUser=null;
+  if(p.authorId) authorUser=USERS.find(function(u){return u.id===p.authorId;});
+  if(!authorUser) authorUser=USERS.find(function(u){return u.display_name===p.authorName||u.username===p.authorName;});
 
-  // Author header row (avatar + "Name's Moment")
+  // Outer wrapper
+  var wrap=document.createElement('div');
+  wrap.style.cssText='max-width:224px;margin-bottom:6px';
+
+  // ── Author header row ─────────────────────────────────────────────
   var hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;cursor:pointer';
-  var authorUser=USERS.find(function(u){return u.display_name===p.authorName||u.username===p.authorName;});
+  hdr.style.cssText='display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer;padding:0 2px';
   var avDiv=document.createElement('div');
-  avDiv.style.cssText='width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:'+nc(p.authorName);
-  avDiv.innerHTML=avH(authorUser&&authorUser.avatar_url||null,p.authorName);
+  avDiv.style.cssText='width:20px;height:20px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:'+nc(p.authorName||'?');
+  avDiv.innerHTML=avH(authorUser&&authorUser.avatar_url||null,p.authorName||'?');
   var lbl=document.createElement('span');
-  lbl.style.cssText='font-size:11.5px;color:var(--sub);font-weight:500';
-  lbl.textContent=p.authorName+'\'s Moment';
+  lbl.style.cssText='font-size:11.5px;color:var(--sub);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  lbl.textContent=(p.authorName||'Someone')+'\'s Moment';
   hdr.appendChild(avDiv);
   hdr.appendChild(lbl);
+  // Tap header → open profile
   if(authorUser){
-    hdr.onclick=function(e){e.stopPropagation();openProf(authorUser);};
+    hdr.onclick=function(e){
+      e.stopPropagation();
+      _chatBackCtx='prof';
+      _profFromChat=true;
+      openProf(authorUser);
+    };
   }
   wrap.appendChild(hdr);
 
-  // Story preview card
+  // ── Story preview card ────────────────────────────────────────────
   var card=document.createElement('div');
-  card.style.cssText='border-radius:12px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,0.08)';
+  card.style.cssText='border-radius:14px;overflow:hidden;cursor:pointer;position:relative;background:'+(p.bg||'#2C2C2C')+';border:1.5px solid rgba(0,0,0,0.07)';
+
   if(p.img){
-    card.innerHTML='<div style="position:relative;width:200px;height:110px"><img src="'+p.img+'" style="width:100%;height:100%;object-fit:cover"/><div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,.45));display:flex;align-items:flex-end;padding:8px"><span style="font-size:11px;color:rgba(255,255,255,.9);font-weight:600">Tap to view</span></div></div>';
+    // Image moment
+    var imgEl=document.createElement('img');
+    imgEl.src=p.img;
+    imgEl.style.cssText='width:200px;height:120px;display:block;object-fit:cover';
+    imgEl.onerror=function(){this.style.display='none';};
+    var grad=document.createElement('div');
+    grad.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.55))';
+    grad.innerHTML='<span style="font-size:10.5px;color:rgba(255,255,255,.9);font-weight:600">Moment</span>';
+    card.appendChild(imgEl);
+    card.appendChild(grad);
+  } else if(p.text){
+    // Text moment
+    var txtBox=document.createElement('div');
+    txtBox.style.cssText='width:200px;min-height:90px;display:flex;align-items:center;justify-content:center;padding:16px 14px;position:relative';
+    var txt2=document.createElement('p');
+    txt2.style.cssText='font-size:13px;color:'+(p.tc||'#fff')+';text-align:center;line-height:1.5;margin:0;word-break:break-word';
+    txt2.textContent=(p.text||emptyText).slice(0,80);
+    txtBox.appendChild(txt2);
+    var bar=document.createElement('div');
+    bar.style.cssText='padding:5px 10px 7px;background:rgba(0,0,0,0.18);font-size:10px;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.2px';
+    bar.textContent='Moment';
+    card.appendChild(txtBox);
+    card.appendChild(bar);
   } else {
-    card.innerHTML='<div style="width:200px;min-height:80px;background:'+p.bg+';display:flex;align-items:center;justify-content:center;padding:14px;position:relative"><p style="font-size:13px;color:'+p.tc+';text-align:center;line-height:1.5;margin:0">'+E((p.text||'').slice(0,80))+'</p></div><div style="padding:6px 10px;background:rgba(0,0,0,0.04);font-size:10.5px;color:var(--sub)">Tap to view moment</div>';
+    // Empty / faded moment
+    card.style.cssText+=';width:200px;height:90px;display:flex;align-items:center;justify-content:center';
+    card.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4);font-weight:500">Moment faded</span>';
   }
-  // Tap to open story if still available
+
+  // Tap card → open story viewer
   card.onclick=function(){
     if(!p.storyId){T('This moment has faded');return;}
-    var targetGI=-1;
+    // Search in current svGroups
+    var foundGI=-1,foundII=-1;
     for(var i=0;i<svGroups.length;i++){
-      var found=svGroups[i].items.findIndex(function(it){return it.id===p.storyId;});
-      if(found>=0){targetGI=i;svGI=i;svII=found;break;}
+      var fi=svGroups[i].items.findIndex(function(it){return it.id===p.storyId;});
+      if(fi>=0){foundGI=i;foundII=fi;break;}
     }
-    if(targetGI>=0){openSV(svGI);}
-    else{T('This moment has faded');}
+    if(foundGI>=0){
+      svGI=foundGI;svII=foundII;
+      openSV(svGI);
+    } else {
+      // Story might not be loaded yet — reload stories then open
+      T('Loading moment…');
+      loadStories();
+      setTimeout(function(){
+        var gi2=-1,ii2=-1;
+        for(var i=0;i<svGroups.length;i++){
+          var fi2=svGroups[i].items.findIndex(function(it){return it.id===p.storyId;});
+          if(fi2>=0){gi2=i;ii2=fi2;break;}
+        }
+        if(gi2>=0){svGI=gi2;svII=ii2;openSV(svGI);}
+        else{T('This moment has faded');}
+      },1400);
+    }
   };
+
+  // ── Message button (open DM with story author) ────────────────────
+  if(authorUser&&authorUser.id!==profile.id){
+    var msgRow=document.createElement('div');
+    msgRow.style.cssText='display:flex;align-items:center;gap:6px;margin-top:5px;cursor:pointer;padding:0 2px';
+    msgRow.innerHTML='<svg width="12" height="12" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span style="font-size:11px;color:var(--sub);font-weight:500">Message '+E(p.authorName||'')+'</span>';
+    (function(au){
+      msgRow.onclick=function(e){
+        e.stopPropagation();
+        _chatBackCtx='prof';
+        startConvoC(au.id);
+      };
+    })(authorUser);
+    wrap.appendChild(card);
+    wrap.appendChild(msgRow);
+    return wrap;
+  }
+
   wrap.appendChild(card);
   return wrap;
 }
