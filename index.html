@@ -7895,7 +7895,13 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
       btn.textContent='…';allBtns.forEach(function(b){b.disabled=true;});
       var upd={status:status,reviewed_at:new Date().toISOString()};
       _sb.from('reports').update(upd).eq('id',rep.id).then(function(r){
-        if(r.error){btn.textContent=label;allBtns.forEach(function(b){b.disabled=false;});T('Error: '+r.error.message);return;}
+        if(r.error){
+          console.error('Report update error:',r.error);
+          btn.textContent=label;
+          allBtns.forEach(function(b){b.disabled=false;});
+          T('Error: '+(r.error.message||'Could not update report'));
+          return;
+        }
         rep.status=status;rep.reviewed_at=upd.reviewed_at;
         // Move from pending to resolved
         var idx=pendingArr.findIndex(function(x){return x.id===rep.id;});
@@ -7903,9 +7909,16 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
         resolvedArr.unshift(rep);
         updateBadge();
         // Animate card out
-        card.style.transition='opacity .22s ease,max-height .28s ease .18s';card.style.overflow='hidden';card.style.opacity='0';
-        setTimeout(function(){card.style.maxHeight='0';card.style.margin='0';card.style.padding='0';card.style.border='none';},220);
-        setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);if(!pendingArr.length&&onRerender)onRerender();},460);
+        card.style.transition='opacity .22s ease,max-height .28s ease .18s';
+        card.style.overflow='hidden';card.style.opacity='0';
+        setTimeout(function(){
+          card.style.maxHeight='0';card.style.margin='0';
+          card.style.padding='0';card.style.border='none';
+        },220);
+        setTimeout(function(){
+          if(card.parentNode)card.parentNode.removeChild(card);
+          if(!pendingArr.length&&onRerender)onRerender();
+        },460);
         if(status==='warned'&&rep.reported_user_id){
           _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was reported and reviewed. Please follow community guidelines.'},is_read:false}).then(function(){});
         }
