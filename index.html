@@ -2215,6 +2215,8 @@ function goTab(n){
   if(n==='me')renderMe();
   if(n==='talk')renderTalkList();
   if(n==='clips')loadClips();
+  // Refresh story strip when user returns to Today tab — no sign-out needed
+  if(n==='today'&&profile)loadStories();
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -2579,6 +2581,8 @@ function initApp(userProfile){
       try{
         var t=sessionStorage.getItem('fade_tab')||'today';
         if(t!==curTab)return;
+        // Re-check stories when app comes back to foreground
+        if(curTab==='today'&&profile)loadStories();
         // Re-apply active classes in case browser wiped them
         Object.keys(TAB_IDX).forEach(function(tab){
           var sc=document.getElementById('s-'+tab);if(!sc)return;
@@ -5145,7 +5149,6 @@ function appendBubble(m){
   var isMine=m.sid==='demo';
   var wrap=document.createElement('div');wrap.className='bwrap '+(isMine?'me':'them');wrap.dataset.ts=m.ts;wrap.dataset.msgid=m.id||'';
   var bs=document.createElement('div');bs.className=isMine?'me-bs':'them-bs';
-  if(m.preview)bs.appendChild(buildSRC(m.preview));
   if(m.replyTo){
     var rl=document.createElement('div');
     rl.style.cssText='font-size:11.5px;color:var(--sub);margin-bottom:4px;text-align:'+(isMine?'right':'left')+';padding:'+(isMine?'0 6px 0 0':'0 0 0 6px');
@@ -5334,12 +5337,33 @@ function appendBubble(m){
     })(src_,playBtn,wave,barEls,playhead,durEl,speedBtn,dur);
   } else {
     b=document.createElement('div');
-    b.className='bubble '+(isMine?'me':'them');
     b.classList.add('anim-bubble-in');
-    // mirror origin for them vs me
     b.style.transformOrigin=isMine?'bottom right':'bottom left';
-    if(m.text&&!m.text.startsWith('[voice:'))b.appendChild(document.createTextNode(m.text));
-    attachHold(b,m,wrap,bs,isMine);
+
+    if(m.preview){
+      // Story reply bubble — card + text unified in one bubble-shaped container
+      b.style.cssText='display:inline-flex;flex-direction:column;overflow:hidden;border-radius:'+(isMine?'18px 18px 4px 18px':'18px 18px 18px 4px')+';max-width:224px;background:'+(isMine?'#7C3AED':'var(--bubble-them)');
+      // Story card (no extra wrapper — sits at top of bubble)
+      var srcCard=buildSRC(m.preview);
+      srcCard.style.cssText='max-width:none;margin-bottom:0;width:100%';
+      b.appendChild(srcCard);
+      // Divider line
+      if(m.text){
+        var divLine=document.createElement('div');
+        divLine.style.cssText='height:1px;background:'+(isMine?'rgba(255,255,255,.15)':'rgba(0,0,0,.06)');
+        b.appendChild(divLine);
+        // Reply text below card
+        var replyTxt=document.createElement('div');
+        replyTxt.style.cssText='padding:10px 13px;font-size:14.5px;line-height:1.45;color:'+(isMine?'#fff':'var(--bubble-them-text)');
+        replyTxt.textContent=m.text;
+        b.appendChild(replyTxt);
+      }
+      attachHold(b,m,wrap,bs,isMine);
+    } else {
+      b.className='bubble '+(isMine?'me':'them');
+      if(m.text&&!m.text.startsWith('[voice:'))b.appendChild(document.createTextNode(m.text));
+      attachHold(b,m,wrap,bs,isMine);
+    }
   }
   bs.appendChild(b);
   if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));
@@ -5413,9 +5437,9 @@ function buildSRC(p){
   if(p.authorId) authorUser=USERS.find(function(u){return u.id===p.authorId;});
   if(!authorUser) authorUser=USERS.find(function(u){return u.display_name===p.authorName||u.username===p.authorName;});
 
-  // Outer wrapper
+  // Outer wrapper — no padding/margin; parent bubble controls sizing
   var wrap=document.createElement('div');
-  wrap.style.cssText='max-width:224px;margin-bottom:6px';
+  wrap.style.cssText='width:100%;overflow:hidden';
 
   // ── Author header row ─────────────────────────────────────────────
   var hdr=document.createElement('div');
@@ -5447,7 +5471,7 @@ function buildSRC(p){
     // Image moment
     var imgEl=document.createElement('img');
     imgEl.src=p.img;
-    imgEl.style.cssText='width:200px;height:120px;display:block;object-fit:cover';
+    imgEl.style.cssText='width:100%;height:120px;display:block;object-fit:cover';
     imgEl.onerror=function(){this.style.display='none';};
     var grad=document.createElement('div');
     grad.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.55))';
@@ -5457,7 +5481,7 @@ function buildSRC(p){
   } else if(p.text){
     // Text moment
     var txtBox=document.createElement('div');
-    txtBox.style.cssText='width:200px;min-height:90px;display:flex;align-items:center;justify-content:center;padding:16px 14px;position:relative';
+    txtBox.style.cssText='width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;padding:16px 14px;position:relative';
     var txt2=document.createElement('p');
     txt2.style.cssText='font-size:13px;color:'+(p.tc||'#fff')+';text-align:center;line-height:1.5;margin:0;word-break:break-word';
     txt2.textContent=(p.text||emptyText).slice(0,80);
@@ -5469,7 +5493,7 @@ function buildSRC(p){
     card.appendChild(bar);
   } else {
     // Empty / faded moment
-    card.style.cssText+=';width:200px;height:90px;display:flex;align-items:center;justify-content:center';
+    card.style.cssText+=';width:100%;height:90px;display:flex;align-items:center;justify-content:center';
     card.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4);font-weight:500">Moment faded</span>';
   }
 
@@ -5500,23 +5524,6 @@ function buildSRC(p){
       },1400);
     }
   };
-
-  // ── Message button (open DM with story author) ────────────────────
-  if(authorUser&&authorUser.id!==profile.id){
-    var msgRow=document.createElement('div');
-    msgRow.style.cssText='display:flex;align-items:center;gap:6px;margin-top:5px;cursor:pointer;padding:0 2px';
-    msgRow.innerHTML='<svg width="12" height="12" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span style="font-size:11px;color:var(--sub);font-weight:500">Message '+E(p.authorName||'')+'</span>';
-    (function(au){
-      msgRow.onclick=function(e){
-        e.stopPropagation();
-        _chatBackCtx='prof';
-        startConvoC(au.id);
-      };
-    })(authorUser);
-    wrap.appendChild(card);
-    wrap.appendChild(msgRow);
-    return wrap;
-  }
 
   wrap.appendChild(card);
   return wrap;
