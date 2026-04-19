@@ -7916,18 +7916,37 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
         card.style.overflow='hidden';card.style.opacity='0';
         setTimeout(function(){card.style.maxHeight='0';card.style.margin='0';card.style.padding='0';card.style.border='none';},220);
         setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);if(!pendingArr.length&&onRerender)onRerender();},460);
-        if(status==='warned'&&rep.reported_user_id){
-          _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was reported and reviewed. Please follow community guidelines.'},is_read:false}).then(function(){});
+
+        // Send warning notification
+        if((status==='warned'||status==='deleted')&&rep.reported_user_id){
+          var warnMsg=status==='deleted'
+            ?'Your post was removed for violating community guidelines.'
+            :'Your content was reported. Please follow community guidelines.';
+          _sb.from('notifications').insert({
+            user_id:rep.reported_user_id,
+            actor_id:profile.id,
+            type:'verification',
+            post_id:null,
+            extra:{result:'rejected',msg:warnMsg},
+            is_read:false
+          }).then(function(nr){
+            if(nr.error)console.error('Warn notification failed:',nr.error.message);
+          });
         }
+
+        // Delete the post — uses admin delete policy
         if(status==='deleted'&&rep.post_id){
-          _sb.from('posts').delete().eq('id',rep.post_id).then(function(){
+          _sb.from('posts').delete().eq('id',rep.post_id).then(function(dr){
+            if(dr.error){
+              console.error('Post delete failed:',dr.error.message);
+              T('Report resolved but post delete failed: '+dr.error.message);
+              return;
+            }
             posts=posts.filter(function(p){return p.id!==rep.post_id;});
             renderFeed();
           });
-          if(rep.reported_user_id){
-            _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was removed for violating community guidelines.'},is_read:false}).then(function(){});
-          }
         }
+
         T(status==='dismissed'?'Report dismissed':status==='deleted'?'Post deleted':'User warned');
       });
     }
