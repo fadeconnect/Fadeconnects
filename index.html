@@ -6438,9 +6438,25 @@ function showPostReport(postId){
   items.innerHTML='';
   var title=document.createElement('div');title.style.cssText='padding:16px 20px 8px;font-weight:700;font-size:16px';title.textContent='Report post';items.appendChild(title);
   var sub=document.createElement('div');sub.style.cssText='padding:0 16px 8px;font-size:13.5px;color:var(--sub)';sub.textContent='Why are you reporting this?';items.appendChild(sub);
-  ['Spam','Inappropriate content','Harassment','False information','Something else'].forEach(function(cat){
+  ['Spam','Inappropriate content','Harassment','False information','Hate speech','Something else'].forEach(function(cat){
     var row=document.createElement('div');row.className='dd-item';row.textContent=cat;
-    row.onclick=function(){closeDD();if(profile)_sb.from('reports').insert({reporter_id:profile.id,post_id:postId,reason:cat}).then(function(){});T('Report submitted. Thanks.');};
+    row.onclick=function(){
+      closeDD();
+      if(!profile)return;
+      var post=posts.find(function(p){return p.id===postId;});
+      var reportedUid=post?post.uid:null;
+      _sb.from('reports').insert({
+        reporter_id:profile.id,
+        post_id:postId,
+        reported_user_id:reportedUid||null,
+        reason:cat,
+        status:'pending',
+        created_at:new Date().toISOString()
+      }).then(function(res){
+        if(res.error){T('Could not submit report. Try again.');return;}
+        T('Report submitted. Thanks.');
+      });
+    };
     items.appendChild(row);
   });
   var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');
@@ -6535,7 +6551,8 @@ function buildSRoot(){
   if(isFounder){
     sections.unshift({title:'Admin',items:[
       {ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',label:'Verification Requests',act:function(){soPush('Verification Requests',buildAdminPanel);}},
-      {ico:IC.verify,label:'Manage Verified Users',act:function(){soPush('Manage Verified Users',function(el){el.innerHTML='';buildBadgeManageTab(el);});}}
+      {ico:IC.verify,label:'Manage Verified Users',act:function(){soPush('Manage Verified Users',function(el){el.innerHTML='';buildBadgeManageTab(el);});}},
+      {ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',label:'Reports',act:function(){soPush('Reports',buildReportsPanel);}}
     ]});
   }
   sections.forEach(function(sec){appendSection(el,sec.title,sec.items);});
@@ -7698,6 +7715,246 @@ function openBadgeEditor(u,listWrap,onDone){
   };
   body.appendChild(remBtn);
   panel.appendChild(body);
+}
+
+// ── REPORTS PANEL ────────────────────────────────────────────────────────────
+function buildReportsPanel(el){
+  el.innerHTML='';
+  var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;min-height:100%';
+  var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:40px';loading.innerHTML='<div class="ptr-ring"></div>';
+  wrap.appendChild(loading);el.appendChild(wrap);
+
+  _sb.from('reports').select('*').order('created_at',{ascending:false}).then(function(res){
+    wrap.innerHTML='';
+    if(res.error){
+      wrap.innerHTML='<div class="empty"><div class="empt">Access error</div><div class="emps">Make sure the reports table exists and RLS allows admin read.</div></div>';
+      return;
+    }
+    var rows=res.data||[];
+    // Collect all user IDs (reporters + reported users)
+    var uidSet={};
+    rows.forEach(function(r){
+      if(r.reporter_id)uidSet[r.reporter_id]=1;
+      if(r.reported_user_id)uidSet[r.reported_user_id]=1;
+    });
+    var uids=Object.keys(uidSet);
+
+    function doRender(pmap){
+      var pending=rows.filter(function(r){return r.status==='pending'||!r.status;});
+      var resolved=rows.filter(function(r){return r.status&&r.status!=='pending';});
+      var activeTab=0;
+
+      // Tab bar
+      var tabBar=document.createElement('div');
+      tabBar.style.cssText='display:flex;border-bottom:1.5px solid var(--border);flex-shrink:0;background:var(--card);position:sticky;top:0;z-index:2';
+      var contentWrap=document.createElement('div');contentWrap.style.cssText='flex:1;overflow-y:auto';
+
+      // Pending count badge
+      var pendBadge=document.createElement('span');
+      pendBadge.style.cssText='display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:#E8352A;color:#fff;font-size:10px;font-weight:700;margin-left:5px;padding:0 3px';
+      pendBadge.textContent=pending.length;
+      function updateBadge(){pendBadge.textContent=pending.length;pendBadge.style.display=pending.length?'inline-flex':'none';}
+      updateBadge();
+
+      function renderTab(idx){
+        activeTab=idx;
+        tabBar.querySelectorAll('.rep-tab').forEach(function(t,i){
+          t.style.borderBottom=i===idx?'2.5px solid var(--text)':'2.5px solid transparent';
+          t.style.color=i===idx?'var(--text)':'var(--sub)';
+          t.style.fontWeight=i===idx?'700':'500';
+        });
+        contentWrap.innerHTML='';
+        var list=idx===0?pending:resolved;
+        if(!list.length){
+          contentWrap.innerHTML='<div class="empty anim-fade-up"><div class="empt">'+(idx===0?'No pending reports':'No resolved reports yet')+'</div></div>';
+          return;
+        }
+        list.forEach(function(rep){
+          contentWrap.appendChild(_buildReportCard(rep,pmap,pending,resolved,updateBadge,contentWrap,function(){renderTab(activeTab);}));
+        });
+      }
+
+      [{label:'New',extra:pendBadge},{label:'Resolved',extra:null}].forEach(function(def,i){
+        var tab=document.createElement('button');tab.className='rep-tab';
+        tab.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;padding:14px 4px;background:none;border:none;border-bottom:2.5px solid '+(i===0?'var(--text)':'transparent')+';font-size:13px;font-weight:'+(i===0?'700':'500')+';color:'+(i===0?'var(--text)':'var(--sub)')+';font-family:Inter,sans-serif;cursor:pointer;transition:all .18s;gap:2px';
+        var lspan=document.createElement('span');lspan.textContent=def.label;tab.appendChild(lspan);
+        if(def.extra)tab.appendChild(def.extra);
+        (function(idx){tab.onclick=function(){renderTab(idx);};})(i);
+        tabBar.appendChild(tab);
+      });
+
+      wrap.appendChild(tabBar);wrap.appendChild(contentWrap);
+      renderTab(0);
+
+      // Realtime — new report pops in instantly
+      _sb.channel('admin-reports').on('postgres_changes',{event:'INSERT',schema:'public',table:'reports'},function(payload){
+        var r=payload.new;
+        if(pending.find(function(x){return x.id===r.id;}))return;
+        var uidsNeeded=[r.reporter_id,r.reported_user_id].filter(Boolean);
+        function addIt(){
+          pending.unshift(r);
+          updateBadge();
+          if(activeTab===0){
+            var empty=contentWrap.querySelector('.empty');
+            if(empty)contentWrap.innerHTML='';
+            contentWrap.insertBefore(_buildReportCard(r,pmap,pending,resolved,updateBadge,contentWrap,function(){renderTab(activeTab);}),contentWrap.firstChild);
+          }
+          T('New report received');
+        }
+        if(uidsNeeded.length){
+          _sb.from('profiles').select('id,username,display_name,avatar_url').in('id',uidsNeeded).then(function(pr){
+            (pr.data||[]).forEach(function(p){pmap[p.id]=p;});
+            addIt();
+          });
+        } else {addIt();}
+      }).subscribe();
+    }
+
+    if(!uids.length){doRender({});return;}
+    _sb.from('profiles').select('id,username,display_name,avatar_url').in('id',uids).then(function(pr){
+      var pmap={};(pr.data||[]).forEach(function(p){pmap[p.id]=p;});
+      doRender(pmap);
+    });
+  });
+}
+
+function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWrap,onRerender){
+  var reporter=pmap[rep.reporter_id]||{display_name:'Unknown',username:'unknown'};
+  var reportedUser=rep.reported_user_id?(pmap[rep.reported_user_id]||{display_name:'Unknown',username:'unknown'}):null;
+  var isPending=rep.status==='pending'||!rep.status;
+  var ts=rep.created_at?new Date(rep.created_at).toLocaleDateString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+
+  var card=document.createElement('div');
+  card.style.cssText='background:var(--card);border-bottom:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:12px';
+
+  // Status pill + time row
+  var topRow=document.createElement('div');topRow.style.cssText='display:flex;align-items:center;justify-content:space-between';
+  var pill=document.createElement('span');
+  var pillColor=rep.status==='dismissed'?'#6B7280':rep.status==='deleted'?'#DC2626':rep.status==='warned'?'#F59E0B':'#E8352A';
+  var pillLabel=rep.status==='dismissed'?'Dismissed':rep.status==='deleted'?'Post Deleted':rep.status==='warned'?'User Warned':'Pending';
+  pill.style.cssText='font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:'+pillColor+'1A;color:'+pillColor+';letter-spacing:.3px;text-transform:uppercase';
+  pill.textContent=pillLabel;
+  var timeEl=document.createElement('span');timeEl.style.cssText='font-size:11.5px;color:var(--sub)';timeEl.textContent=ts;
+  topRow.appendChild(pill);topRow.appendChild(timeEl);
+  card.appendChild(topRow);
+
+  // Reason
+  var reasonEl=document.createElement('div');reasonEl.style.cssText='font-size:14px;font-weight:600;color:var(--text)';reasonEl.textContent=rep.reason||'No reason given';
+  card.appendChild(reasonEl);
+
+  // Reporter row
+  var repRow=document.createElement('div');repRow.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--inp-bg);border-radius:12px';
+  var repAv=document.createElement('div');repAv.style.cssText='width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(reporter.display_name||reporter.username);
+  repAv.innerHTML=avH(reporter.avatar_url,reporter.display_name||reporter.username);
+  var repInfo=document.createElement('div');repInfo.style.cssText='flex:1;min-width:0';
+  repInfo.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Reported by</div><div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(reporter.display_name||reporter.username)+'<span style="color:var(--sub);font-weight:400;margin-left:4px">@'+E(reporter.username||'')+'</span></div>';
+  repRow.appendChild(repAv);repRow.appendChild(repInfo);card.appendChild(repRow);
+
+  // Reported user row (if known)
+  if(reportedUser){
+    var rUserRow=document.createElement('div');rUserRow.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FEF2F2;border-radius:12px';
+    var rUserAv=document.createElement('div');rUserAv.style.cssText='width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(reportedUser.display_name||reportedUser.username);
+    rUserAv.innerHTML=avH(reportedUser.avatar_url,reportedUser.display_name||reportedUser.username);
+    var rUserInfo=document.createElement('div');rUserInfo.style.cssText='flex:1;min-width:0';
+    rUserInfo.innerHTML='<div style="font-size:11px;font-weight:600;color:#DC2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Reported user</div><div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(reportedUser.display_name||reportedUser.username)+'<span style="color:var(--sub);font-weight:400;margin-left:4px">@'+E(reportedUser.username||'')+'</span></div>';
+    rUserRow.appendChild(rUserAv);rUserRow.appendChild(rUserInfo);card.appendChild(rUserRow);
+  }
+
+  // Post preview (if post_id exists — try to find in local posts array)
+  if(rep.post_id){
+    var localPost=posts.find(function(p){return p.id===rep.post_id;});
+    var previewBox=document.createElement('div');previewBox.style.cssText='background:var(--inp-bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px';
+    var previewLabel=document.createElement('div');previewLabel.style.cssText='font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px';previewLabel.textContent='Reported Post';
+    previewBox.appendChild(previewLabel);
+    if(localPost){
+      if(localPost.text){
+        var pt=document.createElement('div');pt.style.cssText='font-size:13.5px;color:var(--text);line-height:1.5';pt.textContent=localPost.text.slice(0,120)+(localPost.text.length>120?'…':'');
+        previewBox.appendChild(pt);
+      }
+      if(localPost.img){
+        var pi=document.createElement('img');pi.src=localPost.img;pi.style.cssText='width:100%;max-height:140px;object-fit:cover;border-radius:8px;cursor:pointer';
+        pi.onclick=function(){openPhotoViewer(localPost.img);};
+        previewBox.appendChild(pi);
+      }
+      if(!localPost.text&&!localPost.img){
+        previewBox.innerHTML+='<div style="font-size:13px;color:var(--sub);font-style:italic">Post has no content preview</div>';
+      }
+    } else {
+      var pidEl=document.createElement('div');pidEl.style.cssText='font-size:12px;color:var(--sub);font-family:monospace;word-break:break-all';pidEl.textContent='Post ID: '+rep.post_id;
+      var noteEl=document.createElement('div');noteEl.style.cssText='font-size:12px;color:var(--sub);margin-top:2px';noteEl.textContent='Post may have already expired.';
+      previewBox.appendChild(pidEl);previewBox.appendChild(noteEl);
+    }
+    card.appendChild(previewBox);
+  }
+
+  // Action buttons (only for pending)
+  if(isPending){
+    var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px';
+
+    function _doAction(status,label,btn,allBtns){
+      btn.textContent='…';allBtns.forEach(function(b){b.disabled=true;});
+      var upd={status:status,reviewed_at:new Date().toISOString()};
+      _sb.from('reports').update(upd).eq('id',rep.id).then(function(r){
+        if(r.error){btn.textContent=label;allBtns.forEach(function(b){b.disabled=false;});T('Error: '+r.error.message);return;}
+        rep.status=status;rep.reviewed_at=upd.reviewed_at;
+        // Move from pending to resolved
+        var idx=pendingArr.findIndex(function(x){return x.id===rep.id;});
+        if(idx>-1)pendingArr.splice(idx,1);
+        resolvedArr.unshift(rep);
+        updateBadge();
+        // Animate card out
+        card.style.transition='opacity .22s ease,max-height .28s ease .18s';card.style.overflow='hidden';card.style.opacity='0';
+        setTimeout(function(){card.style.maxHeight='0';card.style.margin='0';card.style.padding='0';card.style.border='none';},220);
+        setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);if(!pendingArr.length&&onRerender)onRerender();},460);
+        if(status==='warned'&&rep.reported_user_id){
+          _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was reported and reviewed. Please follow community guidelines.'},is_read:false}).then(function(){});
+        }
+        if(status==='deleted'&&rep.post_id){
+          _sb.from('posts').delete().eq('id',rep.post_id).then(function(){
+            posts=posts.filter(function(p){return p.id!==rep.post_id;});
+            renderFeed();
+          });
+          if(rep.reported_user_id){
+            _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was removed for violating community guidelines.'},is_read:false}).then(function(){});
+          }
+        }
+        T(status==='dismissed'?'Report dismissed':status==='deleted'?'Post deleted':'User warned');
+      });
+    }
+
+    var dismissBtn=document.createElement('button');
+    dismissBtn.style.cssText='flex:1;padding:10px;border-radius:10px;background:var(--inp-bg);color:var(--sub);border:1.5px solid var(--inp-border);font-size:12.5px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';
+    dismissBtn.textContent='Dismiss';
+
+    var warnBtn=document.createElement('button');
+    warnBtn.style.cssText='flex:1;padding:10px;border-radius:10px;background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-size:12.5px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';
+    warnBtn.textContent='Warn User';
+
+    var delBtn=document.createElement('button');
+    delBtn.style.cssText='flex:1;padding:10px;border-radius:10px;background:#FEE2E2;color:#DC2626;border:1.5px solid #DC2626;font-size:12.5px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';
+    delBtn.textContent='Delete Post';
+    if(!rep.post_id){delBtn.disabled=true;delBtn.style.opacity='.4';}
+
+    var allBtns=[dismissBtn,warnBtn,delBtn];
+    dismissBtn.onclick=function(){_doAction('dismissed','Dismiss',dismissBtn,allBtns);};
+    warnBtn.onclick=function(){_doAction('warned','Warn User',warnBtn,allBtns);};
+    delBtn.onclick=function(){
+      if(delBtn.dataset.confirm!=='1'){delBtn.dataset.confirm='1';delBtn.textContent='Confirm?';return;}
+      _doAction('deleted','Delete Post',delBtn,allBtns);
+    };
+
+    btnRow.appendChild(dismissBtn);btnRow.appendChild(warnBtn);btnRow.appendChild(delBtn);
+    card.appendChild(btnRow);
+  } else {
+    // Resolved — show reviewed_at
+    if(rep.reviewed_at){
+      var revEl=document.createElement('div');revEl.style.cssText='font-size:12px;color:var(--sub)';
+      revEl.textContent='Reviewed '+new Date(rep.reviewed_at).toLocaleDateString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      card.appendChild(revEl);
+    }
+  }
+
+  return card;
 }
 
 // ── FOLLOW LIST SHEET ─────────────────────────────────────────────────────────
