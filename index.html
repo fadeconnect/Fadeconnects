@@ -7724,35 +7724,39 @@ function buildReportsPanel(el){
   var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:40px';loading.innerHTML='<div class="ptr-ring"></div>';
   wrap.appendChild(loading);el.appendChild(wrap);
 
-  _sb.from('reports').select('*').order('created_at',{ascending:false}).then(function(res){
+  // Fetch all reports — pending and resolved separately from DB
+  Promise.all([
+    _sb.from('reports').select('*').or('status.eq.pending,status.is.null').order('created_at',{ascending:false}),
+    _sb.from('reports').select('*').not('status','is',null).not('status','eq','pending').order('reviewed_at',{ascending:false})
+  ]).then(function(results){
     wrap.innerHTML='';
-    if(res.error){
+    var pendingRes=results[0];
+    var resolvedRes=results[1];
+    if(pendingRes.error){
       wrap.innerHTML='<div class="empty"><div class="empt">Access error</div><div class="emps">Make sure the reports table exists and RLS allows admin read.</div></div>';
       return;
     }
-    var rows=res.data||[];
-    // Collect all user IDs (reporters + reported users)
+
+    var pending=pendingRes.data||[];
+    var resolved=resolvedRes.data||[];
+
+    // Collect all user IDs
     var uidSet={};
-    rows.forEach(function(r){
+    pending.concat(resolved).forEach(function(r){
       if(r.reporter_id)uidSet[r.reporter_id]=1;
       if(r.reported_user_id)uidSet[r.reported_user_id]=1;
     });
     var uids=Object.keys(uidSet);
 
     function doRender(pmap){
-      var pending=rows.filter(function(r){return r.status==='pending'||!r.status;});
-      var resolved=rows.filter(function(r){return r.status&&r.status!=='pending';});
       var activeTab=0;
 
-      // Tab bar
       var tabBar=document.createElement('div');
       tabBar.style.cssText='display:flex;border-bottom:1.5px solid var(--border);flex-shrink:0;background:var(--card);position:sticky;top:0;z-index:2';
       var contentWrap=document.createElement('div');contentWrap.style.cssText='flex:1;overflow-y:auto';
 
-      // Pending count badge
       var pendBadge=document.createElement('span');
       pendBadge.style.cssText='display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:#E8352A;color:#fff;font-size:10px;font-weight:700;margin-left:5px;padding:0 3px';
-      pendBadge.textContent=pending.length;
       function updateBadge(){pendBadge.textContent=pending.length;pendBadge.style.display=pending.length?'inline-flex':'none';}
       updateBadge();
 
@@ -7893,32 +7897,25 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
 
     function _doAction(status,label,btn,allBtns){
       btn.textContent='…';allBtns.forEach(function(b){b.disabled=true;});
-      var upd={status:status,reviewed_at:new Date().toISOString()};
-      _sb.from('reports').update(upd).eq('id',rep.id).then(function(r){
-        if(r.error){
-          console.error('Report update error:',r.error);
+      var now=new Date().toISOString();
+      _sb.from('reports').update({status:status,reviewed_at:now}).eq('id',rep.id).select('id,status').then(function(r){
+        if(r.error||!r.data||!r.data.length){
+          var msg=r.error?r.error.message:'Update blocked — check RLS policy.';
+          console.error('Report action failed:',msg);
           btn.textContent=label;
           allBtns.forEach(function(b){b.disabled=false;});
-          T('Error: '+(r.error.message||'Could not update report'));
+          T('Failed: '+msg);
           return;
         }
-        rep.status=status;rep.reviewed_at=upd.reviewed_at;
-        // Move from pending to resolved
+        rep.status=status;rep.reviewed_at=now;
         var idx=pendingArr.findIndex(function(x){return x.id===rep.id;});
         if(idx>-1)pendingArr.splice(idx,1);
         resolvedArr.unshift(rep);
         updateBadge();
-        // Animate card out
         card.style.transition='opacity .22s ease,max-height .28s ease .18s';
         card.style.overflow='hidden';card.style.opacity='0';
-        setTimeout(function(){
-          card.style.maxHeight='0';card.style.margin='0';
-          card.style.padding='0';card.style.border='none';
-        },220);
-        setTimeout(function(){
-          if(card.parentNode)card.parentNode.removeChild(card);
-          if(!pendingArr.length&&onRerender)onRerender();
-        },460);
+        setTimeout(function(){card.style.maxHeight='0';card.style.margin='0';card.style.padding='0';card.style.border='none';},220);
+        setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);if(!pendingArr.length&&onRerender)onRerender();},460);
         if(status==='warned'&&rep.reported_user_id){
           _sb.from('notifications').insert({user_id:rep.reported_user_id,type:'report_warn',extra:{msg:'Your post was reported and reviewed. Please follow community guidelines.'},is_read:false}).then(function(){});
         }
