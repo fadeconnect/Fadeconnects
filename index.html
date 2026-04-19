@@ -1985,7 +1985,20 @@ function getBadgeSVG(uid, badgeType, isVerified){
 function E(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function ago(d){var diff=Date.now()-(typeof d==='number'?d:new Date(d).getTime());if(diff<60000)return'now';if(diff<3600000)return Math.floor(diff/60000)+'m';if(diff<86400000)return Math.floor(diff/3600000)+'h';return'1d';}
 function agoS(d){var diff=Date.now()-new Date(d).getTime();if(diff<3600000)return Math.floor(diff/60000)+'m ago';return Math.floor(diff/3600000)+'h ago';}
-function stripStoryPrefix(c){if(!c)return'';if(c.startsWith('[storyreply:')){var nl=c.indexOf('\n');return nl>=0?c.slice(nl+1):'📷 Moment';}return c;}
+function stripStoryPrefix(c){
+  if(!c)return'';
+  if(c.startsWith('[storyreply:')){
+    var nl=c.indexOf('\n');
+    var replyText=nl>=0?c.slice(nl+1).trim():'';
+    return replyText?'Moment: '+replyText:'💬 Replied to a Moment';
+  }
+  if(c.startsWith('[voice:')){
+    var m=c.match(/\[voice:(\d+)s\]/);
+    var s=m?parseInt(m[1]):0;
+    return '▶ Voice · '+(s>=60?Math.floor(s/60)+'m '+(s%60?s%60+'s':''):s+'s');
+  }
+  return c;
+}
 function fadeIn(ts){var rem=Math.max(0,86400000-(Date.now()-new Date(ts).getTime()));var h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000);return rem<=0?'soon':h>0?h+'h':m+'m';}
 function bgClose(e,id){if(e.target.id===id||e.target.classList.contains('compose-dim'))closeSheet(id);}
 function closeSheet(id){var el=document.getElementById(id);var sheet=el&&el.querySelector('.sheet');if(sheet)sheet.style.transform='translateY(100%)';setTimeout(function(){if(el)el.style.display='none';},320);}
@@ -4394,7 +4407,7 @@ function loadConversations(cb){
             var isMine=lastMsg.sender_id===profile.id;
             return{
               user:u,
-              lastMsg:(lastMsg.content&&lastMsg.content.startsWith('[voice:')?(function(){var m2=(lastMsg.content||'').match(/\[voice:(\d+)s\]/);var s=m2?parseInt(m2[1]):0;return '▶ Voice · '+(s>=60?Math.floor(s/60)+'m '+(s%60?s%60+'s':''):s+'s');}()):(lastMsg.content&&lastMsg.content.startsWith('[storyreply:')?'📷 Moment':(stripStoryPrefix(lastMsg.content)||(lastMsg.is_photo?'📷 Photo':'')))),
+              lastMsg:(stripStoryPrefix(lastMsg.content)||(lastMsg.is_photo?'📷 Photo':'')),
               lastSid:isMine?'demo':pid,
               ts:new Date(lastMsg.created_at).getTime(),
               lastMsgId:lastMsg.id
@@ -4479,15 +4492,16 @@ function _renderTalkFromCache(){
 
     // Subtitle text + style
     var subText,subColor,subWeight;
+    var cleanMsg=stripStoryPrefix(c.lastMsg||'');
     if(isUnread){
-      subText=(c.lastMsg||'')+(c.ts?' · '+ago(c.ts):'');
+      subText=cleanMsg+(c.ts?' · '+ago(c.ts):'');
       subColor='var(--text)';subWeight='600';
     } else if(_active){
       subText='Active now';subColor='#22C55E';subWeight='400';
     } else if(_lastAct){
       subText=_lastAct;subColor='var(--sub)';subWeight='400';
     } else {
-      subText=(c.lastMsg||'')+(c.ts?' · '+ago(c.ts):'');
+      subText=cleanMsg+(c.ts?' · '+ago(c.ts):'');
       subColor='var(--sub)';subWeight=bold?'500':'400';
     }
 
@@ -4958,7 +4972,7 @@ function subscribeToInbox(){
       if(_convosLoaded){
         var senderUser=USERS.find(function(x){return x.id===r.sender_id;})||{id:r.sender_id,display_name:'User',username:'user',avatar_url:null};
         var existing=convos.find(function(c){return c.user.id===r.sender_id;});
-        var lastMsg=(r.content&&r.content.startsWith('[voice:'))?(function(){var m2=(r.content||'').match(/\[voice:(\d+)s\]/);var s=m2?parseInt(m2[1]):0;return '▶ Voice · '+(s>=60?Math.floor(s/60)+'m '+(s%60?s%60+'s':''):s+'s');}()):(r.content&&r.content.startsWith('[storyreply:')?'📷 Moment':(stripStoryPrefix(r.content)||(r.is_photo?'📷 Photo':'')));
+        var lastMsg=stripStoryPrefix(r.content)||(r.is_photo?'📷 Photo':'');
         if(existing){existing.lastMsg=lastMsg;existing.lastSid=r.sender_id;existing.ts=new Date(r.created_at).getTime();convos.sort(function(a,b){return b.ts-a.ts;});}
         else{convos.unshift({user:senderUser,lastMsg:lastMsg,lastSid:r.sender_id,ts:new Date(r.created_at).getTime()});}
       }
@@ -5359,7 +5373,27 @@ function closeCtx(){document.getElementById('msg-ctx').style.display='none';docu
 function ctxReact(emoji){if(!_ctxMsg||!_ctxBsEl)return closeCtx();var m=_ctxMsg,bs=_ctxBsEl,isMine=_ctxIsMine;var removing=m.reaction===emoji;m.reaction=removing?null:emoji;if(!removing)SFX('react');var old=bs.querySelector('.rxn-badge');if(old)old.remove();if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));closeCtx();if(!removing)T(emoji+' added');_sb.from('messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});}
 function ctxReply(){if(!_ctxMsg)return closeCtx();_replyMsg=_ctxMsg;var sName=_ctxMsg.sid==='demo'?'You':(chatUser&&chatUser.display_name||'Them');_replyMsg._sName=sName;document.getElementById('reply-name').textContent=sName;document.getElementById('reply-preview').textContent=((_ctxMsg.text&&_ctxMsg.text.startsWith('[voice:'))?'🎤 Voice message':(_ctxMsg.text||(_ctxMsg.isPhoto?'📷 Photo':''))).slice(0,50)||'…';document.getElementById('reply-bar').classList.add('on');document.getElementById('chatinp').focus();closeCtx();}
 function cancelReplyBar(){_replyMsg=null;document.getElementById('reply-bar').classList.remove('on');}
-function ctxSavePhoto(){if(!_ctxMsg||!_ctxMsg.img)return closeCtx();var a=document.createElement('a');a.href=_ctxMsg.img;a.download='fade-photo.jpg';a.click();closeCtx();T('Photo saved');}
+function ctxSavePhoto(){
+  if(!_ctxMsg||!_ctxMsg.img)return closeCtx();
+  var url=_ctxMsg.img;
+  closeCtx();
+  // Try fetch+blob first (works on mobile)
+  fetch(url).then(function(res){return res.blob();}).then(function(blob){
+    var burl=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=burl;
+    a.download='fade-photo.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(burl);},2000);
+    T('Photo saved');
+  }).catch(function(){
+    // Fallback: open in new tab so user can long-press save
+    window.open(url,'_blank');
+    T('Long-press the photo to save');
+  });
+}
 function ctxCopy(){if(!_ctxMsg)return closeCtx();if(navigator.clipboard)navigator.clipboard.writeText(_ctxMsg.text||'').catch(function(){});T('Copied');closeCtx();}
 function ctxUnsend(){
   if(!_ctxMsg)return closeCtx();
@@ -8056,6 +8090,43 @@ function closeFollowSheet(){
   document.addEventListener('focusin',function(e){var el=e.target;if(!el||!el.closest('#s-auth'))return;var tag=el.tagName;if(tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT')return;setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'center'});},320);});
 })();
 (function(){if(!window.visualViewport)return;window.visualViewport.addEventListener('resize',function(){if(typeof _epOpen!=='undefined'&&_epOpen)return;var kbH=Math.max(0,window.innerHeight-window.visualViewport.height);var cw=document.getElementById('cw'),foot=cw&&cw.querySelector('.chatfoot'),msgs=document.getElementById('msgs');if(cw&&cw.classList.contains('on')&&foot){foot.style.marginBottom=kbH>0?kbH+'px':'0';if(kbH>0&&msgs)msgs.scrollTop=msgs.scrollHeight;}},{passive:true});})();
+
+// ── COMMENT SHEET KEYBOARD AVOID ─────────────────────────────────────────────
+(function(){
+  if(!window.visualViewport)return;
+  function adjustCS(){
+    var csBg=document.getElementById('cs-bg');
+    if(!csBg||!csBg.classList.contains('on'))return;
+    var vv=window.visualViewport;
+    var kbH=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    var sheet=document.getElementById('cs-sheet');
+    if(!sheet)return;
+    if(kbH>0){
+      // Shrink sheet height so input row stays above keyboard
+      sheet.style.height='calc(88dvh - '+kbH+'px)';
+      sheet.style.maxHeight='calc(88dvh - '+kbH+'px)';
+      // Scroll comment list to bottom so latest comment visible
+      var list=document.getElementById('cs-list');
+      if(list)setTimeout(function(){list.scrollTop=list.scrollHeight;},60);
+    } else {
+      sheet.style.height='';
+      sheet.style.maxHeight='';
+    }
+  }
+  window.visualViewport.addEventListener('resize',adjustCS,{passive:true});
+  window.visualViewport.addEventListener('scroll',adjustCS,{passive:true});
+  // Also trigger on focus into comment input
+  document.addEventListener('focusin',function(e){
+    if(e.target&&e.target.id==='cs-inp'){
+      setTimeout(adjustCS,300);
+    }
+  });
+  document.addEventListener('focusout',function(e){
+    if(e.target&&e.target.id==='cs-inp'){
+      setTimeout(adjustCS,100);
+    }
+  });
+})();
 </script>
 <script>
 if('serviceWorker' in navigator){
