@@ -5341,11 +5341,10 @@ function appendBubble(m){
     b.style.transformOrigin=isMine?'bottom right':'bottom left';
 
     if(m.preview){
-      // Story reply — Instagram style: preview card floats above, reply text in separate normal bubble below
-      b.style.cssText='display:inline-flex;flex-direction:column;gap:5px;max-width:224px;background:none;align-items:'+(isMine?'flex-end':'flex-start');
-      // Story preview card (clean, minimal)
-      var srcCard=buildSRC(m.preview);
-      srcCard.style.cssText='width:224px';
+      // Story reply — Instagram style: compact card above, reply bubble below, aligned to side
+      b.style.cssText='display:inline-flex;flex-direction:column;gap:6px;background:none;align-items:'+(isMine?'flex-end':'flex-start');
+      // Story preview card (compact, auto-width)
+      var srcCard=buildSRC(m.preview,isMine);
       b.appendChild(srcCard);
       // Reply text in a normal bubble
       if(m.text){
@@ -5428,87 +5427,69 @@ function appendBubble(m){
   msgs.scrollTop=msgs.scrollHeight;
 }
 function makeBadge(m,isMine,bs){var badge=document.createElement('div');badge.className='rxn-badge '+(isMine?'me':'them');badge.textContent=m.reaction;badge.addEventListener('click',function(e){e.stopPropagation();openReactSheet(m,bs,isMine);});return badge;}
-function buildSRC(p){
-  // Resolve author — prefer authorId, fallback to name match
+function buildSRC(p,isMine){
+  // Resolve author
   var authorUser=null;
   if(p.authorId) authorUser=USERS.find(function(u){return u.id===p.authorId;});
   if(!authorUser) authorUser=USERS.find(function(u){return u.display_name===p.authorName||u.username===p.authorName;});
 
-  // Outer wrapper — no padding/margin; parent bubble controls sizing
-  var wrap=document.createElement('div');
-  wrap.style.cssText='width:100%;overflow:hidden';
-
-  // ── Story preview card (Instagram-style: clean, minimal, no colored bg) ─────
+  // Card — compact, fixed width like Instagram (~190px), aligned to sender side
   var card=document.createElement('div');
-  card.style.cssText='border-radius:14px;overflow:hidden;cursor:pointer;position:relative;background:var(--inp-bg);border:1.5px solid var(--border)';
+  card.style.cssText='width:190px;border-radius:16px;overflow:hidden;cursor:pointer;position:relative;background:var(--inp-bg);border:1.5px solid var(--border)';
 
-  // Author header row — sits inside the card at top
+  // Author header row inside card
   var hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;gap:7px;padding:9px 10px 7px;cursor:pointer';
+  hdr.style.cssText='display:flex;align-items:center;gap:7px;padding:9px 11px 8px';
   var avDiv=document.createElement('div');
-  avDiv.style.cssText='width:20px;height:20px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:'+nc(p.authorName||'?');
+  avDiv.style.cssText='width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700';
   avDiv.innerHTML=avH(authorUser&&authorUser.avatar_url||null,p.authorName||'?');
   var lbl=document.createElement('span');
-  lbl.style.cssText='font-size:11.5px;color:var(--sub);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  lbl.style.cssText='font-size:12px;color:var(--sub);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1';
   lbl.textContent=(p.authorName||'Someone')+'\'s Moment';
   hdr.appendChild(avDiv);
   hdr.appendChild(lbl);
-  // Tap header → open profile
   if(authorUser){
-    hdr.onclick=function(e){
-      e.stopPropagation();
-      _chatBackCtx='prof';
-      _profFromChat=true;
-      openProf(authorUser);
-    };
+    hdr.onclick=function(e){e.stopPropagation();_chatBackCtx='prof';_profFromChat=true;openProf(authorUser);};
   }
   card.appendChild(hdr);
 
-  // Thin divider between header and preview
+  // Thin divider
   var hdrDiv=document.createElement('div');
   hdrDiv.style.cssText='height:1px;background:var(--border)';
   card.appendChild(hdrDiv);
 
   if(p.img){
-    // Image moment
     var imgEl=document.createElement('img');
     imgEl.src=p.img;
-    imgEl.style.cssText='width:100%;height:110px;display:block;object-fit:cover';
+    imgEl.style.cssText='width:100%;height:100px;display:block;object-fit:cover';
     imgEl.onerror=function(){this.style.display='none';};
     card.appendChild(imgEl);
   } else if(p.text){
-    // Text moment — use story's actual bg color, clipped inside card
     var txtBox=document.createElement('div');
-    txtBox.style.cssText='width:100%;min-height:80px;display:flex;align-items:center;justify-content:center;padding:14px;background:'+(p.bg||'#2C2C2C');
+    txtBox.style.cssText='width:100%;min-height:72px;display:flex;align-items:center;justify-content:center;padding:12px;background:'+(p.bg||'#2C2C2C');
     var txt2=document.createElement('p');
-    txt2.style.cssText='font-size:13px;color:'+(p.tc||'#fff')+';text-align:center;line-height:1.5;margin:0;word-break:break-word';
+    txt2.style.cssText='font-size:13px;color:'+(p.tc||'#fff')+';text-align:center;line-height:1.45;margin:0;word-break:break-word';
     txt2.textContent=(p.text||'').slice(0,80);
     txtBox.appendChild(txt2);
     card.appendChild(txtBox);
   } else {
-    // Empty / faded moment
     var fadedBox=document.createElement('div');
-    fadedBox.style.cssText='width:100%;height:70px;display:flex;align-items:center;justify-content:center;background:var(--inp-bg)';
-    fadedBox.innerHTML='<span style="font-size:12px;color:var(--sub);font-weight:500">Moment faded</span>';
+    fadedBox.style.cssText='width:100%;height:60px;display:flex;align-items:center;justify-content:center';
+    fadedBox.innerHTML='<span style="font-size:12px;color:var(--sub)">Moment faded</span>';
     card.appendChild(fadedBox);
   }
 
-  // Tap card → open story viewer
+  // Tap → open story viewer
   card.onclick=function(){
     if(!p.storyId){T('This moment has faded');return;}
-    // Search in current svGroups
     var foundGI=-1,foundII=-1;
     for(var i=0;i<svGroups.length;i++){
       var fi=svGroups[i].items.findIndex(function(it){return it.id===p.storyId;});
       if(fi>=0){foundGI=i;foundII=fi;break;}
     }
-    if(foundGI>=0){
-      svGI=foundGI;svII=foundII;
-      openSV(svGI);
-    } else {
-      // Story might not be loaded yet — reload stories then open
-      T('Loading moment…');
-      loadStories();
+    if(foundGI>=0){svGI=foundGI;svII=foundII;openSV(svGI);}
+    else{
+      T('Loading moment…');loadStories();
       setTimeout(function(){
         var gi2=-1,ii2=-1;
         for(var i=0;i<svGroups.length;i++){
@@ -5521,8 +5502,7 @@ function buildSRC(p){
     }
   };
 
-  wrap.appendChild(card);
-  return wrap;
+  return card;
 }
 function attachHold(el,m,w,bs,isMine){
   var t=null,fired=false;
