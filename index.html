@@ -1424,7 +1424,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
     <div class="handle"></div>
     <div class="shhd"><span class="shtitle">Edit Profile</span><button class="shx" onclick="closeEP()">✕</button></div>
     <div class="field"><label class="lbl">Name</label><input id="ep-name" class="inp" type="text" autocomplete="name"/></div>
-    <div class="field"><label class="lbl">Username</label><input id="ep-user" class="inp" type="text" autocomplete="username"/></div>
+    <div class="field"><label class="lbl">Username</label><input id="ep-user" class="inp" type="text" autocomplete="username" oninput="checkEPUsername(this.value)"/><div id="ep-user-status" style="display:none;font-size:12px;font-weight:500;margin-top:5px;padding-left:2px"></div></div>
     <div class="field"><label class="lbl">Bio</label><textarea id="ep-bio" class="inp" rows="3"></textarea></div>
     <button class="btn btn-dark" onclick="saveProfile()">Save changes</button>
   </div>
@@ -2074,18 +2074,22 @@ function fmtDT(ts){return new Date(ts).toLocaleString([],{month:'short',day:'num
 function svKey(){return svGI+'-'+svII;}
 
 // ── USERNAME CHECK ────────────────────────────────────────────────────────────
-var TAKEN_USERNAMES=USERS.map(function(u){return u.username.toLowerCase();});
 var _uTimer=null;
+var _uValid=false; // tracks if current signup username passed the check
 function checkUsername(val){
   var el=document.getElementById('su-user-status');if(!el)return;
   var v=val.trim().toLowerCase().replace(/\s+/g,'');
+  _uValid=false;
   if(!v){el.style.display='none';return;}
-  el.style.display='block';el.textContent='';
+  el.style.display='block';el.textContent='Checking…';el.style.color='var(--sub)';
   clearTimeout(_uTimer);
   _uTimer=setTimeout(function(){
-    var taken=TAKEN_USERNAMES.includes(v);
-    el.textContent=taken?'Not available':'Available';
-    el.style.color=taken?'#E8352A':'#16A34A';
+    _sb.from('profiles').select('id',{count:'exact',head:true}).eq('username',v).then(function(res){
+      var taken=(res.count||0)>0;
+      _uValid=!taken;
+      el.textContent=taken?'Not available':'Available';
+      el.style.color=taken?'#E8352A':'#16A34A';
+    });
   },420);
 }
 
@@ -7354,9 +7358,54 @@ function copyProfileLink(){
 }
 
 // ── EDIT PROFILE ──────────────────────────────────────────────────────────────
-function openEP(){document.getElementById('ep-name').value=profile&&profile.display_name||'';document.getElementById('ep-user').value=profile&&profile.username||'';document.getElementById('ep-bio').value=profile&&profile.bio||'';var bg=document.getElementById('ep-bg');bg.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){bg.querySelector('.sheet').style.transform='translateY(0)';});});setTimeout(function(){document.getElementById('ep-name').focus();},350);}
+function openEP(){document.getElementById('ep-name').value=profile&&profile.display_name||'';document.getElementById('ep-user').value=profile&&profile.username||'';document.getElementById('ep-bio').value=profile&&profile.bio||'';var st=document.getElementById('ep-user-status');if(st)st.style.display='none';var bg=document.getElementById('ep-bg');bg.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){bg.querySelector('.sheet').style.transform='translateY(0)';});});setTimeout(function(){document.getElementById('ep-name').focus();},350);}
 function closeEP(){closeSheet('ep-bg');}
-function saveProfile(){if(!profile)return;var newName=document.getElementById('ep-name').value.trim()||profile.display_name;var newUser=document.getElementById('ep-user').value.trim()||profile.username;var newBio=document.getElementById('ep-bio').value.trim();profile.display_name=newName;profile.username=newUser;profile.bio=newBio;closeEP();renderMe();_sb.from('profiles').update({display_name:newName,username:newUser,bio:newBio}).eq('id',profile.id).then(function(res){if(res.error){T('Could not save profile');}else{T('Saved');}});}
+
+var _epUTimer=null;
+var _epUValid=true; // true = available or unchanged
+function checkEPUsername(val){
+  var el=document.getElementById('ep-user-status');if(!el)return;
+  var v=val.trim().toLowerCase().replace(/\s+/g,'');
+  // If same as current username it's always valid
+  if(v===(profile&&profile.username||'').toLowerCase()){
+    _epUValid=true;el.style.display='none';return;
+  }
+  _epUValid=false;
+  if(!v){el.style.display='none';return;}
+  el.style.display='block';el.textContent='Checking…';el.style.color='var(--sub)';
+  clearTimeout(_epUTimer);
+  _epUTimer=setTimeout(function(){
+    _sb.from('profiles').select('id',{count:'exact',head:true}).eq('username',v).then(function(res){
+      var taken=(res.count||0)>0;
+      _epUValid=!taken;
+      el.textContent=taken?'Not available':'Available';
+      el.style.color=taken?'#E8352A':'#16A34A';
+    });
+  },420);
+}
+
+function saveProfile(){
+  if(!profile)return;
+  var newName=document.getElementById('ep-name').value.trim()||profile.display_name;
+  var newUser=document.getElementById('ep-user').value.trim().toLowerCase().replace(/\s+/g,'')||profile.username;
+  var newBio=document.getElementById('ep-bio').value.trim();
+  // Block save if username is taken
+  if(!_epUValid){T('That username is taken');return;}
+  var saveBtn=document.querySelector('#ep-bg .btn-dark');
+  if(saveBtn){saveBtn.textContent='Saving…';saveBtn.disabled=true;}
+  _sb.from('profiles').update({display_name:newName,username:newUser,bio:newBio}).eq('id',profile.id).then(function(res){
+    if(saveBtn){saveBtn.textContent='Save changes';saveBtn.disabled=false;}
+    if(res.error){
+      // Unique constraint violation
+      if(res.error.code==='23505'){T('That username is already taken');var st=document.getElementById('ep-user-status');if(st){st.style.display='block';st.textContent='Not available';st.style.color='#E8352A';}_epUValid=false;}
+      else{T('Could not save profile');}
+      return;
+    }
+    profile.display_name=newName;profile.username=newUser;profile.bio=newBio;
+    _epUValid=true;
+    closeEP();renderMe();T('Saved');
+  });
+}
 
 // ── PHOTO VIEWER ──────────────────────────────────────────────────────────────
 (function(){
@@ -8401,6 +8450,29 @@ function closeFollowSheet(){
   });
   document.addEventListener('focusout',function(e){
     if(e.target&&e.target.id==='c-text'){setTimeout(adjustCompose,100);}
+  });
+})();
+
+// ── EDIT PROFILE SHEET KEYBOARD AVOID ────────────────────────────────────────
+(function(){
+  if(!window.visualViewport)return;
+  var EP_IDS=['ep-name','ep-user','ep-bio'];
+  function adjustEP(){
+    var bg=document.getElementById('ep-bg');
+    if(!bg||!bg.classList.contains('on'))return;
+    var vv=window.visualViewport;
+    var kbH=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    var sheet=bg.querySelector('.sheet');
+    if(!sheet)return;
+    sheet.style.paddingBottom=kbH>0?kbH+'px':'';
+  }
+  window.visualViewport.addEventListener('resize',adjustEP,{passive:true});
+  window.visualViewport.addEventListener('scroll',adjustEP,{passive:true});
+  document.addEventListener('focusin',function(e){
+    if(e.target&&EP_IDS.indexOf(e.target.id)>-1){setTimeout(adjustEP,300);}
+  });
+  document.addEventListener('focusout',function(e){
+    if(e.target&&EP_IDS.indexOf(e.target.id)>-1){setTimeout(adjustEP,100);}
   });
 })();
 </script>
