@@ -10935,7 +10935,7 @@ function _buildEpCats(){
     {id:'circle-cw',         z:200, fn:'closeCircleCW',    edge:true},
     {id:'circle-info',       z:250, fn:'closeCircleInfo',  edge:false},
   ];
-  var sx,sy,el,fn,dragging=false;
+  var sx,sy,el,fn,dragging=false,tid=-1;
 
   function topPanel(){
     var best=null,bz=-1;
@@ -10946,34 +10946,47 @@ function _buildEpCats(){
     return best;
   }
 
-  /* Parallax helpers — safe to call even before the IIFE that defines
-     them runs, because we only call them during live touch events which
-     happen after full parse. Falls back gracefully if not defined. */
-  function _drag(panelEl, dx){
-    if(typeof _onSwipeDrag==='function') _onSwipeDrag(panelEl, dx);
+  function _drag(panelEl,dx){
+    if(typeof _onSwipeDrag==='function') _onSwipeDrag(panelEl,dx);
   }
-  function _release(panelEl, committed){
-    if(typeof _onSwipeRelease==='function') _onSwipeRelease(panelEl, committed);
+  function _release(panelEl,committed){
+    if(typeof _onSwipeRelease==='function') _onSwipeRelease(panelEl,committed);
+  }
+
+  /* Safety: snap a stuck panel back instantly */
+  function _resetStuck(panelEl){
+    if(!panelEl)return;
+    panelEl.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
+    panelEl.style.transform='';
+    _release(panelEl,false);
   }
 
   document.addEventListener('touchstart',function(e){
-    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    /* If already mid-drag, ignore new touches (multi-touch guard) */
+    if(dragging&&el)return;
+    /* If a previous gesture left a panel stuck mid-screen, snap it back */
+    if(el&&!dragging){ _resetStuck(el); el=null; fn=null; }
+
+    var t=e.touches[0];
+    sx=t.clientX; sy=t.clientY; tid=t.identifier;
     dragging=false; el=null; fn=null;
     var p=topPanel(); if(!p)return;
-    /* Edge-only panels: only start tracking if finger is within EDGE px */
     if(p.edge&&sx>EDGE)return;
     el=document.getElementById(p.id); fn=p.fn;
   },{passive:true});
 
   document.addEventListener('touchmove',function(e){
     if(!el)return;
-    var dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
+    /* Find the specific tracked touch — ignore other fingers */
+    var t=null;
+    for(var i=0;i<e.touches.length;i++){
+      if(e.touches[i].identifier===tid){t=e.touches[i];break;}
+    }
+    if(!t)return;
+    var dx=t.clientX-sx, dy=t.clientY-sy;
     if(!dragging){
-      /* Dead-zone: ignore micro-movements */
       if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
-      /* Vertical scroll: cancel tracking atomically */
       if(Math.abs(dy)>Math.abs(dx)){el=null;fn=null;return;}
-      /* Left swipe: not a back gesture */
       if(dx<0){el=null;fn=null;return;}
       dragging=true;
     }
@@ -10982,49 +10995,53 @@ function _buildEpCats(){
       var clampedDx=Math.max(0,dx);
       el.style.transition='none';
       el.style.transform='translateX('+clampedDx+'px)';
-      /* Update shadow + parallax background in sync with finger */
-      _drag(el, clampedDx);
+      _drag(el,clampedDx);
     }
   },{passive:false});
 
   function finish(e){
-    if(!dragging||!el){dragging=false;el=null;fn=null;return;}
-    var dx=(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientX:sx)-sx;
-    var cur=el, back=fn;
-    dragging=false; el=null; fn=null;
+    if(!el){dragging=false;fn=null;tid=-1;return;}
+    /* Find the tracked touch in changedTouches */
+    var t=null;
+    if(e.changedTouches){
+      for(var i=0;i<e.changedTouches.length;i++){
+        if(e.changedTouches[i].identifier===tid){t=e.changedTouches[i];break;}
+      }
+    }
+    if(!dragging){
+      /* Gesture never left dead-zone — clean up silently */
+      el=null;fn=null;tid=-1;return;
+    }
+    var dx=t?t.clientX-sx:0;
+    var cur=el,back=fn;
+    dragging=false;el=null;fn=null;tid=-1;
     var committed=dx>window.innerWidth*THRESH;
-    /* Notify parallax system — it will advance/restore background.
-       We do NOT call _advanceBackground() here directly; the close
-       wrappers (which the fn call triggers) already do that, so we
-       pass committed=false to _release to just clean up the shadow,
-       then let the close wrapper own the background advance. */
-    _release(cur, false);
     if(committed){
+      /* Shadow cleared; background advance owned by the close wrapper */
+      _release(cur,true);
       cur.style.transition='transform .3s cubic-bezier(.4,0,.2,1)';
       cur.style.transform='translateX(100%)';
       setTimeout(function(){
         cur.style.transition='none';
-        /* The close function will call _advanceBackground via its wrapper */
         if(typeof window[back]==='function') window[back]();
         setTimeout(function(){cur.style.transition='';},400);
       },300);
     }else{
-      /* Snap back — restore panel and background */
+      /* Snap back — single _release call here (not before the if/else) */
       cur.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       cur.style.transform='';
-      /* Restore parallax recession since we cancelled the gesture */
-      if(typeof _onSwipeRelease==='function') _onSwipeRelease(cur, false);
+      _release(cur,false);
     }
   }
 
   document.addEventListener('touchend',finish,{passive:true});
   document.addEventListener('touchcancel',function(){
     if(el){
-      el.style.transition='';
+      el.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       el.style.transform='';
-      _release(el, false);
+      _release(el,false);
     }
-    dragging=false; el=null; fn=null;
+    dragging=false;el=null;fn=null;tid=-1;
   },{passive:true});
 })();
 
