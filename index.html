@@ -1088,6 +1088,116 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .ep-grid button.ep-tapped{animation:ep-tap .32s cubic-bezier(.25,.46,.45,.94) both}
 .ep-section-label{grid-column:1/-1;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;padding:8px 4px 4px}
 
+/* ═══════════════════════════════════════════════════════════════
+   NATIVE FEEL PATCH  —  Phase 1 · 3 · 4 · 6
+   All changes are additive. Zero existing functions touched.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Phase 1 + 6: GPU layer always on, visibility swap kills flicker ── */
+/* Panels stay display:flex always — GPU layer is pre-composited.
+   visibility:hidden + pointer-events:none replaces display:none.
+   This eliminates the 1-frame flash that happens when the browser
+   paints display:flex before the opening transform takes effect. */
+
+#cw,
+#notif-panel,
+#prof-screen,
+#circle-cw,
+#sched-form-panel,
+#circle-info,
+#so {
+  display: flex !important;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform;
+  /* default: off-screen right */
+}
+
+#cw.on,
+#notif-panel.on,
+#prof-screen.on,
+#circle-cw.on,
+#sched-form-panel.on,
+#circle-info.on,
+#so.on {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ── Phase 3: Spring easing on all full-screen panel transitions ── */
+/* iOS uses spring physics on navigation. We approximate with two
+   different cubic-bezier curves: a sharp deceleration on enter
+   (feels like snapping into place) and a quick ease-in on exit.
+   The 340ms duration matches iOS navigation timing. */
+
+#cw,
+#notif-panel,
+#prof-screen,
+#circle-cw,
+#sched-form-panel,
+#circle-info {
+  transition: transform 340ms cubic-bezier(.32,0,.67,0) !important;
+}
+
+#cw.on,
+#notif-panel.on,
+#prof-screen.on,
+#circle-cw.on,
+#sched-form-panel.on,
+#circle-info.on {
+  transition: transform 340ms cubic-bezier(.33,1,.68,1) !important;
+}
+
+/* Settings panel uses same spring but slightly faster feel */
+#so {
+  transition: transform 320ms cubic-bezier(.32,0,.67,0) !important;
+}
+#so.on {
+  transition: transform 320ms cubic-bezier(.33,1,.68,1) !important;
+}
+
+/* Bottom sheets also get the spring treatment */
+#cs-sheet,
+#fl-sheet,
+#react-sheet,
+#views-sheet,
+#aud-sheet,
+#circle-create-sheet,
+#seen-by-sheet {
+  transition: transform 340ms cubic-bezier(.33,1,.68,1) !important;
+}
+
+/* ── Phase 4: Instant press feedback classes ── */
+/* These are toggled by touchstart/touchend JS below.
+   CSS :active has ~80ms delay on mobile — this is 0ms. */
+._pressed {
+  opacity: 0.55 !important;
+  transform: scale(0.93) !important;
+  transition: opacity 60ms ease, transform 60ms cubic-bezier(.4,0,.2,1) !important;
+}
+
+/* Icon buttons press slightly differently */
+.ibtn._pressed,
+.nbtn._pressed {
+  opacity: 0.35 !important;
+  transform: scale(0.86) !important;
+}
+
+/* Nav buttons bounce back with spring */
+._press-release {
+  transition: opacity 200ms ease, transform 220ms cubic-bezier(.34,1.56,.64,1) !important;
+}
+
+/* ── Misc: Eliminate tap highlight globally ── */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ── Prevent text rendering jank during scroll ── */
+body {
+  text-rendering: optimizeSpeed;
+}
+
 </style>
 </head>
 <body>
@@ -10897,6 +11007,291 @@ function _buildEpCats(){
 </div>
 
 
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   NATIVE FEEL PATCH — JS side
+   Phase 1 + 6 : patch open/close to use visibility, not display:none
+   Phase 4     : instant 0ms touchstart press feedback
+   ═══════════════════════════════════════════════════════════════════ */
+
+(function(){
+
+  /* ── PHASE 1 + 6: Visibility-swap helpers ────────────────────────
+     The CSS already keeps all panels display:flex at all times.
+     These helpers patch the existing open/close functions so they
+     no longer set display:none / display:flex (which caused flicker),
+     and instead just manage the .on class + visibility.
+     We wrap the originals rather than replace them, so all their
+     Supabase / state logic still runs untouched.
+  ──────────────────────────────────────────────────────────────────*/
+
+  /* Utility: zero-out any inline display style the original code set,
+     and ensure the panel is in the right visibility state. */
+  function syncPanel(id, isOpen) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    // Clear any inline display the legacy code may have set
+    el.style.display = '';
+    if (isOpen) {
+      el.style.visibility = 'visible';
+      el.style.pointerEvents = 'auto';
+    } else {
+      el.style.visibility = '';
+      el.style.pointerEvents = '';
+    }
+  }
+
+  /* Patch openNotif — remove the display:'flex' set, let CSS handle it */
+  var _origOpenNotif = window.openNotif;
+  window.openNotif = function() {
+    var el = document.getElementById('notif-panel');
+    if (el) { el.style.display = ''; }
+    _origOpenNotif && _origOpenNotif.apply(this, arguments);
+    syncPanel('notif-panel', true);
+  };
+
+  var _origCloseNotif = window.closeNotif;
+  window.closeNotif = function() {
+    _origCloseNotif && _origCloseNotif.apply(this, arguments);
+    var el = document.getElementById('notif-panel');
+    if (!el) return;
+    // After the slide-out animation (350ms), clear inline display
+    setTimeout(function() {
+      el.style.display = '';
+      syncPanel('notif-panel', false);
+    }, 360);
+  };
+
+  /* Patch openChat (opens #cw) */
+  var _origOpenChat = window.openChat;
+  window.openChat = function() {
+    var el = document.getElementById('cw');
+    if (el) { el.style.display = ''; }
+    _origOpenChat && _origOpenChat.apply(this, arguments);
+    syncPanel('cw', true);
+  };
+
+  var _origCloseCW = window.closeCW;
+  window.closeCW = function() {
+    _origCloseCW && _origCloseCW.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('cw');
+      if (el) { el.style.display = ''; }
+      syncPanel('cw', false);
+    }, 360);
+  };
+
+  /* Patch openProf */
+  var _origOpenProf = window.openProf;
+  window.openProf = function() {
+    var el = document.getElementById('prof-screen');
+    if (el) { el.style.display = ''; }
+    _origOpenProf && _origOpenProf.apply(this, arguments);
+    syncPanel('prof-screen', true);
+  };
+
+  var _origCloseProf = window.closeProf;
+  window.closeProf = function() {
+    _origCloseProf && _origCloseProf.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('prof-screen');
+      if (el) { el.style.display = ''; }
+      syncPanel('prof-screen', false);
+    }, 360);
+  };
+
+  /* Patch openSettings */
+  var _origOpenSettings = window.openSettings;
+  window.openSettings = function() {
+    var el = document.getElementById('so');
+    if (el) { el.style.display = ''; }
+    _origOpenSettings && _origOpenSettings.apply(this, arguments);
+    syncPanel('so', true);
+  };
+
+  var _origCloseSettings = window.closeSettings;
+  window.closeSettings = function() {
+    _origCloseSettings && _origCloseSettings.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('so');
+      if (el) { el.style.display = ''; }
+      syncPanel('so', false);
+    }, 360);
+  };
+
+  /* Patch openCircleCW */
+  var _origOpenCircleCW = window.openCircleCW;
+  window.openCircleCW = function() {
+    var el = document.getElementById('circle-cw');
+    if (el) { el.style.display = ''; }
+    _origOpenCircleCW && _origOpenCircleCW.apply(this, arguments);
+    syncPanel('circle-cw', true);
+  };
+
+  var _origCloseCircleCW = window.closeCircleCW;
+  window.closeCircleCW = function() {
+    _origCloseCircleCW && _origCloseCircleCW.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('circle-cw');
+      if (el) { el.style.display = ''; }
+      syncPanel('circle-cw', false);
+    }, 360);
+  };
+
+  /* Patch openSchedForm */
+  var _origOpenSchedForm = window.openSchedForm;
+  window.openSchedForm = function() {
+    var el = document.getElementById('sched-form-panel');
+    if (el) { el.style.display = ''; }
+    _origOpenSchedForm && _origOpenSchedForm.apply(this, arguments);
+    syncPanel('sched-form-panel', true);
+  };
+
+  var _origCloseSchedForm = window.closeSchedForm;
+  window.closeSchedForm = function() {
+    _origCloseSchedForm && _origCloseSchedForm.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('sched-form-panel');
+      if (el) { el.style.display = ''; }
+      syncPanel('sched-form-panel', false);
+    }, 360);
+  };
+
+  /* ── Also sync circle-info which uses same on/off pattern ── */
+  var _origOpenCircleInfo = window.openCircleInfo;
+  window.openCircleInfo = function() {
+    var el = document.getElementById('circle-info');
+    if (el) { el.style.display = ''; }
+    _origOpenCircleInfo && _origOpenCircleInfo.apply(this, arguments);
+    syncPanel('circle-info', true);
+  };
+
+  var _origCloseCircleInfo = window.closeCircleInfo;
+  window.closeCircleInfo = function() {
+    _origCloseCircleInfo && _origCloseCircleInfo.apply(this, arguments);
+    setTimeout(function() {
+      var el = document.getElementById('circle-info');
+      if (el) { el.style.display = ''; }
+      syncPanel('circle-info', false);
+    }, 360);
+  };
+
+  /* ── PHASE 4: Instant touchstart press feedback ──────────────────
+     CSS :active fires ~80ms after touchstart on mobile due to the
+     300ms click delay mitigation logic in WebKit. By listening to
+     touchstart directly and adding a class, press feedback is
+     instant — 0ms from finger contact to visual response.
+  ──────────────────────────────────────────────────────────────────*/
+
+  var PRESS_SELECTOR = [
+    '.btn',
+    '.ibtn',
+    '.nbtn',
+    '.actbtn',
+    '.drow',
+    '.ni',
+    '.dd-item',
+    '.ctx-item',
+    '.sitm',
+    '.view-row',
+    '.mention-row',
+    '.sched-act-btn',
+    '.sc-tbtn',
+    '.sc-share',
+    '.dropbtn',
+    '.cssend',
+    '.chat-send',
+    '.svlbtn',
+    '.ilbl',
+    '.sc-pb'
+  ].join(',');
+
+  var _pressedEl = null;
+
+  document.addEventListener('touchstart', function(e) {
+    var target = e.target;
+    var el = null;
+
+    /* Walk up max 4 levels to find a pressable ancestor */
+    for (var i = 0; i < 4; i++) {
+      if (!target || target === document.body) break;
+      if (target.matches && target.matches(PRESS_SELECTOR)) {
+        el = target;
+        break;
+      }
+      target = target.parentElement;
+    }
+
+    if (!el) return;
+
+    _pressedEl = el;
+    el.classList.add('_pressed');
+
+    /* Remove :active CSS so they don't fight each other */
+    el.style.transform = '';
+    el.style.opacity = '';
+
+  }, { passive: true });
+
+  function _releasePress(e) {
+    if (!_pressedEl) return;
+    var el = _pressedEl;
+    _pressedEl = null;
+
+    /* Spring back */
+    el.classList.remove('_pressed');
+    el.classList.add('_press-release');
+
+    setTimeout(function() {
+      el.classList.remove('_press-release');
+    }, 300);
+  }
+
+  document.addEventListener('touchend',    _releasePress, { passive: true });
+  document.addEventListener('touchcancel', function() {
+    if (_pressedEl) {
+      _pressedEl.classList.remove('_pressed');
+      _pressedEl.classList.remove('_press-release');
+      _pressedEl = null;
+    }
+  }, { passive: true });
+
+  /* ── PHASE 1: Force initial state on all panels at load ──────────
+     Since CSS keeps them display:flex, we need to make sure they
+     start off-screen (transform already set by existing CSS) and
+     invisible until explicitly opened.
+  ──────────────────────────────────────────────────────────────────*/
+  var PANELS = [
+    'cw', 'notif-panel', 'prof-screen',
+    'circle-cw', 'sched-form-panel', 'circle-info', 'so'
+  ];
+
+  /* Run after DOM is fully parsed */
+  function initPanels() {
+    PANELS.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      /* Clear any inline display that boot code may have set */
+      el.style.display = '';
+      /* If not .on, ensure invisible */
+      if (!el.classList.contains('on')) {
+        el.style.visibility = 'hidden';
+        el.style.pointerEvents = 'none';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPanels);
+  } else {
+    /* Already parsed */
+    setTimeout(initPanels, 0);
+  }
+
+})();
+</script>
 
 </body>
 </html>
