@@ -11013,7 +11013,9 @@ function _buildEpCats(){
 /* ═══════════════════════════════════════════════════════════════════
    NATIVE FEEL PATCH — JS side
    Phase 1 + 6 : patch open/close to use visibility, not display:none
+   Phase 2     : parallax background recession on panel open/close
    Phase 4     : instant 0ms touchstart press feedback
+   Phase 5     : swipe-back depth shadow
    ═══════════════════════════════════════════════════════════════════ */
 
 (function(){
@@ -11177,6 +11179,222 @@ function _buildEpCats(){
       syncPanel('circle-info', false);
     }, 360);
   };
+
+  /* ── PHASE 2: Parallax background recession ─────────────────────
+     When a panel opens, the background (#sw — the main screen
+     container) slides back 26% simultaneously. This is the single
+     biggest native-feel improvement: it creates depth, making the
+     overlay panel feel like it's truly above a real layer behind it.
+
+     Rules:
+     - Only #sw recedes (the tab screens). Never the auth screen.
+     - Recession happens on the same frame the panel opens.
+     - On close, #sw snaps forward again in sync with the slide-out.
+     - We track an open-panel count so nested panels (e.g. profile
+       opened from chat) don't double-recede.
+     - Uses the same spring easing as the panels themselves.
+     - If the user is mid-swipe (Phase 5), we don't fight it.
+  ──────────────────────────────────────────────────────────────────*/
+
+  var _paralaxDepth = 0; // how many panels are currently open
+
+  var RECEDE_TRANSLATE = '26%';  // how far back the bg slides
+  var RECEDE_SCALE     = '0.94'; // slight scale-down for depth illusion
+  var RECEDE_DURATION  = '340ms';
+  var RECEDE_EASE_IN   = 'cubic-bezier(.32,0,.67,0)';
+  var RECEDE_EASE_OUT  = 'cubic-bezier(.33,1,.68,1)';
+
+  function _getSW() {
+    return document.getElementById('sw');
+  }
+
+  function _recedeBackground() {
+    var sw = _getSW();
+    if (!sw) return;
+    _paralaxDepth++;
+    if (_paralaxDepth > 1) return; // already receded — don't stack
+    sw.style.transition =
+      'transform ' + RECEDE_DURATION + ' ' + RECEDE_EASE_IN + ', ' +
+      'opacity '   + RECEDE_DURATION + ' ' + RECEDE_EASE_IN;
+    // Small rAF to let the panel's .on class land first, then recede
+    requestAnimationFrame(function() {
+      sw.style.transform = 'translateX(-' + RECEDE_TRANSLATE + ') scale(' + RECEDE_SCALE + ')';
+      sw.style.opacity   = '0.88';
+      sw.style.borderRadius = '14px';
+    });
+  }
+
+  function _advanceBackground() {
+    _paralaxDepth = Math.max(0, _paralaxDepth - 1);
+    if (_paralaxDepth > 0) return; // another panel still open
+    var sw = _getSW();
+    if (!sw) return;
+    sw.style.transition =
+      'transform ' + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT + ', ' +
+      'opacity '   + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT;
+    sw.style.transform    = '';
+    sw.style.opacity      = '';
+    sw.style.borderRadius = '';
+  }
+
+  /* ── PHASE 5: Swipe-back depth shadow ────────────────────────────
+     During a swipe-back gesture, a shadow on the panel's left edge
+     reinforces the illusion that the panel is floating above the
+     background screen. Shadow opacity is tied to drag progress:
+     0% drag = full shadow, 100% threshold = shadow fades to 0.
+
+     Also: as the user drags, the background advances proportionally
+     (partial de-recession) so the parallax feels continuous.
+
+     Implementation: we add a single shadow pseudo-element via an
+     injected CSS rule, then control its opacity via a CSS variable
+     on the panel element.
+  ──────────────────────────────────────────────────────────────────*/
+
+  /* Inject shadow styles */
+  var _shadowStyle = document.createElement('style');
+  _shadowStyle.textContent = [
+    /* Left-edge shadow on any panel that's being dragged */
+    '#cw::before,',
+    '#notif-panel::before,',
+    '#prof-screen::before,',
+    '#circle-cw::before,',
+    '#sched-form-panel::before,',
+    '#circle-info::before,',
+    '#so::before {',
+    '  content: "";',
+    '  position: absolute;',
+    '  top: 0; left: -18px; bottom: 0;',
+    '  width: 18px;',
+    '  background: linear-gradient(to right, transparent, rgba(0,0,0,var(--swipe-shadow,0)));',
+    '  pointer-events: none;',
+    '  z-index: 1;',
+    '  border-radius: 0;',
+    '}'
+  ].join('\n');
+  document.head.appendChild(_shadowStyle);
+
+  /* Hook into the existing swipe-back IIFE via a MutationObserver
+     on inline style changes during drag. We watch for translateX
+     being set on panel elements and derive progress from it. */
+  var _swipePanelIds = ['cw','notif-panel','prof-screen','circle-cw','sched-form-panel','circle-info','so'];
+
+  function _onSwipeDrag(el, dx) {
+    var sw    = _getSW();
+    var vw    = window.innerWidth;
+    var pct   = Math.min(1, Math.max(0, dx / (vw * 0.38))); // 0→1 as drag→threshold
+    var shadow = (1 - pct) * 0.18;                          // 0.18 max shadow opacity
+
+    el.style.setProperty('--swipe-shadow', shadow.toFixed(3));
+
+    /* Partially advance the background proportionally */
+    if (sw && _paralaxDepth > 0) {
+      var retreatPct  = 1 - pct;
+      var tx  = parseFloat(RECEDE_TRANSLATE) * retreatPct;
+      var sc  = 1 - (1 - parseFloat(RECEDE_SCALE)) * retreatPct;
+      var op  = 1 - (1 - 0.88) * retreatPct;
+      sw.style.transition = 'none';
+      sw.style.transform  = 'translateX(-' + tx + '%) scale(' + sc + ')';
+      sw.style.opacity    = op.toFixed(3);
+    }
+  }
+
+  function _onSwipeRelease(el, committed) {
+    el.style.setProperty('--swipe-shadow', '0');
+    if (committed) {
+      // Panel is flying out — advance bg in sync
+      _advanceBackground();
+    } else {
+      // Snap back — restore full recession
+      var sw = _getSW();
+      if (sw && _paralaxDepth > 0) {
+        sw.style.transition =
+          'transform 320ms cubic-bezier(.25,.46,.45,.94), ' +
+          'opacity 320ms cubic-bezier(.25,.46,.45,.94)';
+        sw.style.transform  = 'translateX(-' + RECEDE_TRANSLATE + ') scale(' + RECEDE_SCALE + ')';
+        sw.style.opacity    = '0.88';
+      }
+    }
+  }
+
+  /* Observe touchmove on the document to intercept swipe drags.
+     The existing swipe code sets inline transform on the panel —
+     we listen for touchmove and, if a panel has a non-empty
+     inline transform (set by swipe code), update shadow + bg. */
+  var _swipeTouchStart = {x:0, y:0, el:null};
+
+  document.addEventListener('touchstart', function(e) {
+    _swipeTouchStart.x  = e.touches[0].clientX;
+    _swipeTouchStart.y  = e.touches[0].clientY;
+    _swipeTouchStart.el = null;
+    // Find which panel (if any) is currently .on
+    for (var i = 0; i < _swipePanelIds.length; i++) {
+      var p = document.getElementById(_swipePanelIds[i]);
+      if (p && p.classList.contains('on')) {
+        _swipeTouchStart.el = p;
+        break;
+      }
+    }
+  }, { passive: true, capture: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!_swipeTouchStart.el) return;
+    var dx = e.touches[0].clientX - _swipeTouchStart.x;
+    var dy = e.touches[0].clientY - _swipeTouchStart.y;
+    if (Math.abs(dx) < 6 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx > 0) {
+      _onSwipeDrag(_swipeTouchStart.el, dx);
+    }
+  }, { passive: true, capture: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!_swipeTouchStart.el) return;
+    var dx = e.changedTouches[0].clientX - _swipeTouchStart.x;
+    var committed = dx > window.innerWidth * 0.38;
+    _onSwipeRelease(_swipeTouchStart.el, committed);
+    _swipeTouchStart.el = null;
+  }, { passive: true, capture: true });
+
+  document.addEventListener('touchcancel', function() {
+    if (_swipeTouchStart.el) {
+      _onSwipeRelease(_swipeTouchStart.el, false);
+      _swipeTouchStart.el = null;
+    }
+  }, { passive: true, capture: true });
+
+  /* ── Wire parallax into open/close wrappers ──────────────────────
+     The wrappers already exist above (Phase 1+6). We add _recede /
+     _advance calls to them here by re-wrapping the already-wrapped
+     functions. Since each wrapper calls the original, we just need
+     to intercept the outermost version.
+  ──────────────────────────────────────────────────────────────────*/
+
+  function _addParallax(openFnName, closeFnName) {
+    var origOpen  = window[openFnName];
+    var origClose = window[closeFnName];
+
+    if (origOpen) {
+      window[openFnName] = function() {
+        _recedeBackground();
+        origOpen.apply(this, arguments);
+      };
+    }
+
+    if (origClose) {
+      window[closeFnName] = function() {
+        origClose.apply(this, arguments);
+        _advanceBackground();
+      };
+    }
+  }
+
+  _addParallax('openNotif',      'closeNotif');
+  _addParallax('openChat',       'closeCW');
+  _addParallax('openProf',       'closeProf');
+  _addParallax('openSettings',   'closeSettings');
+  _addParallax('openCircleCW',   'closeCircleCW');
+  _addParallax('openSchedForm',  'closeSchedForm');
+  _addParallax('openCircleInfo', 'closeCircleInfo');
 
   /* ── PHASE 4: Instant touchstart press feedback ──────────────────
      CSS :active fires ~80ms after touchstart on mobile due to the
