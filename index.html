@@ -416,7 +416,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .react-row-emoji{font-size:30px;line-height:1}
 
 /* COMMENT SHEET — Instagram style */
-#cs-bg{display:none;position:fixed;inset:0;z-index:700;transition:bottom .22s ease}
+#cs-bg{display:none;position:fixed;inset:0;z-index:700}
 #cs-bg.on{display:flex;align-items:flex-end}
 .cs-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:dimIn .28s ease}
 #cs-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:88dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);border:none;outline:none;overflow:hidden}
@@ -455,6 +455,9 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .rplybar{display:none;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--inp-bg);font-size:13px;color:var(--sub);flex-shrink:0;border-top:1px solid var(--border)}
 .rplybar.on{display:flex}
 .cs-inp-row{display:flex;gap:10px;align-items:flex-end;padding:10px 14px max(16px,env(safe-area-inset-bottom));flex-shrink:0;background:var(--card);margin-top:auto}
+
+/* Comment hold-to-delete modal */
+#cmt-del-modal{z-index:910}
 .csinp{flex:1;background:var(--inp-bg);border:none;border-radius:22px;padding:10px 16px;font-size:14px;font-family:'Inter',sans-serif;color:var(--inp-text);outline:none;resize:none;max-height:80px;line-height:1.4;-webkit-user-select:text;user-select:text}
 .csinp::placeholder{color:var(--inp-ph)}
 .cssend{width:36px;height:36px;border-radius:50%;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
@@ -1448,6 +1451,20 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
     <div style="display:flex">
       <button onclick="closeDelSheet()" style="flex:1;padding:15px;background:none;border:none;border-right:1px solid var(--border);font-size:15px;font-weight:400;color:var(--text);cursor:pointer;font-family:Inter,sans-serif">Cancel</button>
       <button id="del-btn" style="flex:1;padding:15px;background:none;border:none;font-size:15px;font-weight:600;color:#E8352A;cursor:pointer;font-family:Inter,sans-serif">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="cmt-del-modal" class="mbg" style="z-index:910">
+  <div class="modal" style="gap:0;padding:0;overflow:hidden;max-width:300px">
+    <div style="padding:22px 18px 16px;display:flex;flex-direction:column;gap:8px;align-items:center">
+      <div style="font-weight:700;font-size:16px;text-align:center">Delete comment?</div>
+      <div style="font-size:13.5px;color:var(--sub);text-align:center;line-height:1.55">Once deleted it cannot be recovered.</div>
+    </div>
+    <div style="height:1px;background:var(--border)"></div>
+    <div style="display:flex">
+      <button onclick="closeCmtDelBar()" style="flex:1;padding:15px;background:none;border:none;border-right:1px solid var(--border);font-size:15px;font-weight:400;color:var(--text);cursor:pointer;font-family:Inter,sans-serif">Cancel</button>
+      <button onclick="execCmtDelete()" style="flex:1;padding:15px;background:none;border:none;font-size:15px;font-weight:600;color:#E8352A;cursor:pointer;font-family:Inter,sans-serif">Delete</button>
     </div>
   </div>
 </div>
@@ -3669,6 +3686,7 @@ function buildPost(p, showDelete){
   },{passive:false});
   return el;
 }
+var _likeTimers={};  // postId → setTimeout handle — fires like notification only if still liked after delay
 function likePost(id,btn){
   var p=posts.find(function(x){return x.id===id;});if(!p||!profile)return;
   // Flip liked state instantly — never reset by re-render
@@ -3703,9 +3721,19 @@ function likePost(id,btn){
   var postOwnerId=p.uid;
   if(p.liked){
     _sb.from('likes').insert({user_id:profile.id,post_id:id}).then(function(){});
-    // Pass recipientId directly so notification works even if posts array is stale
-    pushN('like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},id,{postText:(p.text||'').slice(0,40)},postOwnerId);
+    // Debounce notification — only push if user keeps the like for 1.5s
+    clearTimeout(_likeTimers[id]);
+    _likeTimers[id]=setTimeout(function(){
+      var still=posts.find(function(x){return x.id===id;});
+      if(still&&still.liked){
+        pushN('like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},id,{postText:(p.text||'').slice(0,40)},postOwnerId);
+      }
+      delete _likeTimers[id];
+    },1500);
   } else {
+    // Cancel any pending like notification
+    clearTimeout(_likeTimers[id]);
+    delete _likeTimers[id];
     _sb.from('likes').delete().eq('user_id',profile.id).eq('post_id',id).then(function(){});
   }
 }
@@ -5829,8 +5857,56 @@ function openCS(pid){
       });
     });
 }
-function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');setTimeout(function(){bg.style.display='none';csPid=null;},320);}
+function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');closeCmtDelBar();setTimeout(function(){bg.style.display='none';csPid=null;},320);}
 function csBgClose(e){if(e.target===document.getElementById('cs-bg')||e.target.classList.contains('cs-dim'))closeCS();}
+
+// ── COMMENT HOLD-TO-DELETE ────────────────────────────────────────────────────
+var _cmtDelTarget=null; // {row, commentId, isReply, parentIdx, replyIdx, commentIdx}
+function openCmtDelBar(target){
+  _cmtDelTarget=target;
+  haptic();
+  document.getElementById('cmt-del-modal').classList.add('on');
+}
+function closeCmtDelBar(){
+  _cmtDelTarget=null;
+  var m=document.getElementById('cmt-del-modal');if(m)m.classList.remove('on');
+}
+function execCmtDelete(){
+  if(!_cmtDelTarget)return;
+  var t=_cmtDelTarget;
+  closeCmtDelBar();
+  // Fade row out
+  t.row.style.transition='opacity .2s ease';
+  t.row.style.opacity='0';
+  setTimeout(function(){
+    if(t.row.parentNode)t.row.parentNode.removeChild(t.row);
+    // Remove from data
+    var p=posts.find(function(x){return x.id===csPid;});
+    if(p&&p.comments){
+      if(t.isReply){
+        var parent=p.comments[t.parentIdx];
+        if(parent&&parent.replies)parent.replies.splice(t.replyIdx,1);
+      } else {
+        p.comments.splice(t.commentIdx,1);
+      }
+    }
+    // Delete from Supabase
+    if(t.commentId){
+      _sb.from('comments').delete().eq('id',t.commentId).eq('user_id',profile.id).then(function(){});
+    }
+    // Update comment count in feed
+    document.querySelectorAll('#cc-'+csPid).forEach(function(el){
+      var p2=posts.find(function(x){return x.id===csPid;});
+      if(p2){p2.comments_count=Math.max(0,(p2.comments_count||0)-1);el.textContent=p2.comments_count||0;}
+    });
+    // Show empty state if no comments left
+    var p3=posts.find(function(x){return x.id===csPid;});
+    var list=document.getElementById('cs-list');
+    if(list&&p3&&!(p3.comments||[]).length){
+      list.innerHTML='<div class="empty" style="padding:50px 22px;text-align:center"><div class="emps">No comments yet. Be first!</div></div>';
+    }
+  },220);
+}
 function renderCSList(){
   var p=posts.find(function(x){return x.id===csPid;}),l=document.getElementById('cs-list');if(!l||!p)return;
   if(!(p.comments||[]).length){l.innerHTML='<div class="empty" style="padding:50px 22px;text-align:center"><div class="emps">No comments yet. Be first!</div></div>';return;}
@@ -5901,6 +5977,15 @@ function renderCSList(){
     heartWrap.appendChild(heartBtn);heartWrap.appendChild(heartCount);
 
     row.appendChild(avEl);row.appendChild(bodyEl);row.appendChild(heartWrap);
+    // Hold-to-delete for own comments
+    if(c.uid&&profile&&c.uid===profile.id){
+      (function(r,commentId,commentIdx){
+        var _ht=null;
+        r.addEventListener('touchstart',function(){_ht=setTimeout(function(){openCmtDelBar({row:r,commentId:commentId,isReply:false,commentIdx:commentIdx});},500);},{passive:true});
+        r.addEventListener('touchend',function(){clearTimeout(_ht);},{passive:true});
+        r.addEventListener('touchcancel',function(){clearTimeout(_ht);},{passive:true});
+      })(row,c.id,ci);
+    }
     l.appendChild(row);
 
     // ── View replies toggle (no dash) ──
@@ -5960,6 +6045,15 @@ function renderCSList(){
 
         rb.appendChild(rnameRow);rb.appendChild(rtxtEl);rb.appendChild(rmetaEl);
         rrow.appendChild(rav);rrow.appendChild(rb);rrow.appendChild(rhWrap);
+        // Hold-to-delete for own replies
+        if(r.uid&&profile&&r.uid===profile.id){
+          (function(rr,replyId,parentIdx,replyIdx){
+            var _ht=null;
+            rr.addEventListener('touchstart',function(){_ht=setTimeout(function(){openCmtDelBar({row:rr,commentId:replyId,isReply:true,parentIdx:parentIdx,replyIdx:replyIdx});},500);},{passive:true});
+            rr.addEventListener('touchend',function(){clearTimeout(_ht);},{passive:true});
+            rr.addEventListener('touchcancel',function(){clearTimeout(_ht);},{passive:true});
+          })(rrow,r.id,ci,c.replies.indexOf(r));
+        }
         replBlock.appendChild(rrow);
       });
 
@@ -8257,13 +8351,17 @@ function closeFollowSheet(){
     if(!csBg||!csBg.classList.contains('on'))return;
     var vv=window.visualViewport;
     var kbH=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    var sheet=document.getElementById('cs-sheet');
+    var list=document.getElementById('cs-list');
+    if(!sheet)return;
     if(kbH>0){
-      // Lift entire sheet container above keyboard
-      csBg.style.bottom=kbH+'px';
-      csBg.style.top='0';
+      // Pad the sheet bottom so input sits above keyboard
+      sheet.style.paddingBottom=kbH+'px';
+      // Shrink the list so the sheet doesn't overflow — leave room for header + input (~120px)
+      if(list)list.style.maxHeight='calc(88dvh - '+kbH+'px - 120px)';
     } else {
-      csBg.style.bottom='';
-      csBg.style.top='';
+      sheet.style.paddingBottom='';
+      if(list)list.style.maxHeight='';
     }
   }
   window.visualViewport.addEventListener('resize',adjustCS,{passive:true});
