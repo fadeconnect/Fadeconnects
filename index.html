@@ -5341,20 +5341,17 @@ function appendBubble(m){
     b.style.transformOrigin=isMine?'bottom right':'bottom left';
 
     if(m.preview){
-      // Story reply bubble — card + text unified in one bubble-shaped container
-      b.style.cssText='display:inline-flex;flex-direction:column;overflow:hidden;border-radius:'+(isMine?'18px 18px 4px 18px':'18px 18px 18px 4px')+';max-width:224px;background:'+(isMine?'#7C3AED':'var(--bubble-them)');
-      // Story card (no extra wrapper — sits at top of bubble)
+      // Story reply — Instagram style: preview card floats above, reply text in separate normal bubble below
+      b.style.cssText='display:inline-flex;flex-direction:column;gap:5px;max-width:224px;background:none;align-items:'+(isMine?'flex-end':'flex-start');
+      // Story preview card (clean, minimal)
       var srcCard=buildSRC(m.preview);
-      srcCard.style.cssText='max-width:none;margin-bottom:0;width:100%';
+      srcCard.style.cssText='width:224px';
       b.appendChild(srcCard);
-      // Divider line
+      // Reply text in a normal bubble
       if(m.text){
-        var divLine=document.createElement('div');
-        divLine.style.cssText='height:1px;background:'+(isMine?'rgba(255,255,255,.15)':'rgba(0,0,0,.06)');
-        b.appendChild(divLine);
-        // Reply text below card
         var replyTxt=document.createElement('div');
-        replyTxt.style.cssText='padding:10px 13px;font-size:14.5px;line-height:1.45;color:'+(isMine?'#fff':'var(--bubble-them-text)');
+        replyTxt.className='bubble '+(isMine?'me':'them');
+        replyTxt.style.transformOrigin=isMine?'bottom right':'bottom left';
         replyTxt.textContent=m.text;
         b.appendChild(replyTxt);
       }
@@ -5441,9 +5438,13 @@ function buildSRC(p){
   var wrap=document.createElement('div');
   wrap.style.cssText='width:100%;overflow:hidden';
 
-  // ── Author header row ─────────────────────────────────────────────
+  // ── Story preview card (Instagram-style: clean, minimal, no colored bg) ─────
+  var card=document.createElement('div');
+  card.style.cssText='border-radius:14px;overflow:hidden;cursor:pointer;position:relative;background:var(--inp-bg);border:1.5px solid var(--border)';
+
+  // Author header row — sits inside the card at top
   var hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer;padding:0 2px';
+  hdr.style.cssText='display:flex;align-items:center;gap:7px;padding:9px 10px 7px;cursor:pointer';
   var avDiv=document.createElement('div');
   avDiv.style.cssText='width:20px;height:20px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:'+nc(p.authorName||'?');
   avDiv.innerHTML=avH(authorUser&&authorUser.avatar_url||null,p.authorName||'?');
@@ -5461,40 +5462,35 @@ function buildSRC(p){
       openProf(authorUser);
     };
   }
-  wrap.appendChild(hdr);
+  card.appendChild(hdr);
 
-  // ── Story preview card ────────────────────────────────────────────
-  var card=document.createElement('div');
-  card.style.cssText='border-radius:14px;overflow:hidden;cursor:pointer;position:relative;background:'+(p.bg||'#2C2C2C')+';border:1.5px solid rgba(0,0,0,0.07)';
+  // Thin divider between header and preview
+  var hdrDiv=document.createElement('div');
+  hdrDiv.style.cssText='height:1px;background:var(--border)';
+  card.appendChild(hdrDiv);
 
   if(p.img){
     // Image moment
     var imgEl=document.createElement('img');
     imgEl.src=p.img;
-    imgEl.style.cssText='width:100%;height:120px;display:block;object-fit:cover';
+    imgEl.style.cssText='width:100%;height:110px;display:block;object-fit:cover';
     imgEl.onerror=function(){this.style.display='none';};
-    var grad=document.createElement('div');
-    grad.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.55))';
-    grad.innerHTML='<span style="font-size:10.5px;color:rgba(255,255,255,.9);font-weight:600">Moment</span>';
     card.appendChild(imgEl);
-    card.appendChild(grad);
   } else if(p.text){
-    // Text moment
+    // Text moment — use story's actual bg color, clipped inside card
     var txtBox=document.createElement('div');
-    txtBox.style.cssText='width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;padding:16px 14px;position:relative';
+    txtBox.style.cssText='width:100%;min-height:80px;display:flex;align-items:center;justify-content:center;padding:14px;background:'+(p.bg||'#2C2C2C');
     var txt2=document.createElement('p');
     txt2.style.cssText='font-size:13px;color:'+(p.tc||'#fff')+';text-align:center;line-height:1.5;margin:0;word-break:break-word';
-    txt2.textContent=(p.text||emptyText).slice(0,80);
+    txt2.textContent=(p.text||'').slice(0,80);
     txtBox.appendChild(txt2);
-    var bar=document.createElement('div');
-    bar.style.cssText='padding:5px 10px 7px;background:rgba(0,0,0,0.18);font-size:10px;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.2px';
-    bar.textContent='Moment';
     card.appendChild(txtBox);
-    card.appendChild(bar);
   } else {
     // Empty / faded moment
-    card.style.cssText+=';width:100%;height:90px;display:flex;align-items:center;justify-content:center';
-    card.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4);font-weight:500">Moment faded</span>';
+    var fadedBox=document.createElement('div');
+    fadedBox.style.cssText='width:100%;height:70px;display:flex;align-items:center;justify-content:center;background:var(--inp-bg)';
+    fadedBox.innerHTML='<span style="font-size:12px;color:var(--sub);font-weight:500">Moment faded</span>';
+    card.appendChild(fadedBox);
   }
 
   // Tap card → open story viewer
