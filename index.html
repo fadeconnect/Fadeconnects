@@ -416,7 +416,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .react-row-emoji{font-size:30px;line-height:1}
 
 /* COMMENT SHEET — Instagram style */
-#cs-bg{display:none;position:fixed;inset:0;z-index:700}
+#cs-bg{display:none;position:fixed;inset:0;z-index:700;transition:bottom .22s ease}
 #cs-bg.on{display:flex;align-items:flex-end}
 .cs-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:dimIn .28s ease}
 #cs-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:88dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);border:none;outline:none;overflow:hidden}
@@ -8257,30 +8257,24 @@ function closeFollowSheet(){
     if(!csBg||!csBg.classList.contains('on'))return;
     var vv=window.visualViewport;
     var kbH=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
-    var sheet=document.getElementById('cs-sheet');
-    if(!sheet)return;
     if(kbH>0){
-      // Shrink sheet height so input row stays above keyboard
-      sheet.style.height='calc(88dvh - '+kbH+'px)';
-      sheet.style.maxHeight='calc(88dvh - '+kbH+'px)';
-      // Scroll comment list to bottom so latest comment visible
-      var list=document.getElementById('cs-list');
-      if(list)setTimeout(function(){list.scrollTop=list.scrollHeight;},60);
+      // Lift entire sheet container above keyboard
+      csBg.style.bottom=kbH+'px';
+      csBg.style.top='0';
     } else {
-      sheet.style.height='';
-      sheet.style.maxHeight='';
+      csBg.style.bottom='';
+      csBg.style.top='';
     }
   }
   window.visualViewport.addEventListener('resize',adjustCS,{passive:true});
   window.visualViewport.addEventListener('scroll',adjustCS,{passive:true});
-  // Also trigger on focus into comment input
   document.addEventListener('focusin',function(e){
-    if(e.target&&e.target.id==='cs-inp'){
+    if(e.target&&(e.target.id==='cs-inp'||e.target.classList.contains('csinp'))){
       setTimeout(adjustCS,300);
     }
   });
   document.addEventListener('focusout',function(e){
-    if(e.target&&e.target.id==='cs-inp'){
+    if(e.target&&(e.target.id==='cs-inp'||e.target.classList.contains('csinp'))){
       setTimeout(adjustCS,100);
     }
   });
