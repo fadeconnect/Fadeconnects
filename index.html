@@ -1264,7 +1264,7 @@ body {
 <div id="sw">
   <div id="s-today" class="screen">
     <div class="topbar">
-      <div class="tb-l"><button class="ibtn" onclick="goTab('search')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></button></div>
+      <div class="tb-l"><button class="ibtn" onclick="(function(){document.querySelectorAll('#sw .screen').forEach(function(sc){sc.classList.remove('active');sc.classList.add('left');});var ss=document.getElementById('s-search');if(ss){ss.classList.remove('left');ss.classList.add('active');}setTimeout(function(){var si=document.getElementById('sinp');if(si)si.focus();},350);showSearchHome();})()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></button></div>
       <span class="tb-logo">Fade</span>
       <div class="tb-r"><button class="ibtn" onclick="openNotif()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="reddot" id="notif-dot"></span></button></div>
     </div>
@@ -1275,7 +1275,7 @@ body {
     </div>
   </div>
   <div id="s-search" class="screen">
-    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="goTab('today')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
+    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="(function(){document.querySelectorAll('#sw .screen').forEach(function(sc){sc.classList.remove('active','left');});var st=document.getElementById('s-today');if(st)st.classList.add('active');})()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
     <div class="sbar"><div class="swrap"><span class="sico"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span><input class="sinp" id="sinp" placeholder="Search people & posts..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" autocomplete="off" style="padding-right:38px"/><button id="sinp-clear" onclick="clearSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--sub);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;align-items:center;justify-content:center;padding:0;flex-shrink:0"><svg width="9" height="9" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg></button></div></div>
     <div class="scroller" id="sresults" style="padding-top:6px"></div>
   </div>
@@ -2103,7 +2103,7 @@ var SC_FONTS=[
   {l:'Script',ff:'Georgia,serif',fs:'italic',fw:'700'},
   {l:'Light',ff:'Inter,sans-serif',fs:'normal',fw:'300'},
 ];
-var TAB_IDX={today:0,search:1,clips:2,talk:3,me:4};
+var TAB_IDX={today:0,clips:1,talk:2,me:3};
 var IC={
   person:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   key:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
@@ -2330,7 +2330,7 @@ function goTab(n){
   var newIdx=TAB_IDX[n];if(newIdx===undefined)return;
   haptic('tab');
   // Save current tab scroll before leaving
-  var _scIds={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _scIds={today:'today-scroll',clips:'clips-feed',talk:'talk-list',me:'me-body'};
   var _prevId=_scIds[curTab];if(_prevId){var _prevEl=document.getElementById(_prevId);if(_prevEl)_tabScroll[curTab]=_prevEl.scrollTop;}
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];if(idx===undefined)return;
@@ -2363,7 +2363,7 @@ function goTab(n){
   // Refresh story strip when user returns to Today tab — no sign-out needed
   if(n==='today'&&profile)loadStories();
   // Restore saved scroll for this tab
-  var _scIds2={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _scIds2={today:'today-scroll',clips:'clips-feed',talk:'talk-list',me:'me-body'};
   var _nextId=_scIds2[n];
   if(_nextId&&_tabScroll[n]){setTimeout(function(){var _el=document.getElementById(_nextId);if(_el)_el.scrollTop=_tabScroll[n];},50);}
 }
@@ -3897,7 +3897,7 @@ function renderFeedRows(rows,likedIds,isFirst){
     posts=newPosts;
     var ranked=rankFeed(posts);
     if(!ranked.length){
-      f.innerHTML='<div class="empty anim-fade-up" style="padding:48px 28px;text-align:center"><div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="goTab(\'search\')" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button></div>';
+      f.innerHTML='<div class="empty anim-fade-up" style="padding:48px 28px;text-align:center"><div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="var ss=document.getElementById(\'s-search\');if(ss){document.querySelectorAll(\'#sw .screen\').forEach(function(sc){sc.classList.remove(\'active\',\'left\');sc.classList.add(\'left\');});ss.classList.remove(\'left\');ss.classList.add(\'active\');setTimeout(function(){var si=document.getElementById(\'sinp\');if(si)si.focus();},350);}" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button></div>';
       return;
     }
     f.innerHTML='';
@@ -11589,15 +11589,18 @@ function _buildEpCats(){
        - The gesture starts outside the 20px left-edge zone reserved
          for panel swipe-back
        - The gesture is more horizontal than vertical
+       - Passes either distance threshold OR velocity threshold
   ──────────────────────────────────────────────────────────────────*/
   (function() {
-    var TAB_ORDER = ['today','search','clips','talk','me'];
+    var TAB_ORDER = ['today','clips','talk','me'];
     var _swTouchStartX = 0;
     var _swTouchStartY = 0;
+    var _swTouchStartT = 0;
     var _swTracking = false;
     var _swEdgeBlocked = false;
-    var SWIPE_THRESHOLD = 52; // px needed to commit
-    var EDGE_ZONE = 24;       // px from left edge reserved for panel back-swipe
+    var SWIPE_THRESHOLD = 48;   // px distance to commit
+    var VELOCITY_THRESHOLD = 0.3; // px/ms — fast flick commits even under 48px
+    var EDGE_ZONE = 24;         // px from left edge reserved for panel back-swipe
 
     var sw = document.getElementById('sw');
     if (!sw) return;
@@ -11605,8 +11608,8 @@ function _buildEpCats(){
     sw.addEventListener('touchstart', function(e) {
       _swTouchStartX = e.touches[0].clientX;
       _swTouchStartY = e.touches[0].clientY;
+      _swTouchStartT = Date.now();
       _swTracking = false;
-      // Block if any panel is open OR touch starts in left edge zone
       _swEdgeBlocked = _anyPanelOpen() || _swTouchStartX < EDGE_ZONE;
     }, { passive: true });
 
@@ -11614,8 +11617,7 @@ function _buildEpCats(){
       if (_swEdgeBlocked) return;
       var dx = e.touches[0].clientX - _swTouchStartX;
       var dy = e.touches[0].clientY - _swTouchStartY;
-      // Must be more horizontal than vertical
-      if (!_swTracking && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (!_swTracking && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.4) {
         _swTracking = true;
       }
     }, { passive: true });
@@ -11623,23 +11625,25 @@ function _buildEpCats(){
     sw.addEventListener('touchend', function(e) {
       if (_swEdgeBlocked || !_swTracking) return;
       var dx = e.changedTouches[0].clientX - _swTouchStartX;
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-      if (_anyPanelOpen()) return; // re-check at end
+      var dt = Date.now() - _swTouchStartT;
+      var velocity = Math.abs(dx) / Math.max(dt, 1);
+      var committed = Math.abs(dx) >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD;
+      if (!committed) return;
+      if (_anyPanelOpen()) return;
 
       var curIdx = TAB_ORDER.indexOf(curTab);
       if (curIdx < 0) return;
 
-      if (dx < 0) {
-        // Swipe LEFT → next tab
-        if (curIdx < TAB_ORDER.length - 1) {
-          goTab(TAB_ORDER[curIdx + 1]);
-        }
-      } else {
-        // Swipe RIGHT → previous tab
-        if (curIdx > 0) {
-          goTab(TAB_ORDER[curIdx - 1]);
-        }
+      if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
+        goTab(TAB_ORDER[curIdx + 1]); // swipe LEFT → next tab
+      } else if (dx > 0 && curIdx > 0) {
+        goTab(TAB_ORDER[curIdx - 1]); // swipe RIGHT → previous tab
       }
+    }, { passive: true });
+
+    sw.addEventListener('touchcancel', function() {
+      _swTracking = false;
+      _swEdgeBlocked = false;
     }, { passive: true });
   })();
 
