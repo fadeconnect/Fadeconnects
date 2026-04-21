@@ -10155,8 +10155,11 @@ function setupOfflineBar(){
   update();
 }
 
-// ── SWIPE-BACK (right-edge drag to dismiss full-screen panels) ───────────────
+// ── SWIPE-BACK (disabled — native OS swipe handled via history API) ──────────
 function setupSwipeBack(){
+  // In-app swipe gestures removed. Native phone swipe-back works via
+  // history.pushState (added in parallax IIFE) + popstate listener.
+  return;
   var panels=[
     {id:'cw',     close:closeCW},
     {id:'prof-screen', close:closeProf},
@@ -10964,187 +10967,10 @@ function _buildEpCats(){
   });
 }
 
-/* ── SWIPE BACK — physics-grade interactive gesture ─────────── */
+/* ── SWIPE BACK — removed; native OS swipe handled via history API ── */
 (function(){
-  var EDGE  = 28;    // px from left edge (unused now all panels are edge:false)
-  var DIST_THRESH = 0.35; // fraction of screen width — easier to trigger
-  var VEL_THRESH  = 0.25;  // px/ms — lower = easier flick recognition
-
-  var PANELS=[
-    {id:'prof-screen',       z:650, fn:'closeProf',       edge:false},
-    {id:'cw',                z:200, fn:'closeCW',          edge:false},
-    {id:'so',                z:300, fn:'soBack',           edge:false},
-    {id:'notif-panel',       z:220, fn:'closeNotif',       edge:false},
-    {id:'scroll-view',       z:250, fn:'closeScrollView',  edge:false},
-    {id:'sched-form-panel',  z:400, fn:'closeSchedForm',   edge:false},
-    {id:'circle-cw',         z:200, fn:'closeCircleCW',    edge:false},
-    {id:'circle-info',       z:250, fn:'closeCircleInfo',  edge:false},
-  ];
-
-  // State
-  var sx, sy, el, fn, dragging = false;
-  var lastX, lastT, velX = 0; // velocity tracking
-
-  function topPanel(){
-    var best=null, bz=-1;
-    PANELS.forEach(function(p){
-      var e=document.getElementById(p.id);
-      if(e && e.classList.contains('on') && p.z>bz){ bz=p.z; best=p; }
-    });
-    return best;
-  }
-
-  // ── Live drag: move panel 1:1 with finger, #sw reveals underneath ──
-  function applyDrag(dx) {
-    if (!el) return;
-    var vw  = window.innerWidth;
-    // Panel follows finger exactly
-    el.style.transition = 'none';
-    el.style.transform  = 'translateX(' + dx + 'px)';
-
-    // Shadow on left edge fades as panel moves right
-    var pct    = Math.min(1, dx / (vw * DIST_THRESH));
-    var shadow = (1 - pct) * 0.22;
-    el.style.setProperty('--swipe-shadow', shadow.toFixed(3));
-
-    // Background (#sw) reveals proportionally:
-    // At dx=0       → full recession (translateX(-26%) scale(0.94))
-    // At dx=vw      → fully restored (translateX(0) scale(1))
-    var sw = window._getSW ? window._getSW() : document.getElementById('sw');
-    if (sw && window._isReceded) {
-      var ratio     = Math.min(1, dx / vw);          // 0→1 as panel crosses screen
-      var recTx     = parseFloat('26');               // % recession amount
-      var recSc     = parseFloat('0.94');
-      var tx  = recTx  * (1 - ratio);                // 26→0 as ratio 0→1
-      var sc  = recSc  + (1 - recSc)  * ratio;       // 0.94→1
-      var op  = 0.88   + (1 - 0.88)   * ratio;       // 0.88→1
-      sw.style.transition = 'none';
-      sw.style.transform  = tx > 0.01 ? 'translateX(-' + tx.toFixed(2) + '%) scale(' + sc.toFixed(4) + ')' : '';
-      sw.style.opacity    = op.toFixed(3);
-    }
-  }
-
-  // ── Snap commit: spring the panel out, restore #sw in sync ──
-  function snapCommit(cur, back, fromDx) {
-    var vw       = window.innerWidth;
-    var remaining = vw - fromDx;               // px left to travel
-    // Duration scales with remaining distance — fast flick = short duration
-    var dur = Math.min(280, Math.max(140, remaining / vw * 300));
-    var durS = (dur / 1000).toFixed(2) + 's';
-
-    // Panel flies out with sharp deceleration
-    cur.style.transition = 'transform ' + durS + ' cubic-bezier(.32,0,.67,0)';
-    cur.style.transform  = 'translateX(100%)';
-    cur.style.setProperty('--swipe-shadow', '0');
-
-    // #sw snaps forward with spring — starts immediately, same duration
-    var sw = window._getSW ? window._getSW() : document.getElementById('sw');
-    if (sw) {
-      sw.style.transition = 'transform ' + durS + ' cubic-bezier(.33,1,.68,1), opacity ' + durS + ' cubic-bezier(.33,1,.68,1)';
-      sw.style.transform  = '';
-      sw.style.opacity    = '';
-      sw.style.borderRadius = '';
-    }
-
-    // Strip .on immediately so state is clean — panel is gone
-    cur.classList.remove('on');
-    window._isReceded = false;
-    cur.style.visibility   = 'hidden';
-    cur.style.pointerEvents = 'none';
-
-    // Run close function after panel is off-screen
-    setTimeout(function(){
-      cur.style.transition = 'none';
-      cur.style.willChange = '';
-      if (typeof window[back] === 'function') window[back]();
-      setTimeout(function(){ cur.style.transition = ''; }, 300);
-    }, dur + 20);
-  }
-
-  // ── Snap back: spring the panel back into place ──
-  function snapBack(cur) {
-    cur.style.setProperty('--swipe-shadow', '0');
-    // Spring easing — slight overshoot makes it feel physical
-    cur.style.transition = 'transform 320ms cubic-bezier(.34,1.2,.64,1)';
-    cur.style.transform  = '';
-    setTimeout(function(){ cur.style.willChange = ''; }, 350);
-
-    // #sw snaps back to receded position
-    var sw = window._getSW ? window._getSW() : document.getElementById('sw');
-    if (sw && window._isReceded) {
-      sw.style.transition = 'transform 320ms cubic-bezier(.34,1.2,.64,1), opacity 320ms ease';
-      sw.style.transform  = 'translateX(-26%) scale(0.94)';
-      sw.style.opacity    = '0.88';
-    }
-  }
-
-  // ── Touch start ──
-  document.addEventListener('touchstart', function(e){
-    sx = e.touches[0].clientX;
-    sy = e.touches[0].clientY;
-    lastX = sx; lastT = Date.now(); velX = 0;
-    dragging = false; el = null; fn = null;
-    var p = topPanel(); if (!p) return;
-    if (p.edge && sx > EDGE) return;
-    el = document.getElementById(p.id); fn = p.fn;
-  }, {passive: true});
-
-  // ── Touch move ──
-  document.addEventListener('touchmove', function(e){
-    if (!el) return;
-    var now = Date.now();
-    var cx  = e.touches[0].clientX;
-    var cy  = e.touches[0].clientY;
-    var dx  = cx - sx;
-    var dy  = cy - sy;
-
-    // Velocity: exponential moving average over last frame
-    var dt = now - lastT;
-    if (dt > 0) {
-      var instVel = (cx - lastX) / dt;
-      velX = velX * 0.6 + instVel * 0.4; // smoothed
-    }
-    lastX = cx; lastT = now;
-
-    if (!dragging) {
-      if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
-      if (Math.abs(dy) > Math.abs(dx) * 1.2) { el = null; fn = null; return; }
-      if (dx < 0) { el = null; fn = null; return; }
-      dragging = true;
-      if (el) el.style.willChange = 'transform';
-    }
-
-    if (dragging) {
-      e.preventDefault();
-      applyDrag(Math.max(0, dx));
-    }
-  }, {passive: false});
-
-  // ── Touch end ──
-  function finish(e) {
-    if (!dragging || !el) { dragging = false; el = null; fn = null; return; }
-    var cx  = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : lastX;
-    var dx  = cx - sx;
-    var cur = el, back = fn;
-    dragging = false; el = null; fn = null;
-
-    var vw        = window.innerWidth;
-    var distOk    = dx > vw * DIST_THRESH;
-    var velOk     = velX > VEL_THRESH;       // fast rightward flick
-    var committed = distOk || velOk;
-
-    if (committed) {
-      snapCommit(cur, back, Math.max(0, dx));
-    } else {
-      snapBack(cur);
-    }
-  }
-
-  document.addEventListener('touchend',   finish, {passive: true});
-  document.addEventListener('touchcancel', function(){
-    if (el) snapBack(el);
-    dragging = false; el = null; fn = null;
-  }, {passive: true});
+  // intentionally empty — kept as wrapper so closing })(); stays valid
+  return;
 })();
 
 </script>
@@ -11352,6 +11178,83 @@ function _buildEpCats(){
   _addParallax('openCircleCW',   'closeCircleCW');
   _addParallax('openSchedForm',  'closeSchedForm');
   _addParallax('openCircleInfo', 'closeCircleInfo');
+
+  /* ── NATIVE SWIPE-BACK via History API ────────────────────────────
+     Each panel open pushes a history entry. When the OS fires a
+     native swipe-back (or Android back button), the browser pops
+     that entry and fires popstate. We intercept it and call the
+     correct close function instead of letting the page unload.
+  ──────────────────────────────────────────────────────────────────*/
+  var _HISTORY_PANELS = [
+    { openFn: 'openNotif',      closeFn: 'closeNotif',      panelId: 'notif-panel'      },
+    { openFn: 'openChat',       closeFn: 'closeCW',          panelId: 'cw'               },
+    { openFn: 'openProf',       closeFn: 'closeProf',        panelId: 'prof-screen'      },
+    { openFn: 'openSettings',   closeFn: 'closeSettings',    panelId: 'so'               },
+    { openFn: 'openCircleCW',   closeFn: 'closeCircleCW',    panelId: 'circle-cw'        },
+    { openFn: 'openSchedForm',  closeFn: 'closeSchedForm',   panelId: 'sched-form-panel' },
+    { openFn: 'openCircleInfo', closeFn: 'closeCircleInfo',  panelId: 'circle-info'      },
+  ];
+
+  // Push a base state so the very first popstate has somewhere to land
+  if (!history.state || !history.state._fade) {
+    history.replaceState({ _fade: 'base' }, '');
+  }
+
+  // Wrap each open function to push a history entry
+  _HISTORY_PANELS.forEach(function(cfg) {
+    var origOpen = window[cfg.openFn];
+    if (!origOpen) return;
+    window[cfg.openFn] = function() {
+      history.pushState({ _fade: cfg.panelId }, '');
+      origOpen.apply(this, arguments);
+    };
+  });
+
+  // Settings sub-pages: soBack already pops the soStack; each soNav push
+  // should also push history so back swipe works one level at a time.
+  var _origSoNav = window.soNav;
+  if (_origSoNav) {
+    window.soNav = function() {
+      history.pushState({ _fade: 'so-sub' }, '');
+      _origSoNav.apply(this, arguments);
+    };
+  }
+
+  // popstate: fired by native OS swipe-back or Android back button
+  window.addEventListener('popstate', function(e) {
+    var state = e.state;
+
+    // Settings sub-page — go back one level inside settings
+    if (state && state._fade === 'so-sub') {
+      if (typeof window.soBack === 'function') window.soBack();
+      return;
+    }
+
+    // Settings root or any named panel — find the topmost open panel and close it
+    // Walk panels in reverse z-order priority to close the topmost one
+    var closed = false;
+    var priority = ['prof-screen', 'sched-form-panel', 'circle-info', 'notif-panel', 'cw', 'circle-cw', 'so'];
+    for (var i = 0; i < priority.length; i++) {
+      var el = document.getElementById(priority[i]);
+      if (el && el.classList.contains('on')) {
+        // Find close function for this panel
+        for (var j = 0; j < _HISTORY_PANELS.length; j++) {
+          if (_HISTORY_PANELS[j].panelId === priority[i]) {
+            var closeFn = window[_HISTORY_PANELS[j].closeFn];
+            if (typeof closeFn === 'function') closeFn();
+            closed = true;
+            break;
+          }
+        }
+        if (closed) break;
+      }
+    }
+
+    // If no panel was open, push base state back so next swipe doesn't exit
+    if (!closed) {
+      history.pushState({ _fade: 'base' }, '');
+    }
+  });
 
   /* ── goTab: force #sw back the instant a tab is tapped.
      Any open panel when tapping a tab is a stuck/leftover state.
