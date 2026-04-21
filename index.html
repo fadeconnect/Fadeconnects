@@ -3207,12 +3207,16 @@ function openNotif(){
 function closeNotif(){
   clearInterval(_notifRefreshTimer);
   var p=document.getElementById('notif-panel');
+  p.classList.remove('on'); // remove .on immediately so _advanceBackground() sees no panel open
   p.style.transform='translateX(100%)';
-  setTimeout(function(){p.classList.remove('on');p.style.display='';p.style.visibility='hidden';p.style.pointerEvents='none';p.style.transform='';},320);
+  setTimeout(function(){p.style.display='';p.style.visibility='hidden';p.style.pointerEvents='none';p.style.transform='';},320);
 }
 
 function openSearch(){
-  /* Slide s-search in from right without disturbing the tab system */
+  /* Reset any parallax recession on #sw first — search is a screen, not a panel */
+  var sw=document.getElementById('sw');
+  if(sw){sw.style.transition='';sw.style.transform='';sw.style.opacity='';sw.style.borderRadius='';}
+  if(typeof window._advanceBackground==='function')window._advanceBackground();
   var ss=document.getElementById('s-search');
   if(!ss)return;
   document.querySelectorAll('#sw .screen').forEach(function(sc){
@@ -11382,6 +11386,7 @@ function _buildEpCats(){
      correct close function instead of letting the page unload.
   ──────────────────────────────────────────────────────────────────*/
   var _HISTORY_PANELS = [
+    { openFn: 'openNotif',      closeFn: 'closeNotif',      panelId: 'notif-panel'      },
     { openFn: 'openChat',       closeFn: 'closeCW',          panelId: 'cw'               },
     { openFn: 'openProf',       closeFn: 'closeProf',        panelId: 'prof-screen'      },
     { openFn: 'openSettings',   closeFn: 'closeSettings',    panelId: 'so'               },
@@ -11447,7 +11452,15 @@ function _buildEpCats(){
     }
 
     // Any named panel — find the topmost open panel and close it.
-    // close functions are already wrapped above to strip .on first.
+    // Notifications panel is intentionally excluded from OS back — it only
+    // closes via its own back arrow. If it's the only open panel, re-push
+    // base state so the OS swipe doesn't exit the app.
+    var notifEl = document.getElementById('notif-panel');
+    if (notifEl && notifEl.classList.contains('on')) {
+      history.pushState({ _fade: 'base' }, '');
+      return;
+    }
+
     var closed = false;
     var priority = ['prof-screen', 'sched-form-panel', 'circle-info', 'cw', 'circle-cw', 'so'];
     for (var i = 0; i < priority.length; i++) {
