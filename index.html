@@ -1628,11 +1628,11 @@ body {
 var AV_COLORS=['#7C3AED','#DB2777','#0EA5E9','#059669','#D97706','#DC2626','#2563EB','#0D9488','#EA580C'];
 function nc(n){var s=0;for(var i=0;i<(n||'').length;i++)s+=(n||'').charCodeAt(i);return AV_COLORS[s%AV_COLORS.length];}
 function nl(n){return(n||'?').charAt(0).toUpperCase();}
-function avH(url,name){if(url)return'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';return'<div class="lav" style="background:'+nc(name||'?')+'">'+nl(name||'?')+'</div>';}
+function avH(url,name){if(url)return'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity .22s ease" onload="this.style.opacity=\'1\'" onerror="this.style.display=\'none\'"/>';return'<div class="lav" style="background:'+nc(name||'?')+'">'+nl(name||'?')+'</div>';}
 function setAv(el,url,name){if(el)el.innerHTML=avH(url,name);}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-var profile=null,curTab='today',S_DARK=false,SND_ON=true,_AC=null;
+var profile=null,curTab='today',S_DARK=false,SND_ON=true,_AC=null,_tabScroll={};
 var _inboxChannel=null,_adminChannel=null,_notifChannel=null;
 var profPhotoUrl=null,newPid=null,_selectedGender='';
 var svGroups=[],svGI=0,svII=0,svTmr=null,svLiked={},svPaused=false,svBarStart=0,svBarDone=0,svViewsOpen=false,svViews={};
@@ -2329,6 +2329,9 @@ function goTab(n){
   if(!profile&&n!=='today')return;
   var newIdx=TAB_IDX[n];if(newIdx===undefined)return;
   haptic('tab');
+  // Save current tab scroll before leaving
+  var _scIds={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _prevId=_scIds[curTab];if(_prevId){var _prevEl=document.getElementById(_prevId);if(_prevEl)_tabScroll[curTab]=_prevEl.scrollTop;}
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];if(idx===undefined)return;
     sc.classList.remove('active','left');
@@ -2359,6 +2362,10 @@ function goTab(n){
   if(n==='clips')loadClips();
   // Refresh story strip when user returns to Today tab — no sign-out needed
   if(n==='today'&&profile)loadStories();
+  // Restore saved scroll for this tab
+  var _scIds2={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _nextId=_scIds2[n];
+  if(_nextId&&_tabScroll[n]){setTimeout(function(){var _el=document.getElementById(_nextId);if(_el)_el.scrollTop=_tabScroll[n];},50);}
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -5243,7 +5250,7 @@ function subscribeToInbox(){
         if(existing){existing.lastMsg=lastMsg;existing.lastSid=r.sender_id;existing.ts=new Date(r.created_at).getTime();convos.sort(function(a,b){return b.ts-a.ts;});}
         else{convos.unshift({user:senderUser,lastMsg:lastMsg,lastSid:r.sender_id,ts:new Date(r.created_at).getTime()});}
       }
-      if(curTab==='talk')_renderTalkFromCache();
+      if(curTab==='talk'){_renderTalkFromCache();var _tl=document.getElementById('talk-list');if(_tl)_tl.scrollTop=0;}
     })
     .subscribe();
 
