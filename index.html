@@ -3213,36 +3213,43 @@ function closeNotif(){
 }
 
 function openSearch(){
-  /* Reset any parallax recession on #sw first — search is a screen, not a panel */
+  /* Hard-reset #sw out of any receded state before showing search */
   var sw=document.getElementById('sw');
-  if(sw){sw.style.transition='';sw.style.transform='';sw.style.opacity='';sw.style.borderRadius='';}
-  if(typeof window._advanceBackground==='function')window._advanceBackground();
+  if(sw){
+    sw.style.transition='none';
+    sw.style.transform='';
+    sw.style.opacity='';
+    sw.style.borderRadius='';
+  }
+  if(typeof window._isReceded!=='undefined') window._isReceded=false;
+  /* Deactivate all tab screens, activate search */
   var ss=document.getElementById('s-search');
   if(!ss)return;
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     sc.classList.remove('active');
-    if(sc.id!=='s-search')sc.classList.add('left');
+    if(sc.id!=='s-search') sc.classList.add('left');
   });
   ss.classList.remove('left');
-  ss.classList.add('active');
+  /* One rAF so the transition reset settles before adding active */
+  requestAnimationFrame(function(){
+    if(sw) sw.style.transition='';
+    ss.classList.add('active');
+  });
   showSearchHome();
   setTimeout(function(){var si=document.getElementById('sinp');if(si)si.focus();},320);
 }
 function closeSearch(){
-  /* Restore the current tab's screen as active */
+  var ct=typeof curTab!=='undefined'?curTab:'today';
+  var order=['today','clips','talk','me'];
+  var ci=order.indexOf(ct);
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     sc.classList.remove('active','left');
   });
-  var ct=typeof curTab!=='undefined'?curTab:'today';
-  var active=document.getElementById('s-'+ct);
-  if(active)active.classList.add('active');
-  /* Re-apply left class to screens that sit before curTab */
-  var order=['today','clips','talk','me'];
-  var ci=order.indexOf(ct);
   order.forEach(function(t,i){
-    if(i===ci)return;
     var sc=document.getElementById('s-'+t);
-    if(sc)sc.classList.add('left');
+    if(!sc)return;
+    if(i===ci) sc.classList.add('active');
+    else sc.classList.add('left');
   });
 }
 function markNotifRead(n){
@@ -11413,7 +11420,9 @@ function _buildEpCats(){
   // Wrap each close function to strip .on BEFORE running, so
   // _anyPanelOpen() returns false and _advanceBackground() always
   // restores #sw — regardless of whether called from back button or popstate.
+  // NOTE: notif-panel is excluded — closeNotif manages its own .on removal.
   _HISTORY_PANELS.forEach(function(cfg) {
+    if (cfg.panelId === 'notif-panel') return; // notif manages itself
     var origClose = window[cfg.closeFn];
     if (!origClose) return;
     window[cfg.closeFn] = function() {
@@ -11653,7 +11662,9 @@ function _buildEpCats(){
       _swTouchStartY = e.touches[0].clientY;
       _swTouchStartT = Date.now();
       _swTracking = false;
-      _swEdgeBlocked = _anyPanelOpen() || _swTouchStartX < EDGE_ZONE;
+      /* Also block when notif panel is open — it manages its own .on state */
+      var notifOpen = (function(){var n=document.getElementById('notif-panel');return n&&n.classList.contains('on');})();
+      _swEdgeBlocked = _anyPanelOpen() || notifOpen || _swTouchStartX < EDGE_ZONE;
     }, { passive: true });
 
     sw.addEventListener('touchmove', function(e) {
@@ -11672,7 +11683,8 @@ function _buildEpCats(){
       var velocity = Math.abs(dx) / Math.max(dt, 1);
       var committed = Math.abs(dx) >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD;
       if (!committed) return;
-      if (_anyPanelOpen()) return;
+      var notifOpen = (function(){var n=document.getElementById('notif-panel');return n&&n.classList.contains('on');})();
+      if (_anyPanelOpen() || notifOpen) return;
 
       var curIdx = TAB_ORDER.indexOf(curTab);
       if (curIdx < 0) return;
