@@ -11210,6 +11210,19 @@ function _buildEpCats(){
     };
   });
 
+  // Wrap each close function to strip .on BEFORE running, so
+  // _anyPanelOpen() returns false and _advanceBackground() always
+  // restores #sw — regardless of whether called from back button or popstate.
+  _HISTORY_PANELS.forEach(function(cfg) {
+    var origClose = window[cfg.closeFn];
+    if (!origClose) return;
+    window[cfg.closeFn] = function() {
+      var el = document.getElementById(cfg.panelId);
+      if (el) el.classList.remove('on');
+      origClose.apply(this, arguments);
+    };
+  });
+
   // Settings sub-pages: soBack already pops the soStack; each soNav push
   // should also push history so back swipe works one level at a time.
   var _origSoNav = window.soNav;
@@ -11224,29 +11237,27 @@ function _buildEpCats(){
   window.addEventListener('popstate', function(e) {
     var state = e.state;
 
-    // Settings sub-page — go back one level inside settings
+    // Settings sub-page back — go one level inside settings
     if (state && state._fade === 'so-sub') {
-      if (typeof window.soBack === 'function') {
-        // If soStack is empty this will call closeSettings — strip .on first
-        var soEl = document.getElementById('so');
-        var soStackLen = window.soStack ? window.soStack.length : 0;
-        if (soStackLen === 0 && soEl) soEl.classList.remove('on');
-        window.soBack();
-      }
+      if (typeof window.soBack === 'function') window.soBack();
       return;
     }
 
-    // Settings root or any named panel — find the topmost open panel and close it
-    // Walk panels in reverse z-order priority to close the topmost one
+    // If settings panel is open and we still have sub-pages on the stack,
+    // a swipe-back should go back one sub-page, not close the whole panel.
+    var soEl = document.getElementById('so');
+    if (soEl && soEl.classList.contains('on') && window.soStack && window.soStack.length > 0) {
+      if (typeof window.soBack === 'function') window.soBack();
+      return;
+    }
+
+    // Any named panel — find the topmost open panel and close it.
+    // close functions are already wrapped above to strip .on first.
     var closed = false;
     var priority = ['prof-screen', 'sched-form-panel', 'circle-info', 'notif-panel', 'cw', 'circle-cw', 'so'];
     for (var i = 0; i < priority.length; i++) {
       var el = document.getElementById(priority[i]);
       if (el && el.classList.contains('on')) {
-        // Strip .on BEFORE calling close so _anyPanelOpen() returns false
-        // and _advanceBackground() actually restores #sw
-        el.classList.remove('on');
-        // Find close function for this panel
         for (var j = 0; j < _HISTORY_PANELS.length; j++) {
           if (_HISTORY_PANELS[j].panelId === priority[i]) {
             var closeFn = window[_HISTORY_PANELS[j].closeFn];
