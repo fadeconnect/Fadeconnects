@@ -2333,8 +2333,9 @@ function goTab(n){
   var _scIds={today:'today-scroll',clips:'clips-feed',talk:'talk-list',me:'me-body'};
   var _prevId=_scIds[curTab];if(_prevId){var _prevEl=document.getElementById(_prevId);if(_prevEl)_tabScroll[curTab]=_prevEl.scrollTop;}
   document.querySelectorAll('#sw .screen').forEach(function(sc){
-    var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];if(idx===undefined)return;
-    sc.classList.remove('active','left');
+    var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];
+    sc.classList.remove('active','left'); // strip all first, including s-search
+    if(idx===undefined)return;           // s-search and others not in TAB_IDX stay stripped
     if(idx===newIdx)sc.classList.add('active');
     else if(idx<newIdx)sc.classList.add('left');
   });
@@ -3213,44 +3214,31 @@ function closeNotif(){
 }
 
 function openSearch(){
-  /* Hard-reset #sw out of any receded state before showing search */
   var sw=document.getElementById('sw');
-  if(sw){
-    sw.style.transition='none';
-    sw.style.transform='';
-    sw.style.opacity='';
-    sw.style.borderRadius='';
-  }
-  if(typeof window._isReceded!=='undefined') window._isReceded=false;
-  /* Deactivate all tab screens, activate search */
   var ss=document.getElementById('s-search');
   if(!ss)return;
+  /* 1. Kill any live parallax transition on #sw synchronously */
+  if(sw){
+    sw.style.transition='none';
+    sw.style.transform='none';
+    sw.style.opacity='1';
+    sw.style.borderRadius='0';
+    void sw.offsetWidth; /* force reflow so 'none' settles before class changes */
+    sw.style.transition='';
+  }
+  if(typeof window._isReceded!=='undefined') window._isReceded=false;
+  /* 2. Set all screens to correct state */
   document.querySelectorAll('#sw .screen').forEach(function(sc){
-    sc.classList.remove('active');
+    sc.classList.remove('active','left');
     if(sc.id!=='s-search') sc.classList.add('left');
   });
-  ss.classList.remove('left');
-  /* One rAF so the transition reset settles before adding active */
-  requestAnimationFrame(function(){
-    if(sw) sw.style.transition='';
-    ss.classList.add('active');
-  });
+  ss.classList.add('active');
   showSearchHome();
   setTimeout(function(){var si=document.getElementById('sinp');if(si)si.focus();},320);
 }
 function closeSearch(){
   var ct=typeof curTab!=='undefined'?curTab:'today';
-  var order=['today','clips','talk','me'];
-  var ci=order.indexOf(ct);
-  document.querySelectorAll('#sw .screen').forEach(function(sc){
-    sc.classList.remove('active','left');
-  });
-  order.forEach(function(t,i){
-    var sc=document.getElementById('s-'+t);
-    if(!sc)return;
-    if(i===ci) sc.classList.add('active');
-    else sc.classList.add('left');
-  });
+  goTab(ct);
 }
 function markNotifRead(n){
   if(n.read)return;
@@ -11460,13 +11448,12 @@ function _buildEpCats(){
       return;
     }
 
-    // Any named panel — find the topmost open panel and close it.
     // Notifications panel is intentionally excluded from OS back — it only
     // closes via its own back arrow. If it's the only open panel, re-push
     // base state so the OS swipe doesn't exit the app.
     var notifEl = document.getElementById('notif-panel');
     if (notifEl && notifEl.classList.contains('on')) {
-      history.pushState({ _fade: 'base' }, '');
+      setTimeout(function(){ history.pushState({ _fade: 'notif-panel' }, ''); }, 0);
       return;
     }
 
