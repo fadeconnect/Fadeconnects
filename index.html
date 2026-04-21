@@ -27,10 +27,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',s
   #root{width:390px;max-width:390px;height:100dvh;box-shadow:0 0 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);overflow:hidden;flex-shrink:0;padding-top:0}
 }
 #sw{position:absolute;inset:0;bottom:calc(var(--nav-h) + var(--nb));overflow:hidden}
-.screen{display:flex;flex-direction:column;overflow:hidden;position:absolute;inset:0;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);background:var(--bg)}
-.screen.active{transform:translateX(0)}
-.screen.left{transform:translateX(-20%)}
-.scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:16px;position:relative}
+.screen{display:flex;flex-direction:column;overflow:hidden;position:absolute;inset:0;transform:translateX(100%);opacity:0;transition:transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease;background:var(--bg)}
+.screen.active{transform:translateX(0);opacity:1}
+.screen.left{transform:translateX(-20%);opacity:0.6}
+.scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto;padding-bottom:16px;position:relative}
 .scroller::-webkit-scrollbar{display:none}
 
 /* AUTH */
@@ -513,7 +513,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .c-sender-name{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:3px;padding-left:2px}
 .c-seen-bar{font-size:11px;color:var(--sub);text-align:right;padding:2px 6px 4px;cursor:pointer}
 .c-seen-bar:active{opacity:.6}
-.circle-chatfoot{background:var(--card);flex-shrink:0;padding:8px 14px max(12px,env(safe-area-inset-bottom));position:relative}
+.circle-chatfoot{background:var(--card);flex-shrink:0;padding:8px 14px max(12px,env(safe-area-inset-bottom));position:relative;transition:margin-bottom 280ms cubic-bezier(.25,.46,.45,.94)}
 .circle-chatrow{display:flex;gap:9px;align-items:flex-end}
 .circle-chatinp{flex:1;border:none;border-radius:22px;padding:10px 16px;font-size:15px;font-family:'Inter',sans-serif;background:var(--inp-bg);color:var(--inp-text);outline:none;resize:none;max-height:86px;line-height:1.4;-webkit-user-select:text;user-select:text}
 .circle-chatinp::placeholder{color:var(--inp-ph)}
@@ -1048,7 +1048,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .chatinp::placeholder{color:var(--inp-ph)}
 
 /* ── DM CHAT ─────────────────────────────────────────────────── */
-#cw .chatfoot{padding:10px 16px max(16px,env(safe-area-inset-bottom))}
+#cw .chatfoot{padding:10px 16px max(16px,env(safe-area-inset-bottom));transition:margin-bottom 280ms cubic-bezier(.25,.46,.45,.94)}
 #cw .chatrow{gap:0}
 #cw .chat-pill{border-radius:26px;padding:0 6px 0 0}
 #cw .chatinp{padding:12px 4px 12px 2px;align-self:center}
@@ -2234,11 +2234,26 @@ function SFX(type){
 }
 function haptic(type){
   if(!navigator.vibrate)return;
-  if(type==='like')navigator.vibrate(12);
-  else if(type==='send')navigator.vibrate(8);
-  else if(type==='follow')navigator.vibrate([8,40,8]);
-  else if(type==='error')navigator.vibrate([30,20,30]);
-  else navigator.vibrate(10);
+  // Native-feel haptic vocabulary:
+  // light   — gentle tap: nav, minor UI actions
+  // medium  — confirm: send, post, tab switch
+  // heavy   — impact: like, destructive confirm
+  // tab     — navigation tab change
+  // success — positive confirm: follow, post drop
+  // destructive — delete/block confirm
+  // error   — failure shake
+  if(type==='light')       navigator.vibrate(6);
+  else if(type==='medium') navigator.vibrate(10);
+  else if(type==='heavy')  navigator.vibrate(18);
+  else if(type==='tab')    navigator.vibrate(7);
+  else if(type==='success')navigator.vibrate([8,30,10]);
+  else if(type==='destructive')navigator.vibrate([14,22,14]);
+  else if(type==='error')  navigator.vibrate([28,18,28]);
+  // Legacy aliases kept for all existing call sites
+  else if(type==='like')   navigator.vibrate(18);
+  else if(type==='send')   navigator.vibrate(10);
+  else if(type==='follow') navigator.vibrate([8,30,10]);
+  else                     navigator.vibrate(8);
 }
 
 function isFounderUser(usernameOrUid){
@@ -2318,6 +2333,7 @@ function goTab(n){
   try{sessionStorage.setItem('fade_tab',n);}catch(e){}
   if(!profile&&n!=='today')return;
   var newIdx=TAB_IDX[n];if(newIdx===undefined)return;
+  haptic('tab');
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];if(idx===undefined)return;
     sc.classList.remove('active','left');
@@ -2421,19 +2437,22 @@ var _sb = (function(){
 
   // ── Instant auth-screen suppression ─────────────────────────────────────
   // If Supabase has a stored session in localStorage, hide the auth screen
-  // immediately (before the async getSession resolves) to eliminate the flash.
+  // immediately (before the async getSession resolves) so it never flashes.
   (function(){
     try{
       var hasToken=false;
       for(var k in localStorage){
-        if(k.indexOf('supabase')>=0&&k.indexOf('auth-token')>=0){
-          var val=JSON.parse(localStorage.getItem(k));
-          if(val&&val.access_token){hasToken=true;break;}
+        if(k.indexOf('supabase')>=0&&(k.indexOf('auth-token')>=0||k.indexOf('session')>=0)){
+          var raw=localStorage.getItem(k);
+          if(!raw)continue;
+          var val=JSON.parse(raw);
+          var tok=(val&&val.access_token)||(val&&val.currentSession&&val.currentSession.access_token);
+          if(tok){hasToken=true;break;}
         }
       }
       if(hasToken){
         var a=document.getElementById('s-auth');
-        if(a){a.style.opacity='0';a.style.pointerEvents='none';}
+        if(a){a.style.display='none';a.style.opacity='0';a.style.pointerEvents='none';}
       }
     }catch(e){}
   })();
@@ -2443,9 +2462,9 @@ var _sb = (function(){
     if(session && session.user){
       loadProfile(session.user.id);
     } else {
-      // No session — make sure auth screen is visible
+      // Truly no session — restore and show auth screen
       var a=document.getElementById('s-auth');
-      if(a){a.style.opacity='1';a.style.pointerEvents='';}
+      if(a){a.style.display='flex';a.style.opacity='1';a.style.pointerEvents='';}
     }
   });
   _sb.auth.onAuthStateChange(function(event, session){
@@ -4012,7 +4031,7 @@ function submitPost(){
       var r=res.data,au=r.profiles||{};
       var np={id:r.id,uid:r.user_id,author:{display_name:au.display_name||au.username,username:au.username,avatar_url:au.avatar_url},text:r.text||'',img:r.img_url||null,likes:0,liked:false,comments:[],ts:r.created_at};
       newPid=np.id;posts.unshift(np);
-      document.getElementById('c-text').value='';rmCI();closeCompose();SFX('drop');renderFeed();if(curTab==='me')renderMe();T('Dropped');
+      document.getElementById('c-text').value='';rmCI();closeCompose();SFX('drop');haptic('success');renderFeed();if(curTab==='me')renderMe();T('Dropped');
       setTimeout(function(){if(newPid===np.id)newPid=null;},5000);
     });
   }
@@ -5443,7 +5462,7 @@ function appendBubble(m){
               if(playing)rafId=requestAnimationFrame(tick);
             });
           }
-          haptic();
+          haptic('light');
         }
       };
 
@@ -5462,7 +5481,7 @@ function appendBubble(m){
         var s=speeds[speedIdx];
         spBtn.textContent=s===1?'1x':s+'x';
         if(aud)aud.playbackRate=s;
-        haptic();
+        haptic('light');
       };
 
       // Seek
@@ -5978,7 +5997,7 @@ function csBgClose(e){if(e.target===document.getElementById('cs-bg')||e.target.c
 var _cmtDelTarget=null; // {row, commentId, isReply, parentIdx, replyIdx, commentIdx}
 function openCmtDelBar(target){
   _cmtDelTarget=target;
-  haptic();
+  haptic('destructive');
   document.getElementById('cmt-del-modal').classList.add('on');
 }
 function closeCmtDelBar(){
@@ -10110,8 +10129,74 @@ function setupOfflineBar(){
   update();
 }
 
-// ── SWIPE-BACK: replaced by unified manager below ───────────────────────────
-function setupSwipeBack(){ /* no-op: unified swipe manager handles this */ }
+// ── SWIPE-BACK (right-edge drag to dismiss full-screen panels) ───────────────
+function setupSwipeBack(){
+  var panels=[
+    {id:'cw',     close:closeCW},
+    {id:'prof-screen', close:closeProf},
+    {id:'notif-panel', close:closeNotif},
+    {id:'so',     close:closeSettings}
+  ];
+  panels.forEach(function(cfg){
+    var el=document.getElementById(cfg.id);
+    if(!el)return;
+    var sx=0,sy=0,dragging=false,threshold=72,maxDrag=120;
+    el.addEventListener('touchstart',function(e){
+      // Only start swipe when touch begins on left 28px (edge) OR is a clear rightward swipe
+      sx=e.touches[0].clientX;
+      sy=e.touches[0].clientY;
+      dragging=false;
+    },{passive:true});
+    el.addEventListener('touchmove',function(e){
+      var dx=e.touches[0].clientX-sx;
+      var dy=e.touches[0].clientY-sy;
+      // Must be moving more right than up/down, and started from left edge or pure swipe
+      if(!dragging){
+        if(dx>12&&Math.abs(dy)<Math.abs(dx)){
+          // Allow swipe from anywhere, not just left edge, for naturalness
+          dragging=true;
+        } else {
+          return;
+        }
+      }
+      if(dx<0)return;
+      var clamped=Math.min(dx,maxDrag);
+      el.style.transition='none';
+      el.style.transform='translateX('+clamped+'px)';
+      // Prevent scroll while dragging
+      e.preventDefault();
+    },{passive:false});
+    el.addEventListener('touchend',function(e){
+      if(!dragging)return;
+      dragging=false;
+      var dx=e.changedTouches[0].clientX-sx;
+      el.style.transition='';
+      if(dx>threshold){
+        // Commit the dismiss — animate to full width then close
+        el.style.transform='translateX(100%)';
+        setTimeout(function(){
+          el.classList.remove('on');
+          el.style.display='none';
+          el.style.transform='';
+          // Run any teardown logic from the existing close function
+          // but skip the re-animation since we already slid out
+          if(cfg.id==='cw'){
+            if(window._chatChannel){_sb.removeChannel(window._chatChannel);window._chatChannel=null;}
+            hideTypingBubble();
+            if(chatUser){unreadConvos.delete(chatUser.id);}
+            updateTalkDot();
+            chatUser=null;
+            renderTalkList();
+          }
+        },320);
+        haptic('light');
+      } else {
+        // Snap back
+        el.style.transform='translateX(0)';
+      }
+    },{passive:true});
+  });
+}
 
 
 // ── LIVE EXPIRY TICK — updates 'fades in Xh' every 60s without re-rendering ──
@@ -10262,7 +10347,7 @@ function _voiceCancelAnimated(){
   setTimeout(function(){
     cancelBtn.classList.remove('trash-open');
     cancelBtn.classList.add('trash-shut');
-    haptic();
+    haptic('medium');
   },900);
 
   // T=1150ms: remove pill + bounce class, slide rec bar out, cancel state
@@ -10277,7 +10362,7 @@ function _voiceCancel(){
   if(!_voiceActive)return;
   _voiceCancelled=true;
   _voiceActive=false;
-  haptic();
+  haptic('light');
   _stopWaveAnim();
   _abortVoiceRecord();
   _hideVoiceOverlay();
@@ -10829,7 +10914,7 @@ function _insertEmoji(e){
   _recentEmoji.unshift(e);
   if(_recentEmoji.length>24)_recentEmoji=_recentEmoji.slice(0,24);
   try{localStorage.setItem('fade_recent_emoji',JSON.stringify(_recentEmoji));}catch(e_){}
-  haptic();
+  haptic('light');
 }
 
 function _buildEpCats(){
@@ -10853,7 +10938,111 @@ function _buildEpCats(){
   });
 }
 
-/* ── SWIPE BACK: consolidated into unified swipe manager (see IIFE below) ── */
+/* ── SWIPE BACK ──────────────────────────────────────────────── */
+(function(){
+  var EDGE=28,THRESH=0.38;
+  var PANELS=[
+    {id:'prof-screen',       z:650, fn:'closeProf',       edge:false},
+    {id:'cw',                z:200, fn:'closeCW',          edge:true},
+    {id:'so',                z:300, fn:'soBack',           edge:false},
+    {id:'notif-panel',       z:220, fn:'closeNotif',       edge:false},
+    {id:'scroll-view',       z:250, fn:'closeScrollView',  edge:false},
+    {id:'sched-form-panel',  z:400, fn:'closeSchedForm',   edge:false},
+    {id:'circle-cw',         z:200, fn:'closeCircleCW',    edge:true},
+    {id:'circle-info',       z:250, fn:'closeCircleInfo',  edge:false},
+  ];
+  var sx,sy,el,fn,dragging=false;
+
+  function topPanel(){
+    var best=null,bz=-1;
+    PANELS.forEach(function(p){
+      var e=document.getElementById(p.id);
+      if(e&&e.classList.contains('on')&&p.z>bz){bz=p.z;best=p;}
+    });
+    return best;
+  }
+
+  /* Parallax helpers — safe to call even before the IIFE that defines
+     them runs, because we only call them during live touch events which
+     happen after full parse. Falls back gracefully if not defined. */
+  function _drag(panelEl, dx){
+    if(typeof _onSwipeDrag==='function') _onSwipeDrag(panelEl, dx);
+  }
+  function _release(panelEl, committed){
+    if(typeof _onSwipeRelease==='function') _onSwipeRelease(panelEl, committed);
+  }
+
+  document.addEventListener('touchstart',function(e){
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    dragging=false; el=null; fn=null;
+    var p=topPanel(); if(!p)return;
+    /* Edge-only panels: only start tracking if finger is within EDGE px */
+    if(p.edge&&sx>EDGE)return;
+    el=document.getElementById(p.id); fn=p.fn;
+  },{passive:true});
+
+  document.addEventListener('touchmove',function(e){
+    if(!el)return;
+    var dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
+    if(!dragging){
+      /* Dead-zone: ignore micro-movements */
+      if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+      /* Vertical scroll: cancel tracking atomically */
+      if(Math.abs(dy)>Math.abs(dx)){el=null;fn=null;return;}
+      /* Left swipe: not a back gesture */
+      if(dx<0){el=null;fn=null;return;}
+      dragging=true;
+    }
+    if(dragging){
+      e.preventDefault();
+      var clampedDx=Math.max(0,dx);
+      el.style.transition='none';
+      el.style.transform='translateX('+clampedDx+'px)';
+      /* Update shadow + parallax background in sync with finger */
+      _drag(el, clampedDx);
+    }
+  },{passive:false});
+
+  function finish(e){
+    if(!dragging||!el){dragging=false;el=null;fn=null;return;}
+    var dx=(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientX:sx)-sx;
+    var cur=el, back=fn;
+    dragging=false; el=null; fn=null;
+    var committed=dx>window.innerWidth*THRESH;
+    /* Notify parallax system — it will advance/restore background.
+       We do NOT call _advanceBackground() here directly; the close
+       wrappers (which the fn call triggers) already do that, so we
+       pass committed=false to _release to just clean up the shadow,
+       then let the close wrapper own the background advance. */
+    _release(cur, false);
+    if(committed){
+      cur.style.transition='transform .3s cubic-bezier(.4,0,.2,1)';
+      cur.style.transform='translateX(100%)';
+      setTimeout(function(){
+        cur.style.transition='none';
+        /* The close function will call _advanceBackground via its wrapper */
+        if(typeof window[back]==='function') window[back]();
+        setTimeout(function(){cur.style.transition='';},400);
+      },300);
+    }else{
+      /* Snap back — restore panel and background */
+      cur.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
+      cur.style.transform='';
+      /* Restore parallax recession since we cancelled the gesture */
+      if(typeof _onSwipeRelease==='function') _onSwipeRelease(cur, false);
+    }
+  }
+
+  document.addEventListener('touchend',finish,{passive:true});
+  document.addEventListener('touchcancel',function(){
+    if(el){
+      el.style.transition='';
+      el.style.transform='';
+      _release(el, false);
+    }
+    dragging=false; el=null; fn=null;
+  },{passive:true});
+})();
 
 </script>
 
@@ -11162,10 +11351,11 @@ function _buildEpCats(){
 
   function _onSwipeRelease(el, committed) {
     el.style.setProperty('--swipe-shadow', '0');
-    if (committed) {
-      // Panel is flying out — advance bg in sync
-      _advanceBackground();
-    } else {
+    /* NOTE: when committed=true, we do NOT call _advanceBackground() here.
+       The close wrapper function (closeCW, closeProf, etc.) will call it
+       via _addParallax — calling it here too would double-decrement
+       _paralaxDepth and leave the background stuck. */
+    if (!committed) {
       // Snap back — restore full recession
       var sw = _getSW();
       if (sw && _paralaxDepth > 0) {
@@ -11177,8 +11367,6 @@ function _buildEpCats(){
       }
     }
   }
-
-  /* Shadow drag + bg parallax are now handled inside the unified swipe manager below */
 
   /* ── Wire parallax into open/close wrappers ──────────────────────
      The wrappers already exist above (Phase 1+6). We add _recede /
@@ -11206,17 +11394,6 @@ function _buildEpCats(){
     }
   }
 
-  /* Store pre-parallax originals so swipe-commit can call state-only teardown
-     without triggering the _advanceBackground double-fire from _addParallax. */
-  window._swipeOrig_closeNotif      = window.closeNotif;
-  window._swipeOrig_closeCW         = window.closeCW;
-  window._swipeOrig_closeProf       = window.closeProf;
-  window._swipeOrig_closeSettings   = window.closeSettings;
-  window._swipeOrig_closeCircleCW   = window.closeCircleCW;
-  window._swipeOrig_closeSchedForm  = window.closeSchedForm;
-  window._swipeOrig_closeCircleInfo = window.closeCircleInfo;
-  window._swipeOrig_closeScrollView = window.closeScrollView;
-
   _addParallax('openNotif',      'closeNotif');
   _addParallax('openChat',       'closeCW');
   _addParallax('openProf',       'closeProf');
@@ -11224,158 +11401,6 @@ function _buildEpCats(){
   _addParallax('openCircleCW',   'closeCircleCW');
   _addParallax('openSchedForm',  'closeSchedForm');
   _addParallax('openCircleInfo', 'closeCircleInfo');
-
-  /* ── UNIFIED SWIPE-BACK MANAGER ──────────────────────────────────
-     Single document-level touch handler for all swipe-back panels.
-     Replaces: setupSwipeBack() per-panel listeners + the standalone
-     IIFE swipe-back block + the Phase-5 duplicate document listeners.
-
-     Rules:
-       • edge:true  → swipe only starts from left 28px (panels with
-                      internal horizontal content like chat)
-       • edge:false → swipe starts from anywhere on screen
-       • Direction lock: first 6px of movement decides scroll vs swipe;
-         if |dy| > |dx| we abort and let the scroller take over.
-       • e.preventDefault() called ONLY after direction is locked as
-         horizontal — never during the ambiguous first 6px.
-       • On commit: slide out, call the close function, clean up.
-       • On cancel/snap-back: restore transform via CSS transition.
-  ──────────────────────────────────────────────────────────────────*/
-  (function(){
-    var EDGE   = 28;
-    var THRESH = 0.38; // fraction of screen width to commit
-
-    var PANELS = [
-      {id:'prof-screen',       z:650, fn:'closeProf',       edge:false},
-      {id:'cw',                z:200, fn:'closeCW',          edge:true},
-      {id:'so',                z:300, fn:'closeSettings',     edge:false},
-      {id:'notif-panel',       z:220, fn:'closeNotif',       edge:false},
-      {id:'scroll-view',       z:250, fn:'closeScrollView',  edge:false},
-      {id:'sched-form-panel',  z:400, fn:'closeSchedForm',   edge:false},
-      {id:'circle-cw',         z:200, fn:'closeCircleCW',    edge:true},
-      {id:'circle-info',       z:250, fn:'closeCircleInfo',  edge:false},
-      {id:'scroll-view',       z:250, fn:'closeScrollView',  edge:false},
-    ];
-
-    /* State — one gesture at a time */
-    var _sx=0, _sy=0, _el=null, _cfg=null, _dragging=false, _locked=false;
-
-    function _topPanel(){
-      var best=null, bz=-1;
-      for(var i=0;i<PANELS.length;i++){
-        var p=PANELS[i];
-        var e=document.getElementById(p.id);
-        if(e && e.classList.contains('on') && p.z>bz){ bz=p.z; best=p; }
-      }
-      return best;
-    }
-
-    function _cwTeardown(){
-      if(window._chatChannel){_sb.removeChannel(window._chatChannel);window._chatChannel=null;}
-      if(typeof hideTypingBubble==='function') hideTypingBubble();
-      if(typeof chatUser!=='undefined'&&chatUser){ unreadConvos.delete(chatUser.id); }
-      if(typeof updateTalkDot==='function') updateTalkDot();
-      if(typeof chatUser!=='undefined') chatUser=null;
-      if(typeof renderTalkList==='function') renderTalkList();
-    }
-
-    function _reset(){
-      _dragging=false; _locked=false; _el=null; _cfg=null;
-    }
-
-    function _snapBack(){
-      if(!_el) return;
-      var el=_el;
-      el.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
-      el.style.transform='';
-      _onSwipeRelease(el, false);
-      _reset();
-      setTimeout(function(){ el.style.transition=''; }, 340);
-    }
-
-    function _commit(){
-      if(!_el||!_cfg) return;
-      var cur=_el, cfg=_cfg;
-      /* Advance bg ONCE — do NOT call the close fn wrapper (it would double-advance) */
-      _onSwipeRelease(cur, true);
-      _reset();
-      cur.style.transition='transform .28s cubic-bezier(.4,0,.2,1)';
-      cur.style.transform='translateX(100%)';
-      haptic('light');
-      setTimeout(function(){
-        cur.style.transition='';
-        cur.style.transform='';
-        if(cfg.id==='cw'){
-          _cwTeardown();
-          cur.classList.remove('on');
-        } else {
-          /* Use the pre-parallax original fn to avoid _advanceBackground double-fire */
-          var origKey='_swipeOrig_'+cfg.fn;
-          var fn=window[origKey]||window[cfg.fn];
-          if(typeof fn==='function') fn();
-        }
-      },300);
-    }
-
-    document.addEventListener('touchstart',function(e){
-      _reset();
-      _sx=e.touches[0].clientX;
-      _sy=e.touches[0].clientY;
-      var p=_topPanel();
-      if(!p) return;
-      if(p.edge && _sx>EDGE) return; // edge-only panel: must start from left edge
-      _el=document.getElementById(p.id);
-      _cfg=p;
-    },{passive:true});
-
-    document.addEventListener('touchmove',function(e){
-      if(!_el) return;
-      var dx=e.touches[0].clientX-_sx;
-      var dy=e.touches[0].clientY-_sy;
-
-      if(!_locked){
-        /* Not enough movement yet — wait */
-        if(Math.abs(dx)<6 && Math.abs(dy)<6) return;
-        /* Vertical scroll wins — abort swipe */
-        if(Math.abs(dy)>=Math.abs(dx)){ _reset(); return; }
-        /* Moving left — not a back swipe */
-        if(dx<0){ _reset(); return; }
-        /* Confirmed horizontal rightward — lock in */
-        _locked=true;
-        _dragging=true;
-      }
-
-      /* Safe to prevent scroll now that direction is confirmed */
-      e.preventDefault();
-      var tx=Math.max(0,dx);
-      _el.style.transition='none';
-      _el.style.transform='translateX('+tx+'px)';
-      _onSwipeDrag(_el, tx);
-    },{passive:false});
-
-    function _onEnd(e){
-      if(!_dragging||!_el){ _reset(); return; }
-      var dx=(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientX:_sx)-_sx;
-      if(dx>window.innerWidth*THRESH){
-        _commit();
-      } else {
-        _snapBack();
-      }
-    }
-
-    document.addEventListener('touchend',   _onEnd,   {passive:true});
-    document.addEventListener('touchcancel',function(){
-      if(_el){
-        var el=_el;
-        el.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
-        el.style.transform='';
-        _onSwipeRelease(el,false);
-        setTimeout(function(){ el.style.transition=''; }, 340);
-      }
-      _reset();
-    },{passive:true});
-
-  })();
 
   /* ── PHASE 4: Instant touchstart press feedback ──────────────────
      CSS :active fires ~80ms after touchstart on mobile due to the
