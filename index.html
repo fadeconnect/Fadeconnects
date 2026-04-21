@@ -513,7 +513,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .c-sender-name{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:3px;padding-left:2px}
 .c-seen-bar{font-size:11px;color:var(--sub);text-align:right;padding:2px 6px 4px;cursor:pointer}
 .c-seen-bar:active{opacity:.6}
-.circle-chatfoot{background:var(--card);flex-shrink:0;padding:8px 14px max(12px,env(safe-area-inset-bottom));position:relative;transition:margin-bottom 280ms cubic-bezier(.25,.46,.45,.94)}
+.circle-chatfoot{background:var(--card);flex-shrink:0;padding:8px 14px max(12px,env(safe-area-inset-bottom));position:relative}
 .circle-chatrow{display:flex;gap:9px;align-items:flex-end}
 .circle-chatinp{flex:1;border:none;border-radius:22px;padding:10px 16px;font-size:15px;font-family:'Inter',sans-serif;background:var(--inp-bg);color:var(--inp-text);outline:none;resize:none;max-height:86px;line-height:1.4;-webkit-user-select:text;user-select:text}
 .circle-chatinp::placeholder{color:var(--inp-ph)}
@@ -1048,7 +1048,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .chatinp::placeholder{color:var(--inp-ph)}
 
 /* ── DM CHAT ─────────────────────────────────────────────────── */
-#cw .chatfoot{padding:10px 16px max(16px,env(safe-area-inset-bottom));transition:margin-bottom 280ms cubic-bezier(.25,.46,.45,.94)}
+#cw .chatfoot{padding:10px 16px max(16px,env(safe-area-inset-bottom))}
 #cw .chatrow{gap:0}
 #cw .chat-pill{border-radius:26px;padding:0 6px 0 0}
 #cw .chatinp{padding:12px 4px 12px 2px;align-self:center}
@@ -2234,14 +2234,6 @@ function SFX(type){
 }
 function haptic(type){
   if(!navigator.vibrate)return;
-  // Native-feel haptic vocabulary:
-  // light   — gentle tap: nav, minor UI actions
-  // medium  — confirm: send, post, tab switch
-  // heavy   — impact: like, destructive confirm
-  // tab     — navigation tab change
-  // success — positive confirm: follow, post drop
-  // destructive — delete/block confirm
-  // error   — failure shake
   if(type==='light')       navigator.vibrate(6);
   else if(type==='medium') navigator.vibrate(10);
   else if(type==='heavy')  navigator.vibrate(18);
@@ -2249,7 +2241,7 @@ function haptic(type){
   else if(type==='success')navigator.vibrate([8,30,10]);
   else if(type==='destructive')navigator.vibrate([14,22,14]);
   else if(type==='error')  navigator.vibrate([28,18,28]);
-  // Legacy aliases kept for all existing call sites
+  // Legacy aliases
   else if(type==='like')   navigator.vibrate(18);
   else if(type==='send')   navigator.vibrate(10);
   else if(type==='follow') navigator.vibrate([8,30,10]);
@@ -2435,37 +2427,53 @@ var _sb = (function(){
   if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){var l=document.querySelector('.splash-logo');if(l)l.classList.add('ready');setTimeout(hideSplash,600);});}
   else{var l=document.querySelector('.splash-logo');if(l)l.classList.add('ready');setTimeout(hideSplash,800);}
 
-  // ── Instant auth-screen suppression ─────────────────────────────────────
-  // If Supabase has a stored session in localStorage, hide the auth screen
-  // immediately (before the async getSession resolves) so it never flashes.
-  (function(){
-    try{
-      var hasToken=false;
-      for(var k in localStorage){
-        if(k.indexOf('supabase')>=0&&(k.indexOf('auth-token')>=0||k.indexOf('session')>=0)){
-          var raw=localStorage.getItem(k);
-          if(!raw)continue;
-          var val=JSON.parse(raw);
-          var tok=(val&&val.access_token)||(val&&val.currentSession&&val.currentSession.access_token);
-          if(tok){hasToken=true;break;}
+  // ── Instant session boot ──────────────────────────────────────────────────
+  // Read Supabase session directly from localStorage using the known key.
+  // This is synchronous — zero network latency — so returning users go straight
+  // to feed with no auth screen flash at all.
+  // getSession() still runs in parallel to validate/refresh the token.
+  var SB_KEY = 'sb-xmgmpewuevzgriqgsoct-auth-token';
+  var _cachedUid = null;
+
+  try {
+    var _raw = localStorage.getItem(SB_KEY);
+    if (_raw) {
+      var _sess = JSON.parse(_raw);
+      var _uid  = _sess && _sess.user && _sess.user.id;
+      var _tok  = _sess && _sess.access_token;
+      var _exp  = _sess && _sess.expires_at; // unix seconds
+      if (_uid && _tok) {
+        var _now = Math.floor(Date.now() / 1000);
+        if (!_exp || _exp > _now - 60) {
+          _cachedUid = _uid;
         }
       }
-      if(hasToken){
-        var a=document.getElementById('s-auth');
-        if(a){a.style.display='none';a.style.opacity='0';a.style.pointerEvents='none';}
-      }
-    }catch(e){}
-  })();
+    }
+  } catch(e) {}
 
+  if (_cachedUid) {
+    // Hide auth screen immediately — before any network call
+    var _a = document.getElementById('s-auth');
+    if (_a) { _a.style.display='none'; _a.style.opacity='0'; _a.style.pointerEvents='none'; }
+    // Start loading profile now — parallel with getSession validation
+    loadProfile(_cachedUid);
+  }
+
+  // getSession validates/refreshes the token in background.
   _sb.auth.getSession().then(function(res){
     var session = res.data && res.data.session;
-    if(session && session.user){
-      loadProfile(session.user.id);
-    } else {
-      // Truly no session — restore and show auth screen
-      var a=document.getElementById('s-auth');
-      if(a){a.style.display='flex';a.style.opacity='1';a.style.pointerEvents='';}
+    if (session && session.user) {
+      // Already loaded via cache with same uid — nothing to do.
+      // Different uid (rare edge case) — load correct profile.
+      if (!_cachedUid || session.user.id !== _cachedUid) {
+        loadProfile(session.user.id);
+      }
+    } else if (!_cachedUid) {
+      // No session at all — show auth screen
+      var a = document.getElementById('s-auth');
+      if (a) { a.style.display='flex'; a.style.opacity='1'; a.style.pointerEvents=''; }
     }
+    // If cache existed but token is invalid, onAuthStateChange SIGNED_OUT handles it.
   });
   _sb.auth.onAuthStateChange(function(event, session){
     if(event === 'PASSWORD_RECOVERY'){
@@ -2478,6 +2486,7 @@ var _sb = (function(){
     if(event === 'SIGNED_OUT'){
       // ── Wipe all in-memory state ──────────────────────────────────────
       profile = null;
+      _loadProfileInFlight = null;
       profPhotoUrl = null;
       posts = [];
       notifs = [];
@@ -2573,7 +2582,12 @@ var _sb = (function(){
   });
 })();
 
+var _loadProfileInFlight = null;
 function loadProfile(uid){
+  // Guard: if already loading or already loaded for this uid, skip
+  if (_loadProfileInFlight === uid) return;
+  if (profile && profile.id === uid) return;
+  _loadProfileInFlight = uid;
   _sb.from('profiles').select('*').eq('id', uid).single().then(function(res){
     // Also fetch the auth user to get email
     _sb.auth.getUser().then(function(authRes){
@@ -2594,6 +2608,7 @@ function loadProfile(uid){
           dob: meta.dob || null
         };
         _sb.from('profiles').upsert(newProfile).then(function(){
+          _loadProfileInFlight = null;
           initApp(newProfile);
         });
         return;
@@ -2601,6 +2616,7 @@ function loadProfile(uid){
       // Merge auth email into profile (profiles table may not store it)
       var p = res.data;
       if(!p.email && authEmail) p.email = authEmail;
+      _loadProfileInFlight = null;
       initApp(p);
     });
   });
@@ -11401,6 +11417,52 @@ function _buildEpCats(){
   _addParallax('openCircleCW',   'closeCircleCW');
   _addParallax('openSchedForm',  'closeSchedForm');
   _addParallax('openCircleInfo', 'closeCircleInfo');
+
+  /* ── Swipe-back on settings calls soBack, not closeSettings.
+     When soBack reaches the root (soStack empty), it calls closeSettings
+     which IS wrapped above — so that path is fine.
+     But if the swipe threshold is met mid-sub-page, soBack pops the
+     stack without calling closeSettings, so _advanceBackground never
+     runs and #sw stays receded forever.
+     Fix: wrap soBack to force _advanceBackground when the panel is
+     actually closing (i.e. soStack would become empty). ── */
+  var _origSoBack = window.soBack;
+  window.soBack = function() {
+    var isClosing = (typeof soStack !== 'undefined' && soStack.length === 0);
+    _origSoBack && _origSoBack.apply(this, arguments);
+    /* If soBack just called closeSettings internally (isClosing=true),
+       closeSettings is already wrapped and will call _advanceBackground.
+       We don't double-call. Only call advance if a sub-page was popped
+       but the panel is NOW at root and will stay open — in that case
+       we do NOT advance. So no extra call needed here beyond the
+       closeSettings wrapper. */
+    /* Safety net: if #so is no longer .on after soBack, force advance */
+    setTimeout(function() {
+      var so = document.getElementById('so');
+      if (so && !so.classList.contains('on') && _paralaxDepth > 0) {
+        _paralaxDepth = 0;
+        _advanceBackground();
+      }
+    }, 400);
+  };
+
+  /* ── Hard safety reset on goTab: if no overlay panels are open
+     but #sw is still receded, snap it back immediately. ── */
+  var _origGoTab = window.goTab;
+  window.goTab = function() {
+    _origGoTab && _origGoTab.apply(this, arguments);
+    setTimeout(function() {
+      var anyOpen = ['cw','notif-panel','prof-screen','circle-cw',
+                     'sched-form-panel','circle-info','so'].some(function(id) {
+        var el = document.getElementById(id);
+        return el && el.classList.contains('on');
+      });
+      if (!anyOpen && _paralaxDepth > 0) {
+        _paralaxDepth = 0;
+        _advanceBackground();
+      }
+    }, 50);
+  };
 
   /* ── PHASE 4: Instant touchstart press feedback ──────────────────
      CSS :active fires ~80ms after touchstart on mobile due to the
