@@ -208,8 +208,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .view-name{font-weight:600;font-size:14.5px;flex:1}
 
 /* CHAT */
-#cw{display:none;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform}
-#cw.on{display:flex;transform:translateX(0)}
+#cw{display:flex;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#cw.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 .cwbar{display:flex;align-items:center;gap:11px;padding:0 14px;background:var(--card);height:52px;flex-shrink:0}
 .cwinfo{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0}
 .cwav-wrap{position:relative;flex-shrink:0;width:38px;height:38px}
@@ -253,7 +253,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .sinp::placeholder{color:var(--inp-ph)}
 
 /* PROFILE SCREEN — z-index 650 so it's above everything */
-#prof-screen{display:none;position:fixed;inset:0;background:var(--card);z-index:650;flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
+#prof-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:650;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#prof-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #prof-screen.on{display:flex;transform:translateX(0)}
 .prof-bar{display:flex;align-items:center;height:54px;padding:0 8px;position:relative}
 .prof-back{background:none;border:none;cursor:pointer;padding:10px;color:var(--text);display:flex;align-items:center;border-radius:10px;z-index:1}
@@ -284,7 +285,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .gcell img{width:100%;height:100%;object-fit:cover}
 
 /* SETTINGS */
-#so{display:none;position:fixed;inset:0;z-index:300;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
+#so{display:flex;position:fixed;inset:0;z-index:300;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#so.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #so.on{display:flex;transform:translateX(0)}
 .so-bar{display:flex;align-items:center;height:52px;padding:0 14px;flex-shrink:0}
 .so-title{font-weight:600;font-size:16px;flex:1}
@@ -344,8 +346,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #del-modal{z-index:900}
 
 /* NOTIF */
-#notif-panel{display:none;position:fixed;inset:0;background:var(--card);z-index:220;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform}
-#notif-panel.on{display:flex;transform:translateX(0)}
+#notif-panel{display:flex;position:fixed;inset:0;background:var(--card);z-index:220;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#notif-panel.on{display:flex;transform:translateX(0);visibility:visible;pointer-events:auto}
 .ni{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer}
 .ni-av{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
 .ni-txt{flex:1;font-size:13.5px;line-height:1.5}
@@ -370,9 +372,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .dd-item.red{color:#E8352A}
 
 /* SCROLL VIEW */
-#scroll-view{display:none;position:fixed;inset:0;z-index:250;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-#scroll-view.on{display:flex;transform:translateX(0)}
-#scroll-view{z-index:660}
+#scroll-view{display:flex;position:fixed;inset:0;z-index:660;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#scroll-view.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #sv-feed{flex:1;overflow-y:auto;overscroll-behavior:contain}
 #sv-feed::-webkit-scrollbar{display:none}
 .scroll-topbar{display:flex;align-items:center;padding:0 8px;background:var(--card);height:52px;flex-shrink:0}
@@ -464,7 +465,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cssend:active{opacity:.6}
 
 /* SCHED */
-#sched-form-panel{display:none;position:fixed;inset:0;z-index:400;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
+#sched-form-panel{display:flex;position:fixed;inset:0;z-index:400;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#sched-form-panel.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #sched-form-panel.on{display:flex;transform:translateX(0)}
 .sfp-bar{display:flex;align-items:center;height:52px;padding:0 8px;flex-shrink:0}
 .sfp-back{background:none;border:none;cursor:pointer;padding:10px;color:var(--text);display:flex;align-items:center;border-radius:10px}
@@ -496,8 +498,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .circle-pulse-dot{position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:#F97316;border:2.5px solid var(--card);z-index:3;animation:pulseDot 2s ease-in-out infinite}
 
 /* Circle chat window — separate from DM */
-#circle-cw{display:none;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
-#circle-cw.on{display:flex;transform:translateX(0)}
+#circle-cw{display:flex;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#circle-cw.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 .circle-cwbar{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--card);height:52px;flex-shrink:0}
 .circle-cwinfo{display:flex;align-items:center;gap:9px;flex:1;cursor:pointer;min-width:0}
 .circle-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -529,7 +531,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .mention-row:active{background:var(--inp-bg)}
 
 /* Circle info screen */
-#circle-info{display:none;position:fixed;inset:0;background:var(--card);z-index:250;flex-direction:column;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
+#circle-info{display:flex;position:fixed;inset:0;background:var(--card);z-index:250;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#circle-info.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #circle-info.on{display:flex;transform:translateX(0)}
 .ci-bar{display:flex;align-items:center;height:52px;padding:0 8px;flex-shrink:0;position:relative}
 .ci-title{font-size:16px;font-weight:600;position:absolute;left:50%;transform:translateX(-50%)}
@@ -3178,8 +3181,7 @@ function openNotif(){
   if(_od){_od.classList.remove('on');_od.style.display='none';}
   renderNotifs();
   var p=document.getElementById('notif-panel');
-  p.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){p.classList.add('on');});});
+  p.style.display='';p.style.visibility='';p.style.pointerEvents='';p.classList.add('on');
   _notifRefreshTimer=setInterval(function(){
     var panel=document.getElementById('notif-panel');
     if(!panel.classList.contains('on')){clearInterval(_notifRefreshTimer);return;}
@@ -3193,7 +3195,7 @@ function closeNotif(){
   clearInterval(_notifRefreshTimer);
   var p=document.getElementById('notif-panel');
   p.style.transform='translateX(100%)';
-  setTimeout(function(){p.classList.remove('on');p.style.display='none';p.style.transform='';},350);
+  setTimeout(function(){p.classList.remove('on');p.style.display='';p.style.visibility='hidden';p.style.pointerEvents='none';p.style.transform='';},320);
 }
 function markNotifRead(n){
   if(n.read)return;
@@ -4959,7 +4961,7 @@ function openChat(u){
   var active=isActiveNow(u.id);
   var _setStatus=function(){var lbl=active?'Active now':activeLabel(u.id);document.getElementById('cw-status').textContent=lbl;document.getElementById('cw-status').style.color=active?'#22C55E':'var(--sub)';var cwDot=document.getElementById('cw-dot');if(cwDot){cwDot.style.display=active?'block':'none';}};
   if(!active&&!_lastActiveCache[u.id]){loadLastActive(u.id,_setStatus);}else{_setStatus();}
-  var cw=document.getElementById('cw');cw.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){cw.classList.add('on');});});
+  var cw=document.getElementById('cw');cw.style.display='';cw.style.visibility='';cw.style.pointerEvents='';cw.classList.add('on');;
   var msgs=document.getElementById('msgs');msgs.innerHTML='';
   addSysMsg('Loading…');
   // Mark their messages as read
@@ -5900,7 +5902,7 @@ function closeCW(){
   if(chatUser){unreadConvos.delete(chatUser.id);}
   updateTalkDot();
   cw.style.transform='translateX(100%)';
-  setTimeout(function(){cw.classList.remove('on');cw.style.display='none';cw.style.transform='';chatUser=null;renderTalkList();},350);
+  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.visibility='hidden';cw.style.pointerEvents='none';chatUser=null;renderTalkList();},320);
 }
 function renderMentions(text){
   return E(text).replace(/@(\w+)/g,function(match,handle){
@@ -6374,10 +6376,10 @@ function openScrollView(uid,startIdx){
     });
     f.appendChild(el);
   });
-  var sv=document.getElementById('scroll-view');sv.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){sv.classList.add('on');});});
+  var sv=document.getElementById('scroll-view');sv.style.display='';sv.style.visibility='';sv.style.pointerEvents='';sv.classList.add('on');
   setTimeout(function(){var cards=f.querySelectorAll('.post');if(cards[startIdx])cards[startIdx].scrollIntoView({behavior:'instant',block:'start'});},100);
 }
-function closeScrollView(){var sv=document.getElementById('scroll-view');sv.classList.remove('on');setTimeout(function(){sv.style.display='none';document.getElementById('sv-feed').innerHTML='';},350);}
+function closeScrollView(){var sv=document.getElementById('scroll-view');sv.classList.remove('on');setTimeout(function(){sv.style.visibility='hidden';sv.style.pointerEvents='none';document.getElementById('sv-feed').innerHTML='';},320);}
 
 // ── NOTIF POST VIEW ───────────────────────────────────────────────────────────
 function openNotifPost(pid, csHint){
@@ -6589,8 +6591,7 @@ function openProf(u){
   _renderProfBody(full, full.followers||0, full.following||0);
   document.getElementById('prof-back-btn').onclick=closeProf;
   var ps=document.getElementById('prof-screen');
-  ps.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){ps.classList.add('on');});});
+  ps.style.display='';ps.style.visibility='';ps.style.pointerEvents='';ps.classList.add('on');
   // Fetch live profile data (avatar, counts) from Supabase
   var uid=full.id;
   // If avatar_url missing from cache, fetch fresh profile first then counts
@@ -6631,7 +6632,7 @@ function closeProf(){
   var ps=document.getElementById('prof-screen');
   ps.style.transform='translateX(100%)';
   setTimeout(function(){ps.classList.remove('on');ps.style.transform='';
-    ps.style.display='none';
+    ps.style.display='';ps.style.visibility='hidden';ps.style.pointerEvents='none';
     _profUser=null;
 
     // Return to chat if we came from the chat window header
@@ -6640,8 +6641,10 @@ function closeProf(){
       // Chat window is still open underneath — just ensure it's visible
       var cw=document.getElementById('cw');
       if(cw&&chatUser){
-        cw.style.display='flex';
-        requestAnimationFrame(function(){requestAnimationFrame(function(){cw.classList.add('on');});});
+        cw.style.display='';
+        cw.style.visibility='';
+        cw.style.pointerEvents='';
+        cw.classList.add('on');
       }
       return;
     }
@@ -6725,7 +6728,9 @@ function startConvoC(uid){
         updateTalkDot();
         cw.classList.remove('on');
         setTimeout(function(){
-          cw.style.display='none';
+          cw.style.display='';
+          cw.style.visibility='hidden';
+          cw.style.pointerEvents='none';
           cw.style.zIndex='';
           chatUser=null;
           _chatBackCtx=null;
@@ -6976,8 +6981,8 @@ function ddAct(a){
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
-function openSettings(){soStack=[];buildSRoot();document.getElementById('sp0').classList.add('active');[1,2,3,4].forEach(function(i){document.getElementById('sp'+i).classList.remove('active','behind');});document.getElementById('so-title').textContent='Settings';var so=document.getElementById('so');so.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){so.classList.add('on');});});}
-function closeSettings(){var so=document.getElementById('so');so.style.transform='translateX(100%)';setTimeout(function(){so.classList.remove('on');so.style.display='none';so.style.transform='';soStack=[];},350);}
+function openSettings(){soStack=[];buildSRoot();document.getElementById('sp0').classList.add('active');[1,2,3,4].forEach(function(i){document.getElementById('sp'+i).classList.remove('active','behind');});document.getElementById('so-title').textContent='Settings';var so=document.getElementById('so');so.style.display='';so.style.visibility='';so.style.pointerEvents='';so.classList.add('on');}
+function closeSettings(){var so=document.getElementById('so');so.style.transform='translateX(100%)';setTimeout(function(){so.classList.remove('on');so.style.display='';so.style.visibility='hidden';so.style.pointerEvents='none';so.style.transform='';soStack=[];},320);}
 function soBack(){if(soStack.length===0){closeSettings();return;}var cur=soStack.length;document.getElementById('sp'+cur).classList.remove('active');var prev=document.getElementById('sp'+(cur-1));prev.classList.remove('behind');prev.classList.add('active');soStack.pop();document.getElementById('so-title').textContent=soStack.length===0?'Settings':soStack[soStack.length-1];}
 function soPush(title,fn){var d=soStack.length+1;if(d>4)return;soStack.push(title);document.getElementById('so-title').textContent=title;var pp=document.getElementById('sp'+(d-1)),cp=document.getElementById('sp'+d);pp.classList.remove('active');pp.classList.add('behind');cp.innerHTML='';fn(cp);cp.classList.add('active');}
 function buildSRoot(){
@@ -7377,8 +7382,8 @@ function buildPhotoUpload(id){
 }
 function buildSchedListPage(el){_schedListEl=el;el.innerHTML='';var wrap=document.createElement('div');wrap.style.cssText='padding:16px;display:flex;flex-direction:column;gap:14px';if(scheduled.length>0){var lw=document.createElement('div');scheduled.forEach(function(s,i){var item=document.createElement('div');item.className='sched-item';var thumb=document.createElement('div');thumb.className='sched-thumb';if(s.img){var ti=document.createElement('img');ti.src=s.img;thumb.appendChild(ti);}else{var tw=document.createElement('p');tw.style.cssText='font-size:9px;color:var(--sub);text-align:center;line-height:1.3;word-break:break-word;overflow:hidden;max-height:100%;padding:4px';tw.textContent=(s.text||'Drop').slice(0,20);thumb.appendChild(tw);}var info=document.createElement('div');info.className='sched-info';var tt=document.createElement('div');tt.className='sched-text';tt.textContent=(s.text&&s.text.trim())?s.text.slice(0,42):(s.img?'Photo drop':'Drop');var dt=document.createElement('div');dt.className='sched-dt';dt.textContent=fmtDT(s.schedAt);info.appendChild(tt);info.appendChild(dt);var actions=document.createElement('div');actions.className='sched-actions';var editBtn=document.createElement('button');editBtn.className='sched-act-btn';editBtn.innerHTML=IC.edit;(function(idx){editBtn.onclick=function(e){e.stopPropagation();openSchedForm(idx);};})(i);var delBtn=document.createElement('button');delBtn.className='sched-act-btn red';delBtn.innerHTML=IC.trash;(function(idx){delBtn.onclick=function(e){e.stopPropagation();scheduled.splice(idx,1);saveScheduled();buildSchedListPage(el);T('Deleted');};})(i);actions.appendChild(editBtn);actions.appendChild(delBtn);item.appendChild(thumb);item.appendChild(info);item.appendChild(actions);lw.appendChild(item);});wrap.appendChild(lw);}var addBtn=document.createElement('button');addBtn.className='sched-add-btn';addBtn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Schedule a drop';addBtn.onclick=function(){openSchedForm(-1);};wrap.appendChild(addBtn);el.appendChild(wrap);}
 function toLocalDT(ts){var d=new Date(ts);var pad=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
-function openSchedForm(idx){_schedEditIdx=idx;_schedImgUrl=null;var isEdit=(idx>=0&&idx<scheduled.length);var s=isEdit?scheduled[idx]:null;document.getElementById('sfp-title').textContent=isEdit?'Edit Scheduled Drop':'Schedule a Drop';var body=document.getElementById('sfp-body');body.innerHTML='';var capField=document.createElement('div');capField.className='field';capField.innerHTML='<label class="lbl">Caption</label>';var capTa=document.createElement('textarea');capTa.className='inp';capTa.rows=4;capTa.placeholder="What's fading today…";if(isEdit&&s&&s.text)capTa.value=s.text;capField.appendChild(capTa);body.appendChild(capField);var photoField=document.createElement('div');photoField.className='field';photoField.innerHTML='<label class="lbl">Photo (optional)</label>';var pu=buildPhotoUpload('sched');photoField.appendChild(pu.row);body.appendChild(photoField);if(isEdit&&s&&s.img){_schedImgUrl=s.img;}var dtField=document.createElement('div');dtField.className='field';dtField.innerHTML='<label class="lbl">Date and Time</label>';var dtWrap=document.createElement('div');dtWrap.style.cssText='position:relative';var dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.className='inp';if(!isEdit)dtInp.min=toLocalDT(Date.now());if(isEdit&&s&&s.schedAt){dtInp.value=toLocalDT(s.schedAt);}dtInp.style.cssText='padding-left:42px;color:'+(isEdit&&s&&s.schedAt?'var(--inp-text)':'transparent');var dtIco=document.createElement('span');dtIco.style.cssText='position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;color:var(--inp-ph)';dtIco.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';var dtPh=document.createElement('div');dtPh.style.cssText='position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 42px;pointer-events:none;font-size:15px;color:var(--inp-ph);font-family:Inter,sans-serif';dtPh.textContent='Pick date and time';dtPh.style.display=dtInp.value?'none':'flex';dtInp.addEventListener('change',function(){dtPh.style.display=this.value?'none':'flex';this.style.color=this.value?'var(--inp-text)':'transparent';});dtWrap.appendChild(dtInp);dtWrap.appendChild(dtIco);dtWrap.appendChild(dtPh);dtField.appendChild(dtWrap);body.appendChild(dtField);var submitBtn=document.createElement('button');submitBtn.className='btn btn-dark';submitBtn.textContent=isEdit?'Save Changes':'Schedule Drop';submitBtn.onclick=function(){var capVal=capTa.value.trim();var dtVal=dtInp.value;if(!capVal&&!pu.hasImg())return T('Add a caption or photo');if(!dtVal)return T('Pick a date and time');var schedAt=new Date(dtVal).getTime();    if(isNaN(schedAt)||schedAt<=Date.now()+60000)return T('Pick a time at least 1 minute from now');var entry={id:isEdit&&s?s.id:('sc'+Date.now()),text:capVal,img:pu.hasImg()?_schedImgUrl:null,schedAt:schedAt};if(isEdit){scheduled[idx]=entry;}else{scheduled.push(entry);}saveScheduled();SFX('drop');T(isEdit?'Updated':'Scheduled');closeSchedForm();setTimeout(function(){if(_schedListEl)buildSchedListPage(_schedListEl);},60);};body.appendChild(submitBtn);var panel=document.getElementById('sched-form-panel');panel.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){panel.classList.add('on');});});}
-function closeSchedForm(){var panel=document.getElementById('sched-form-panel');panel.style.transform='translateX(100%)';setTimeout(function(){panel.classList.remove('on');panel.style.display='none';panel.style.transform='';_schedImgUrl=null;},350);}
+function openSchedForm(idx){_schedEditIdx=idx;_schedImgUrl=null;var isEdit=(idx>=0&&idx<scheduled.length);var s=isEdit?scheduled[idx]:null;document.getElementById('sfp-title').textContent=isEdit?'Edit Scheduled Drop':'Schedule a Drop';var body=document.getElementById('sfp-body');body.innerHTML='';var capField=document.createElement('div');capField.className='field';capField.innerHTML='<label class="lbl">Caption</label>';var capTa=document.createElement('textarea');capTa.className='inp';capTa.rows=4;capTa.placeholder="What's fading today…";if(isEdit&&s&&s.text)capTa.value=s.text;capField.appendChild(capTa);body.appendChild(capField);var photoField=document.createElement('div');photoField.className='field';photoField.innerHTML='<label class="lbl">Photo (optional)</label>';var pu=buildPhotoUpload('sched');photoField.appendChild(pu.row);body.appendChild(photoField);if(isEdit&&s&&s.img){_schedImgUrl=s.img;}var dtField=document.createElement('div');dtField.className='field';dtField.innerHTML='<label class="lbl">Date and Time</label>';var dtWrap=document.createElement('div');dtWrap.style.cssText='position:relative';var dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.className='inp';if(!isEdit)dtInp.min=toLocalDT(Date.now());if(isEdit&&s&&s.schedAt){dtInp.value=toLocalDT(s.schedAt);}dtInp.style.cssText='padding-left:42px;color:'+(isEdit&&s&&s.schedAt?'var(--inp-text)':'transparent');var dtIco=document.createElement('span');dtIco.style.cssText='position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;color:var(--inp-ph)';dtIco.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';var dtPh=document.createElement('div');dtPh.style.cssText='position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 42px;pointer-events:none;font-size:15px;color:var(--inp-ph);font-family:Inter,sans-serif';dtPh.textContent='Pick date and time';dtPh.style.display=dtInp.value?'none':'flex';dtInp.addEventListener('change',function(){dtPh.style.display=this.value?'none':'flex';this.style.color=this.value?'var(--inp-text)':'transparent';});dtWrap.appendChild(dtInp);dtWrap.appendChild(dtIco);dtWrap.appendChild(dtPh);dtField.appendChild(dtWrap);body.appendChild(dtField);var submitBtn=document.createElement('button');submitBtn.className='btn btn-dark';submitBtn.textContent=isEdit?'Save Changes':'Schedule Drop';submitBtn.onclick=function(){var capVal=capTa.value.trim();var dtVal=dtInp.value;if(!capVal&&!pu.hasImg())return T('Add a caption or photo');if(!dtVal)return T('Pick a date and time');var schedAt=new Date(dtVal).getTime();    if(isNaN(schedAt)||schedAt<=Date.now()+60000)return T('Pick a time at least 1 minute from now');var entry={id:isEdit&&s?s.id:('sc'+Date.now()),text:capVal,img:pu.hasImg()?_schedImgUrl:null,schedAt:schedAt};if(isEdit){scheduled[idx]=entry;}else{scheduled.push(entry);}saveScheduled();SFX('drop');T(isEdit?'Updated':'Scheduled');closeSchedForm();setTimeout(function(){if(_schedListEl)buildSchedListPage(_schedListEl);},60);};body.appendChild(submitBtn);var panel=document.getElementById('sched-form-panel');panel.style.display='';panel.style.visibility='';panel.style.pointerEvents='';panel.classList.add('on');}
+function closeSchedForm(){var panel=document.getElementById('sched-form-panel');panel.style.transform='translateX(100%)';setTimeout(function(){panel.classList.remove('on');panel.style.display='';panel.style.visibility='hidden';panel.style.pointerEvents='none';panel.style.transform='';_schedImgUrl=null;},320);}
 function buildActivityPage(el){
   var opts=[{v:'everyone',l:'Everyone',d:'All Fade users can see your activity'},{v:'followers',l:'Followers Only',d:'Only people you follow back'},{v:'nobody',l:'No One',d:'Hide your activity from everyone'}];
   el.innerHTML='<div style="padding:8px 16px"></div>';var wrap=el.firstChild;
@@ -9221,8 +9226,7 @@ function openCircleCW(c){
   else if(pinBar){pinBar.style.display='none';}
   // Show window
   var cw=document.getElementById('circle-cw');
-  cw.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){cw.classList.add('on');});});
+  cw.style.display='';cw.style.visibility='';cw.style.pointerEvents='';cw.classList.add('on');
   // Load messages
   var msgs=document.getElementById('circle-msgs');
   msgs.innerHTML='';
@@ -9245,7 +9249,7 @@ function closeCircleCW(){
   hideMentionPicker();
   var cw=document.getElementById('circle-cw');
   cw.style.transform='translateX(100%)';
-  setTimeout(function(){cw.classList.remove('on');cw.style.display='none';cw.style.transform='';activeCircle=null;renderTalkList();},350);
+  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.visibility='hidden';cw.style.pointerEvents='none';activeCircle=null;renderTalkList();},320);
 }
 
 function _loadCircleMessages(circleId,cb){
@@ -9688,15 +9692,14 @@ function openCircleInfo(){
   var screen=document.getElementById('circle-info');
   if(!screen||!activeCircle)return;
   buildCircleInfoBody(activeCircle);
-  screen.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){screen.classList.add('on');});});
+  screen.style.display='';screen.style.visibility='';screen.style.pointerEvents='';screen.classList.add('on');
 }
 
 function closeCircleInfo(){
   var screen=document.getElementById('circle-info');
   if(!screen)return;
   screen.style.transform='translateX(100%)';
-  setTimeout(function(){screen.classList.remove('on');screen.style.display='none';screen.style.transform='';},350);
+  setTimeout(function(){screen.classList.remove('on');screen.style.display='';screen.style.visibility='hidden';screen.style.pointerEvents='none';screen.style.transform='';},320);
 }
 
 function buildCircleInfoBody(c){
@@ -10956,8 +10959,8 @@ function _buildEpCats(){
 
 /* ── SWIPE BACK — physics-grade interactive gesture ─────────── */
 (function(){
-  var EDGE  = 28;    // px from left edge to start edge-only panels
-  var DIST_THRESH = 0.35; // fraction of screen width for slow swipes (easier to trigger)
+  var EDGE  = 28;    // px from left edge (unused now all panels are edge:false)
+  var DIST_THRESH = 0.35; // fraction of screen width — easier to trigger
   var VEL_THRESH  = 0.25;  // px/ms — lower = easier flick recognition
 
   var PANELS=[
@@ -10988,9 +10991,8 @@ function _buildEpCats(){
   function applyDrag(dx) {
     if (!el) return;
     var vw  = window.innerWidth;
-    // Panel follows finger exactly — GPU composited
+    // Panel follows finger exactly
     el.style.transition = 'none';
-    el.style.willChange = 'transform';
     el.style.transform  = 'translateX(' + dx + 'px)';
 
     // Shadow on left edge fades as panel moves right
@@ -11020,7 +11022,7 @@ function _buildEpCats(){
     var vw       = window.innerWidth;
     var remaining = vw - fromDx;               // px left to travel
     // Duration scales with remaining distance — fast flick = short duration
-    var dur = Math.min(320, Math.max(160, remaining / vw * 340));
+    var dur = Math.min(280, Math.max(140, remaining / vw * 300));
     var durS = (dur / 1000).toFixed(2) + 's';
 
     // Panel flies out with sharp deceleration
@@ -11040,7 +11042,6 @@ function _buildEpCats(){
     // Strip .on immediately so state is clean — panel is gone
     cur.classList.remove('on');
     window._isReceded = false;
-    // Also update visibility state from Phase 1 patch
     cur.style.visibility   = 'hidden';
     cur.style.pointerEvents = 'none';
 
@@ -11049,7 +11050,7 @@ function _buildEpCats(){
       cur.style.transition = 'none';
       cur.style.willChange = '';
       if (typeof window[back] === 'function') window[back]();
-      setTimeout(function(){ cur.style.transition = ''; }, 400);
+      setTimeout(function(){ cur.style.transition = ''; }, 300);
     }, dur + 20);
   }
 
@@ -11057,14 +11058,14 @@ function _buildEpCats(){
   function snapBack(cur) {
     cur.style.setProperty('--swipe-shadow', '0');
     // Spring easing — slight overshoot makes it feel physical
-    cur.style.transition = 'transform 380ms cubic-bezier(.34,1.3,.64,1)';
+    cur.style.transition = 'transform 320ms cubic-bezier(.34,1.2,.64,1)';
     cur.style.transform  = '';
-    setTimeout(function(){ cur.style.willChange = ''; }, 400);
+    setTimeout(function(){ cur.style.willChange = ''; }, 350);
 
     // #sw snaps back to receded position
     var sw = window._getSW ? window._getSW() : document.getElementById('sw');
     if (sw && window._isReceded) {
-      sw.style.transition = 'transform 380ms cubic-bezier(.34,1.3,.64,1), opacity 380ms ease';
+      sw.style.transition = 'transform 320ms cubic-bezier(.34,1.2,.64,1), opacity 320ms ease';
       sw.style.transform  = 'translateX(-26%) scale(0.94)';
       sw.style.opacity    = '0.88';
     }
@@ -11100,11 +11101,9 @@ function _buildEpCats(){
 
     if (!dragging) {
       if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
-      // If clearly more vertical than horizontal, cancel gesture
       if (Math.abs(dy) > Math.abs(dx) * 1.2) { el = null; fn = null; return; }
       if (dx < 0) { el = null; fn = null; return; }
       dragging = true;
-      // Promote to GPU layer immediately on drag start
       if (el) el.style.willChange = 'transform';
     }
 
@@ -11167,165 +11166,11 @@ function _buildEpCats(){
 
 (function(){
 
-  /* ── PHASE 1 + 6: Visibility-swap helpers ────────────────────────
-     The CSS already keeps all panels display:flex at all times.
-     These helpers patch the existing open/close functions so they
-     no longer set display:none / display:flex (which caused flicker),
-     and instead just manage the .on class + visibility.
-     We wrap the originals rather than replace them, so all their
-     Supabase / state logic still runs untouched.
+  /* ── Phase 1+6 wrappers are no longer needed ─────────────────────
+     All open/close functions now manage visibility directly using
+     el.classList.add/remove('on') + visibility/pointer-events.
+     No display:none toggling, no double-rAF delays anywhere.
   ──────────────────────────────────────────────────────────────────*/
-
-  /* Utility: zero-out any inline display style the original code set,
-     and ensure the panel is in the right visibility state. */
-  function syncPanel(id, isOpen) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    // Clear any inline display the legacy code may have set
-    el.style.display = '';
-    if (isOpen) {
-      el.style.visibility = 'visible';
-      el.style.pointerEvents = 'auto';
-    } else {
-      el.style.visibility = '';
-      el.style.pointerEvents = '';
-    }
-  }
-
-  /* Patch openNotif — remove the display:'flex' set, let CSS handle it */
-  var _origOpenNotif = window.openNotif;
-  window.openNotif = function() {
-    var el = document.getElementById('notif-panel');
-    if (el) { el.style.display = ''; }
-    _origOpenNotif && _origOpenNotif.apply(this, arguments);
-    syncPanel('notif-panel', true);
-  };
-
-  var _origCloseNotif = window.closeNotif;
-  window.closeNotif = function() {
-    _origCloseNotif && _origCloseNotif.apply(this, arguments);
-    var el = document.getElementById('notif-panel');
-    if (!el) return;
-    // After the slide-out animation (350ms), clear inline display
-    setTimeout(function() {
-      el.style.display = '';
-      syncPanel('notif-panel', false);
-    }, 360);
-  };
-
-  /* Patch openChat (opens #cw) */
-  var _origOpenChat = window.openChat;
-  window.openChat = function() {
-    var el = document.getElementById('cw');
-    if (el) { el.style.display = ''; }
-    _origOpenChat && _origOpenChat.apply(this, arguments);
-    syncPanel('cw', true);
-  };
-
-  var _origCloseCW = window.closeCW;
-  window.closeCW = function() {
-    _origCloseCW && _origCloseCW.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('cw');
-      if (el) { el.style.display = ''; }
-      syncPanel('cw', false);
-    }, 360);
-  };
-
-  /* Patch openProf */
-  var _origOpenProf = window.openProf;
-  window.openProf = function() {
-    var el = document.getElementById('prof-screen');
-    if (el) { el.style.display = ''; }
-    _origOpenProf && _origOpenProf.apply(this, arguments);
-    syncPanel('prof-screen', true);
-  };
-
-  var _origCloseProf = window.closeProf;
-  window.closeProf = function() {
-    _origCloseProf && _origCloseProf.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('prof-screen');
-      if (el) { el.style.display = ''; }
-      syncPanel('prof-screen', false);
-    }, 360);
-  };
-
-  /* Patch openSettings */
-  var _origOpenSettings = window.openSettings;
-  window.openSettings = function() {
-    var el = document.getElementById('so');
-    if (el) { el.style.display = ''; }
-    _origOpenSettings && _origOpenSettings.apply(this, arguments);
-    syncPanel('so', true);
-  };
-
-  var _origCloseSettings = window.closeSettings;
-  window.closeSettings = function() {
-    _origCloseSettings && _origCloseSettings.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('so');
-      if (el) { el.style.display = ''; }
-      syncPanel('so', false);
-    }, 360);
-  };
-
-  /* Patch openCircleCW */
-  var _origOpenCircleCW = window.openCircleCW;
-  window.openCircleCW = function() {
-    var el = document.getElementById('circle-cw');
-    if (el) { el.style.display = ''; }
-    _origOpenCircleCW && _origOpenCircleCW.apply(this, arguments);
-    syncPanel('circle-cw', true);
-  };
-
-  var _origCloseCircleCW = window.closeCircleCW;
-  window.closeCircleCW = function() {
-    _origCloseCircleCW && _origCloseCircleCW.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('circle-cw');
-      if (el) { el.style.display = ''; }
-      syncPanel('circle-cw', false);
-    }, 360);
-  };
-
-  /* Patch openSchedForm */
-  var _origOpenSchedForm = window.openSchedForm;
-  window.openSchedForm = function() {
-    var el = document.getElementById('sched-form-panel');
-    if (el) { el.style.display = ''; }
-    _origOpenSchedForm && _origOpenSchedForm.apply(this, arguments);
-    syncPanel('sched-form-panel', true);
-  };
-
-  var _origCloseSchedForm = window.closeSchedForm;
-  window.closeSchedForm = function() {
-    _origCloseSchedForm && _origCloseSchedForm.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('sched-form-panel');
-      if (el) { el.style.display = ''; }
-      syncPanel('sched-form-panel', false);
-    }, 360);
-  };
-
-  /* ── Also sync circle-info which uses same on/off pattern ── */
-  var _origOpenCircleInfo = window.openCircleInfo;
-  window.openCircleInfo = function() {
-    var el = document.getElementById('circle-info');
-    if (el) { el.style.display = ''; }
-    _origOpenCircleInfo && _origOpenCircleInfo.apply(this, arguments);
-    syncPanel('circle-info', true);
-  };
-
-  var _origCloseCircleInfo = window.closeCircleInfo;
-  window.closeCircleInfo = function() {
-    _origCloseCircleInfo && _origCloseCircleInfo.apply(this, arguments);
-    setTimeout(function() {
-      var el = document.getElementById('circle-info');
-      if (el) { el.style.display = ''; }
-      syncPanel('circle-info', false);
-    }, 360);
-  };
 
   /* ── PHASE 2: Parallax background recession ─────────────────────
      When a panel opens, the background (#sw — the main screen
@@ -11523,8 +11368,7 @@ function _buildEpCats(){
     _origGoTab && _origGoTab.apply(this, arguments);
   };
 
-  /* ── Periodic safety sweep: removed — was causing 2-second jank ticks.
-     Panel state is now managed purely through open/close events. ── */
+  /* ── Periodic safety sweep removed — caused 2s jank ticks. ── */
 
   /* ── PHASE 4: Instant touchstart press feedback ──────────────────
      CSS :active fires ~80ms after touchstart on mobile due to the
