@@ -3251,13 +3251,12 @@ function markAllRead(){
     /* Inner slide wrapper — contains all original content */
     '.ni-s{display:flex;align-items:center;gap:12px;flex:1;min-width:0;'+
       'transition:transform .22s cubic-bezier(.25,.46,.45,.94);}'+
-    /* Trash: red circle, hidden off right edge, snaps in when row slides open */
+    /* Trash: plain red icon, no background, hidden off right edge */
     '.ni-t{'+
-      'position:absolute;right:12px;top:50%;transform:translate(72px,-50%);'+
-      'width:40px;height:40px;border-radius:50%;'+
-      'background:#E8352A;border:none;cursor:pointer;color:#fff;'+
+      'position:absolute;right:14px;top:50%;transform:translate(60px,-50%);'+
+      'width:32px;height:32px;border-radius:0;'+
+      'background:none;border:none;cursor:pointer;color:#E8352A;'+
       'display:flex;align-items:center;justify-content:center;flex-shrink:0;'+
-      'box-shadow:0 2px 8px rgba(232,53,42,.35);'+
       'transition:transform .22s cubic-bezier(.34,1.2,.64,1);'+
       '-webkit-tap-highlight-color:transparent;'+
     '}'+
@@ -3265,13 +3264,13 @@ function markAllRead(){
     '.ni-t .tlid{transform-box:fill-box;transform-origin:50% 100%;'+
       'transition:transform .28s cubic-bezier(.25,.46,.45,.94);}'+
     '.ni-t.lo .tlid{transform:rotate(-52deg);}'+
-    /* Lid-shut shake — mirrors #voice-cancel-btn.trash-shut */
+    /* Lid-shut shake */
     '@keyframes tsk{'+
-      '0%  {transform:translate(0,-50%) scale(1)}'+
-      '30% {transform:translate(0,-50%) scale(1.22)}'+
-      '65% {transform:translate(0,-50%) scale(.88)}'+
-      '100%{transform:translate(0,-50%) scale(1)}}'+
-    '.ni-t.sk{animation:tsk .24s ease forwards;}'+
+      '0%  {transform:translate(0,-50%) rotate(0deg)}'+
+      '25% {transform:translate(0,-50%) rotate(-12deg) scale(1.15)}'+
+      '55% {transform:translate(0,-50%) rotate(8deg)  scale(.95)}'+
+      '100%{transform:translate(0,-50%) rotate(0deg)  scale(1)}}'+
+    '.ni-t.sk{animation:tsk .26s ease forwards;}'+
     /* Content flies right into trash then vanishes */
     '@keyframes nfly{'+
       '0%  {opacity:1;transform:translateX(0)   scale(1)}'+
@@ -3318,8 +3317,8 @@ function attachSwipeDismiss(el,onDismiss){
   function animSlide(nx,anim){
     slide.style.transition=anim?'transform .22s cubic-bezier(.25,.46,.45,.94)':'none';
     slide.style.transform='translateX('+nx+'px)';
-    /* 72=fully hidden (matches translate(72px) in CSS); at nx=-60 → trx=12 flush inside */
-    var trx=72+nx;
+    /* 60=fully hidden; at nx=-60 → trx=0 = sits flush at right:14px */
+    var trx=60+nx;
     tb.style.transition=anim?'transform .22s cubic-bezier(.34,1.2,.64,1)':'none';
     tb.style.transform='translate('+trx+'px,-50%)';
   }
