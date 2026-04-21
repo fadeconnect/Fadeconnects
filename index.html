@@ -3241,155 +3241,163 @@ function markAllRead(){
   if(btn){btn.textContent='Done';btn.style.color='var(--text)';setTimeout(function(){btn.textContent='Mark all read';btn.style.color='var(--sub)';},1200);}
   renderNotifs();
 }
-/* Inject swipe-trash styles once */
+/* ── Notification swipe-to-delete styles (injected once) ── */
 (function(){
-  if(document.getElementById('_nt-css'))return;
-  var s=document.createElement('style');s.id='_nt-css';
+  if(document.getElementById('_ntd'))return;
+  var s=document.createElement('style');s.id='_ntd';
   s.textContent=
-    /* Each .ni clips its children so trash never bleeds to other rows */
+    /* Row clips overflow so nothing bleeds */
     '.ni{overflow:hidden;position:relative;}'+
-    /* The inner content slides left on swipe */
-    '.ni-c{display:contents;}'+
-    /* Red trash zone - hidden off-screen right by default */
-    '.ni-tb{'+
-      'position:absolute;top:0;right:0;bottom:0;width:68px;'+
-      'background:#E8352A;border:none;cursor:pointer;'+
-      'display:flex;align-items:center;justify-content:center;'+
-      'transform:translateX(68px);'+
-      'transition:transform .22s cubic-bezier(.25,.46,.45,.94);'+
-      'color:#fff;'+
+    /* Inner slide wrapper — contains all original content */
+    '.ni-s{display:flex;align-items:center;gap:12px;flex:1;min-width:0;'+
+      'transition:transform .22s cubic-bezier(.25,.46,.45,.94);}'+
+    /* Trash: small red circle, only the icon, hidden off right edge */
+    '.ni-t{'+
+      'position:absolute;right:15px;top:50%;transform:translate(80px,-50%);'+
+      'width:36px;height:36px;border-radius:50%;'+
+      'background:#E8352A;border:none;cursor:pointer;color:#fff;'+
+      'display:flex;align-items:center;justify-content:center;flex-shrink:0;'+
+      'transition:transform .22s cubic-bezier(.34,1.2,.64,1);'+
     '}'+
-    /* Trash icon lid - CLOSED by default, opens only when tapped */
-    '.ni-tb .tlid{'+
-      'transform-box:fill-box;transform-origin:50% 100%;'+
-      'transition:transform .22s cubic-bezier(.25,.46,.45,.94);'+
+    /* Trash lid animation */
+    '.ni-t .tlid{transform-box:fill-box;transform-origin:50% 100%;'+
+      'transition:transform .25s cubic-bezier(.25,.46,.45,.94);}'+
+    '.ni-t.lo .tlid{transform:rotate(-48deg);}'+
+    /* Lid-shut shake */
+    '@keyframes tsk{0%{transform:translate(0,-50%) scale(1)}'+
+      '35%{transform:translate(0,-50%) scale(1.3)}'+
+      '65%{transform:translate(0,-50%) scale(.85)}'+
+      '100%{transform:translate(0,-50%) scale(1)}}'+
+    '.ni-t.sk{animation:tsk .22s ease forwards;}'+
+    /* Content flies into trash */
+    '@keyframes nfly{'+
+      '0%  {opacity:1;transform:translateX(0) scale(1)}'+
+      '100%{opacity:0;transform:translateX(48px) scale(.25)}'+
     '}'+
-    '.ni-tb.lid-open .tlid{transform:rotate(-48deg);}'+
-    /* Shake on lid close */
-    '@keyframes tshake{0%{transform:scale(1)}30%{transform:scale(1.25)}65%{transform:scale(.88)}100%{transform:scale(1)}}'+
-    '.ni-tb.tshake svg{animation:tshake .2s ease;}'+
-    /* Notification content flies into trash on delete */
-    '@keyframes fly-in{'+
-      '0%  {transform:translateX(var(--ni-offset,0px)) scale(1);opacity:1}'+
-      '60% {transform:translateX(calc(var(--ni-offset,0px) + 36px)) scale(.72);opacity:.5}'+
-      '100%{transform:translateX(calc(var(--ni-offset,0px) + 60px)) scale(.3);opacity:0}'+
-    '}'+
-    '.ni.flying{animation:fly-in .28s cubic-bezier(.55,0,1,.7) forwards !important;}'+
-    /* Row height collapses after fly */
-    '@keyframes collapse{from{max-height:var(--nih);opacity:0}to{max-height:0;padding:0;margin:0}}'+
-    '.ni.collapsing{overflow:hidden;animation:collapse .22s ease forwards;}';
+    '.ni-s.fly{animation:nfly .3s cubic-bezier(.55,0,1,.6) forwards;}'+
+    /* Row collapses */
+    '@keyframes ncol{from{max-height:var(--nh)}to{max-height:0;padding:0;margin:0}}'+
+    '.ni.col{overflow:hidden;animation:ncol .22s ease forwards;}';
   document.head.appendChild(s);
 })();
 
 function attachSwipeDismiss(el,onDismiss){
-  var W=68; /* trash zone width px */
-  var SNAP=W*0.45;
-  var sx=0,sy=0,cx=0,swipe=false,open=false,gone=false;
+  /* Slide content left by this many px to reveal trash */
+  var PULL=60;
+  var SNAP=PULL*0.45;
+  var sx=0,sy=0,cx=0,sw=false,open=false,gone=false;
 
-  /* --- Build trash button inside the row --- */
+  /* Wrap existing children in slide div */
+  var slide=document.createElement('div');
+  slide.className='ni-s';
+  while(el.firstChild)slide.appendChild(el.firstChild);
+  el.appendChild(slide);
+
+  /* Small red circle trash button */
   var tb=document.createElement('button');
-  tb.className='ni-tb';
-  tb.setAttribute('aria-label','Delete');
+  tb.className='ni-t';
+  tb.setAttribute('aria-label','Delete notification');
   tb.innerHTML=
-    '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"'+
-    ' stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">'+
-      '<g class="tlid"><line x1="3" y1="6" x2="21" y2="6"/><path d="M9 6V4h6v2"/></g>'+
+    '<svg width="14" height="14" fill="none" stroke="currentColor"'+
+    ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'+
+    ' viewBox="0 0 24 24">'+
+      '<g class="tlid">'+
+        '<line x1="3" y1="6" x2="21" y2="6"/>'+
+        '<path d="M9 6V4h6v2"/>'+
+      '</g>'+
       '<path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/>'+
       '<line x1="10" y1="11" x2="10" y2="17"/>'+
       '<line x1="14" y1="11" x2="14" y2="17"/>'+
     '</svg>';
   el.appendChild(tb);
 
-  /* --- Helpers --- */
-  function setX(nx,anim){
-    el.style.transition=anim?'transform .22s cubic-bezier(.25,.46,.45,.94)':'none';
-    tb.style.transition=anim?'transform .22s cubic-bezier(.25,.46,.45,.94)':'none';
-    el.style.transform='translateX('+nx+'px)';
-    /* trash slides in from right in sync */
-    tb.style.transform='translateX('+Math.max(0,W+nx)+'px)';
+  function animSlide(nx,anim){
+    slide.style.transition=anim?'transform .22s cubic-bezier(.25,.46,.45,.94)':'none';
+    slide.style.transform='translateX('+nx+'px)';
+    /* Trash pops in from right — offset inverse to slide */
+    var trx=80+nx; /* 80=fully hidden; at nx=-60 → trx=20 still offset from right:15 */
+    tb.style.transition=anim?'transform .22s cubic-bezier(.34,1.2,.64,1)':'none';
+    tb.style.transform='translate('+trx+'px,-50%)';
   }
-  function reveal(){
+
+  function doOpen(){
     open=true;
-    setX(-W,true);
+    animSlide(-PULL,true);
     if(typeof haptic==='function')haptic('light');
   }
-  function hide(){
+  function doClose(){
     open=false;
-    setX(0,true);
+    animSlide(0,true);
   }
 
-  /* --- Touch on the row --- */
-  el.addEventListener('touchstart',function(e){
+  /* Touch on slide (not on trash button) */
+  slide.addEventListener('touchstart',function(e){
     if(gone)return;
-    /* Don't intercept touches on the trash button itself */
-    if(e.target===tb||tb.contains(e.target))return;
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;
-    cx=0;swipe=false;
-    el.style.transition='none';tb.style.transition='none';
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;cx=0;sw=false;
+    slide.style.transition='none';tb.style.transition='none';
   },{passive:true});
 
-  el.addEventListener('touchmove',function(e){
+  slide.addEventListener('touchmove',function(e){
     if(gone)return;
-    if(e.target===tb||tb.contains(e.target))return;
     var dx=e.touches[0].clientX-sx;
     var dy=Math.abs(e.touches[0].clientY-sy);
-    if(!swipe){if(Math.abs(dx)<6)return;if(dy>Math.abs(dx))return;swipe=true;}
-    var base=open?-W:0;
-    cx=Math.max(-W*1.08,Math.min(0,base+dx));
-    setX(cx,false);
+    if(!sw){if(Math.abs(dx)<6)return;if(dy>Math.abs(dx))return;sw=true;}
+    var base=open?-PULL:0;
+    cx=Math.max(-PULL*1.1,Math.min(0,base+dx));
+    animSlide(cx,false);
   },{passive:true});
 
-  el.addEventListener('touchend',function(){
-    if(!swipe)return;
-    var base=open?-W:0;
-    (!open&&cx<-SNAP)||(open&&cx-base<-SNAP)?reveal():
-    (!open)?hide():
-    (cx-base>SNAP)?hide():reveal();
+  slide.addEventListener('touchend',function(){
+    if(!sw)return;
+    var base=open?-PULL:0;
+    var moved=cx-base;
+    if(!open){cx<-SNAP?doOpen():doClose();}
+    else{moved>SNAP?doClose():doOpen();}
   },{passive:true});
 
-  /* --- Trash tap: lid opens → row flies in → lid shuts → row collapses --- */
+  /* Trash tap: lid opens → content flies in → lid shuts → collapse */
   tb.addEventListener('click',function(e){
     e.stopPropagation();
     if(gone)return;
     gone=true;
     if(typeof haptic==='function')haptic('destructive');
 
-    /* Step 1: open lid */
-    tb.classList.add('lid-open');
+    /* 1. Open lid */
+    tb.classList.add('lo');
 
-    /* Step 2: 120ms later fly the row into the trash */
+    /* 2. After 100ms: fly content into trash */
     setTimeout(function(){
-      var curOffset=parseFloat(el.style.transform.replace('translateX(',''))||0;
-      el.style.setProperty('--ni-offset',curOffset+'px');
-      el.style.transition='none';
-      el.classList.add('flying');
-    },120);
+      slide.style.transition='none';
+      slide.classList.add('fly');
+    },100);
 
-    /* Step 3: 340ms - close lid + shake */
+    /* 3. After 320ms: close lid with shake */
     setTimeout(function(){
-      tb.classList.remove('lid-open');
-      tb.classList.add('tshake');
-    },340);
+      tb.classList.remove('lo');
+      tb.style.transition='none';
+      tb.style.animation='none';
+      void tb.offsetWidth;
+      tb.classList.add('sk');
+    },320);
 
-    /* Step 4: 380ms - collapse row height */
+    /* 4. After 400ms: collapse row */
     setTimeout(function(){
-      var h=el.offsetHeight||64;
-      el.style.setProperty('--nih',h+'px');
-      el.classList.remove('flying');
-      el.classList.add('collapsing');
-    },380);
+      var h=el.offsetHeight;
+      el.style.setProperty('--nh',h+'px');
+      el.classList.add('col');
+    },400);
 
-    /* Step 5: done */
+    /* 5. After 640ms: remove from DOM */
     setTimeout(function(){
       if(el.parentNode)el.parentNode.removeChild(el);
       onDismiss();
-    },620);
+    },640);
   });
 
-  /* Close on tap outside */
-  document.addEventListener('touchstart',function _c(e){
-    if(!open||gone){document.removeEventListener('touchstart',_c);return;}
-    if(!el.contains(e.target))hide();
+  /* Tap outside → close */
+  document.addEventListener('touchstart',function _cl(e){
+    if(!open||gone){document.removeEventListener('touchstart',_cl);return;}
+    if(!el.contains(e.target))doClose();
   },{passive:true});
 }
 var _notifScrollY=0; // saved scroll position inside notifications panel
