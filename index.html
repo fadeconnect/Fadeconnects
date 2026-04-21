@@ -3223,19 +3223,31 @@ function openSearch(){
     sw.style.transform='none';
     sw.style.opacity='1';
     sw.style.borderRadius='0';
-    void sw.offsetWidth; /* force reflow so 'none' settles before class changes */
+    void sw.offsetWidth;
     sw.style.transition='';
   }
   if(typeof window._isReceded!=='undefined') window._isReceded=false;
-  /* 2. Set all screens to correct state — hide others fully (no opacity bleed) */
+  /* 2. Hide all other screens (no bleed), position search off-screen right */
   document.querySelectorAll('#sw .screen').forEach(function(sc){
     sc.classList.remove('active','left');
-    /* Don't add 'left' to sibling screens — keeps them invisible (translateX(100%))
-       so they don't bleed through the search screen background */
   });
-  ss.classList.add('active');
+  /* 3. Slide search in from the right — same motion as every other panel */
+  ss.style.transition='none';
+  ss.style.transform='translateX(100%)';
+  ss.style.opacity='0';
+  void ss.offsetWidth; /* force reflow before animating */
+  ss.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease';
+  ss.style.transform='translateX(0)';
+  ss.style.opacity='1';
+  /* Clean up inline styles once animation ends, then mark active */
+  setTimeout(function(){
+    ss.style.transition='';
+    ss.style.transform='';
+    ss.style.opacity='';
+    ss.classList.add('active');
+    var si=document.getElementById('sinp');if(si)si.focus();
+  },320);
   showSearchHome();
-  setTimeout(function(){var si=document.getElementById('sinp');if(si)si.focus();},320);
 }
 function closeSearch(){
   var ct=typeof curTab!=='undefined'?curTab:'today';
@@ -3864,6 +3876,7 @@ function tapNewPostsBanner(){
   if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});
   renderFeed();
 }
+var _feedHasEverLoaded=false;
 function renderFeed(){
   var f=document.getElementById('feed');
   // Reset pagination state
@@ -3872,16 +3885,19 @@ function renderFeed(){
   _feedLoading=false;
   // Tear down previous sentinel observer
   if(_feedSentinelObs){_feedSentinelObs.disconnect();_feedSentinelObs=null;}
-  // Only show skeleton on cold load (no existing posts in DOM).
-  // On refresh/pull-to-refresh keep existing content visible — no blink.
-  var hasPosts=posts.length>0;
-  if(!hasPosts){
+  // Only show skeleton on a true cold load (DOM is empty AND no cached posts).
+  // If we already have content rendered, keep it visible while the fetch runs —
+  // this eliminates the blink on every tab-switch and pull-to-refresh.
+  var hasDOMContent=f.children.length>0;
+  var hasCachedPosts=posts.length>0;
+  if(!hasDOMContent&&!hasCachedPosts){
     var skHTML='';
     for(var si=0;si<4;si++){
       skHTML+='<div class="skeleton-post" style="opacity:'+(1-si*0.18)+'"><div class="skeleton-post-hd"><div class="skeleton skeleton-avatar" style="width:42px;height:42px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="skeleton skeleton-text" style="width:36%"></div><div class="skeleton skeleton-text" style="width:20%"></div></div></div>'+(si%2===0?'<div class="skeleton skeleton-img" style="width:100%;aspect-ratio:4/5"></div>':'<div class="skeleton skeleton-text" style="width:78%"></div><div class="skeleton skeleton-text" style="width:58%"></div>')+'<div style="display:flex;gap:16px;padding-top:2px"><div class="skeleton skeleton-round" style="width:52px;height:20px"></div><div class="skeleton skeleton-round" style="width:52px;height:20px"></div></div></div>';
     }
     f.innerHTML=skHTML;
   }
+  // Keep posts array intact so existing DOM stays correct; _loadFeedPage will replace it
   posts=[];
   _loadFeedPage(true);
 }
@@ -3949,32 +3965,39 @@ function renderFeedRows(rows,likedIds,isFirst){
   });
 
   if(isFirst){
-    // Full re-render
+    // Build into a DocumentFragment first — swap atomically to kill the blink
     posts=newPosts;
     var ranked=rankFeed(posts);
+    var frag=document.createDocumentFragment();
     if(!ranked.length){
-      f.innerHTML='<div class="empty anim-fade-up" style="padding:48px 28px;text-align:center"><div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="openSearch()" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button></div>';
+      var emptyDiv=document.createElement('div');
+      emptyDiv.className='empty anim-fade-up';
+      emptyDiv.style.cssText='padding:48px 28px;text-align:center';
+      emptyDiv.innerHTML='<div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="openSearch()" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button>';
+      frag.appendChild(emptyDiv);
+      f.innerHTML='';
+      f.appendChild(frag);
       return;
     }
-    f.innerHTML='';
+    var isCold=!_feedHasEverLoaded;
+    _feedHasEverLoaded=true;
     var lastGroup=-1,animIdx=0;
     ranked.forEach(function(p){
       var g=getPostGroup(p);
       if(g!==lastGroup&&g!==0&&GROUP_LABELS[g]){
         var div=document.createElement('div');div.style.cssText='padding:20px 14px 6px';
-        div.classList.add('anim-fade-up');div.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';
+        if(isCold){div.classList.add('anim-fade-up');div.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';}
         div.innerHTML='<span style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px">'+GROUP_LABELS[g]+'</span>';
-        f.appendChild(div);animIdx++;
+        frag.appendChild(div);animIdx++;
       }
       lastGroup=g;
       var el=buildPost(p,false);
-      el.classList.add('anim-fade-up');el.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';
-      animIdx++;f.appendChild(el);
+      if(isCold){el.classList.add('anim-fade-up');el.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';}
+      animIdx++;frag.appendChild(el);
       if(p.liked){
-        var h=document.getElementById('hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
-        var lb=document.getElementById('lb-'+p.id);if(lb)lb.classList.add('liked');
+        var h=el.querySelector('#hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
+        var lb=el.querySelector('#lb-'+p.id);if(lb)lb.classList.add('liked');
       }
-      // Mark suggested posts as seen when they scroll into view
       if(g===4){
         (function(pid,postEl){
           var obs=new IntersectionObserver(function(entries){
@@ -3984,6 +4007,9 @@ function renderFeedRows(rows,likedIds,isFirst){
         })(p.id,el);
       }
     });
+    // Single atomic DOM swap — no blank frame ever shown
+    f.innerHTML='';
+    f.appendChild(frag);
   } else {
     // Append mode — remove old sentinel first
     var oldSentinel=document.getElementById('feed-sentinel');if(oldSentinel)oldSentinel.remove();
@@ -6130,7 +6156,7 @@ function closeCW(){
   if(chatUser){unreadConvos.delete(chatUser.id);}
   updateTalkDot();
   cw.style.transform='translateX(100%)';
-  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.visibility='hidden';cw.style.pointerEvents='none';chatUser=null;renderTalkList();},320);
+  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.zIndex='';cw.style.visibility='hidden';cw.style.pointerEvents='none';chatUser=null;renderTalkList();},320);
 }
 function renderMentions(text){
   return E(text).replace(/@(\w+)/g,function(match,handle){
@@ -6150,12 +6176,19 @@ function openProfFromCS(u){
   var full=USERS.find(function(x){return x.id===u.id||x.username===u.username||x.display_name===u.display_name;})||u;
   var csBg=document.getElementById('cs-bg');
   var csSheet=document.getElementById('cs-sheet');
+  // Slide CS sheet out — but keep cs-bg history entry alive.
+  // We replace it with a prof-screen entry so the stack stays 1:1 with visible screens.
   csBg.classList.remove('on');
   csSheet.style.transform='translateY(100%)';
   setTimeout(function(){
     csBg.style.display='none';
     _csProfReturn=true;
-    openProf(full);
+    // openProf is wrapped — it will push its own history entry.
+    // But we must first consume the cs-bg history entry so there's no phantom.
+    // Replace current history state with prof-screen so swipe back lands correctly.
+    history.replaceState({ _fade: 'prof-screen' }, '');
+    var origOpenProf = window._origOpenProf || window.openProf;
+    origOpenProf(full);
   },200);
 }
 
@@ -6890,6 +6923,9 @@ function closeProf(){
           csSheet.style.transition='';
           csSheet.style.transform='translateY(0)';
           csBg.classList.add('on');
+          // The cs-bg history entry is already in the stack (from when openCS was called).
+          // openProfFromCS did replaceState(prof-screen) so the entry below is cs-bg.
+          // No extra push needed — swipe back from here will pop cs-bg correctly.
         });});
       }
       return;
@@ -11414,13 +11450,19 @@ function _buildEpCats(){
     { openFn: 'openCircleCW',   closeFn: 'closeCircleCW',    panelId: 'circle-cw'        },
     { openFn: 'openSchedForm',  closeFn: 'closeSchedForm',   panelId: 'sched-form-panel' },
     { openFn: 'openCircleInfo', closeFn: 'closeCircleInfo',  panelId: 'circle-info'      },
-    { openFn: 'openSearch',     closeFn: 'closeSearch',      panelId: 's-search'         },
+    { openFn: 'openSearch',      closeFn: 'closeSearch',      panelId: 's-search'         },
+    { openFn: 'openScrollView',  closeFn: 'closeScrollView',  panelId: 'scroll-view'      },
+    { openFn: 'openCS',          closeFn: 'closeCS',          panelId: 'cs-bg'            },
+    { openFn: 'openNotifPost',   closeFn: 'closeScrollView',  panelId: 'scroll-view'      },
   ];
 
   // Push a base state so the very first popstate has somewhere to land
   if (!history.state || !history.state._fade) {
     history.replaceState({ _fade: 'base' }, '');
   }
+
+  // Save originals before wrapping (used by openProfFromCS to avoid double-push)
+  window._origOpenProf = window.openProf;
 
   // Wrap each open function to push a history entry
   _HISTORY_PANELS.forEach(function(cfg) {
@@ -11436,8 +11478,12 @@ function _buildEpCats(){
   // _anyPanelOpen() returns false and _advanceBackground() always
   // restores #sw — regardless of whether called from back button or popstate.
   // NOTE: notif-panel is excluded — closeNotif manages its own .on removal.
+  var _wrappedCloseFns = {};
   _HISTORY_PANELS.forEach(function(cfg) {
     if (cfg.panelId === 'notif-panel') return; // notif manages itself
+    var key = cfg.closeFn + '::' + cfg.panelId;
+    if (_wrappedCloseFns[key]) return; // already wrapped this exact pair
+    _wrappedCloseFns[key] = true;
     var origClose = window[cfg.closeFn];
     if (!origClose) return;
     window[cfg.closeFn] = function() {
@@ -11484,29 +11530,35 @@ function _buildEpCats(){
 
     var closed = false;
 
-    // Search screen uses .active (not .on) — check it first
-    var searchEl = document.getElementById('s-search');
-    if (searchEl && searchEl.classList.contains('active')) {
-      if (typeof window.closeSearch === 'function') window.closeSearch();
-      closed = true;
-    }
-
-    if (!closed) {
-    var priority = ['prof-screen', 'sched-form-panel', 'circle-info', 'cw', 'circle-cw', 'so'];
-    for (var i = 0; i < priority.length; i++) {
-      var el = document.getElementById(priority[i]);
+    // Close the topmost visible layer first (highest z-index wins).
+    // cs-bg:700, scroll-view:660, prof-screen:650, notif/cw:200-220
+    var _toClose = [
+      ['cs-bg',            'closeCS'         ],
+      ['prof-screen',      'closeProf'       ],
+      ['scroll-view',      'closeScrollView' ],
+      ['sched-form-panel', 'closeSchedForm'  ],
+      ['circle-info',      'closeCircleInfo' ],
+      ['cw',               'closeCW'         ],
+      ['circle-cw',        'closeCircleCW'   ],
+      ['so',               'closeSettings'   ],
+    ];
+    for (var i = 0; i < _toClose.length; i++) {
+      var el = document.getElementById(_toClose[i][0]);
       if (el && el.classList.contains('on')) {
-        for (var j = 0; j < _HISTORY_PANELS.length; j++) {
-          if (_HISTORY_PANELS[j].panelId === priority[i]) {
-            var closeFn = window[_HISTORY_PANELS[j].closeFn];
-            if (typeof closeFn === 'function') closeFn();
-            closed = true;
-            break;
-          }
-        }
-        if (closed) break;
+        var fn = window[_toClose[i][1]];
+        if (typeof fn === 'function') fn();
+        closed = true;
+        break;
       }
     }
+
+    // Search screen uses .active (not .on)
+    if (!closed) {
+      var searchEl = document.getElementById('s-search');
+      if (searchEl && searchEl.classList.contains('active')) {
+        if (typeof window.closeSearch === 'function') window.closeSearch();
+        closed = true;
+      }
     }
 
     // If no panel was open, push base state back so next swipe doesn't exit
