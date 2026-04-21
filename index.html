@@ -11030,21 +11030,26 @@ function _buildEpCats(){
        wrappers (which the fn call triggers) already do that, so we
        pass committed=false to _release to just clean up the shadow,
        then let the close wrapper own the background advance. */
-    _release(cur, false);
     if(committed){
+      /* Panel is leaving — advance background immediately so #sw
+         starts restoring in sync with the panel sliding out. */
+      _release(cur, true);
       cur.style.transition='transform .3s cubic-bezier(.4,0,.2,1)';
       cur.style.transform='translateX(100%)';
+      /* Strip .on right away so _anyPanelOpen() returns false now,
+         not after 350ms. The close fn still runs for state cleanup. */
+      cur.classList.remove('on');
+      if(typeof _advanceBackground==='function') _advanceBackground();
       setTimeout(function(){
         cur.style.transition='none';
-        /* The close function will call _advanceBackground via its wrapper */
         if(typeof window[back]==='function') window[back]();
         setTimeout(function(){cur.style.transition='';},400);
       },300);
     }else{
-      /* Snap back — restore panel and background */
+      /* Snap back — cancelled gesture, restore recession */
+      _release(cur, false);
       cur.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       cur.style.transform='';
-      /* Restore parallax recession since we cancelled the gesture */
       if(typeof _onSwipeRelease==='function') _onSwipeRelease(cur, false);
     }
   }
@@ -11442,17 +11447,26 @@ function _buildEpCats(){
   _addParallax('openSchedForm',  'closeSchedForm');
   _addParallax('openCircleInfo', 'closeCircleInfo');
 
-  /* ── goTab: always force #sw back when switching tabs.
-     Tabs are background content — if any panel is still marked .on
-     that is a bug state. Force-reset so users are never stuck. ── */
+  /* ── goTab: force #sw back the instant a tab is tapped.
+     Any open panel when tapping a tab is a stuck/leftover state.
+     Strip .on from all overlay panels immediately so _anyPanelOpen()
+     returns false, then advance #sw synchronously. No 350ms wait. ── */
   var _origGoTab = window.goTab;
   window.goTab = function() {
-    _origGoTab && _origGoTab.apply(this, arguments);
-    /* Synchronous check: after tab switch, if #sw is receded but
-       no panel is actually open, restore it immediately. */
-    if (_isReceded && !_anyPanelOpen()) {
+    /* Close any stuck-open panels instantly before switching tab */
+    if (_isReceded) {
+      OVERLAY_IDS.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && el.classList.contains('on')) {
+          el.classList.remove('on');
+          /* Let visibility patch know it's closed */
+          el.style.visibility = 'hidden';
+          el.style.pointerEvents = 'none';
+        }
+      });
       _forceAdvanceBackground();
     }
+    _origGoTab && _origGoTab.apply(this, arguments);
   };
 
   /* ── Periodic safety sweep: every 2 seconds check if #sw is stuck.
