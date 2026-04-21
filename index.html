@@ -11226,7 +11226,13 @@ function _buildEpCats(){
 
     // Settings sub-page — go back one level inside settings
     if (state && state._fade === 'so-sub') {
-      if (typeof window.soBack === 'function') window.soBack();
+      if (typeof window.soBack === 'function') {
+        // If soStack is empty this will call closeSettings — strip .on first
+        var soEl = document.getElementById('so');
+        var soStackLen = window.soStack ? window.soStack.length : 0;
+        if (soStackLen === 0 && soEl) soEl.classList.remove('on');
+        window.soBack();
+      }
       return;
     }
 
@@ -11237,6 +11243,9 @@ function _buildEpCats(){
     for (var i = 0; i < priority.length; i++) {
       var el = document.getElementById(priority[i]);
       if (el && el.classList.contains('on')) {
+        // Strip .on BEFORE calling close so _anyPanelOpen() returns false
+        // and _advanceBackground() actually restores #sw
+        el.classList.remove('on');
         // Find close function for this panel
         for (var j = 0; j < _HISTORY_PANELS.length; j++) {
           if (_HISTORY_PANELS[j].panelId === priority[i]) {
