@@ -5574,11 +5574,12 @@ function appendBubble(m){
       var move=dx*dir;
       if(move>0){
         swiping=true;
+        e.preventDefault();
         var limited=Math.min(move,threshold+10);
         wrapEl.style.transform='translateX('+(limited*dir)+'px)';
         wrapEl.style.transition='none';
       }
-    },{passive:true});
+    },{passive:false});
     wrapEl.addEventListener('touchend',function(){
       var dx=parseFloat(wrapEl.style.transform.replace('translateX(',''))||0;
       wrapEl.style.transition='transform .2s ease';
