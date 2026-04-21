@@ -11262,39 +11262,63 @@ function _buildEpCats(){
      - If the user is mid-swipe (Phase 5), we don't fight it.
   ──────────────────────────────────────────────────────────────────*/
 
-  var _paralaxDepth = 0; // how many panels are currently open
-
-  var RECEDE_TRANSLATE = '26%';  // how far back the bg slides
-  var RECEDE_SCALE     = '0.94'; // slight scale-down for depth illusion
+  /* Counter removed — use DOM truth instead to prevent stuck states */
+  var RECEDE_TRANSLATE = '26%';
+  var RECEDE_SCALE     = '0.94';
   var RECEDE_DURATION  = '340ms';
   var RECEDE_EASE_IN   = 'cubic-bezier(.32,0,.67,0)';
   var RECEDE_EASE_OUT  = 'cubic-bezier(.33,1,.68,1)';
 
-  function _getSW() {
-    return document.getElementById('sw');
+  var OVERLAY_IDS = ['cw','notif-panel','prof-screen','circle-cw',
+                     'sched-form-panel','circle-info','so'];
+
+  function _getSW() { return document.getElementById('sw'); }
+
+  /* Single source of truth: is any overlay panel actually open right now? */
+  function _anyPanelOpen() {
+    return OVERLAY_IDS.some(function(id) {
+      var el = document.getElementById(id);
+      return el && el.classList.contains('on');
+    });
   }
+
+  var _isReceded = false; // track actual visual state, not a counter
 
   function _recedeBackground() {
     var sw = _getSW();
     if (!sw) return;
-    _paralaxDepth++;
-    if (_paralaxDepth > 1) return; // already receded — don't stack
+    if (_isReceded) return; // already receded — don't re-apply
+    _isReceded = true;
     sw.style.transition =
       'transform ' + RECEDE_DURATION + ' ' + RECEDE_EASE_IN + ', ' +
       'opacity '   + RECEDE_DURATION + ' ' + RECEDE_EASE_IN;
-    // Small rAF to let the panel's .on class land first, then recede
     requestAnimationFrame(function() {
-      sw.style.transform = 'translateX(-' + RECEDE_TRANSLATE + ') scale(' + RECEDE_SCALE + ')';
-      sw.style.opacity   = '0.88';
+      sw.style.transform    = 'translateX(-' + RECEDE_TRANSLATE + ') scale(' + RECEDE_SCALE + ')';
+      sw.style.opacity      = '0.88';
       sw.style.borderRadius = '14px';
     });
   }
 
   function _advanceBackground() {
-    _paralaxDepth = Math.max(0, _paralaxDepth - 1);
-    if (_paralaxDepth > 0) return; // another panel still open
+    /* Only restore if NO panel is actually open right now */
+    if (_anyPanelOpen()) return;
     var sw = _getSW();
     if (!sw) return;
+    _isReceded = false;
+    sw.style.transition =
+      'transform ' + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT + ', ' +
+      'opacity '   + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT;
+    sw.style.transform    = '';
+    sw.style.opacity      = '';
+    sw.style.borderRadius = '';
+  }
+
+  /* Hard reset — always restores #sw regardless of panel state.
+     Called by goTab and any recovery path. */
+  function _forceAdvanceBackground() {
+    var sw = _getSW();
+    if (!sw) return;
+    _isReceded = false;
     sw.style.transition =
       'transform ' + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT + ', ' +
       'opacity '   + RECEDE_DURATION + ' ' + RECEDE_EASE_OUT;
@@ -11354,7 +11378,7 @@ function _buildEpCats(){
     el.style.setProperty('--swipe-shadow', shadow.toFixed(3));
 
     /* Partially advance the background proportionally */
-    if (sw && _paralaxDepth > 0) {
+    if (sw && _isReceded) {
       var retreatPct  = 1 - pct;
       var tx  = parseFloat(RECEDE_TRANSLATE) * retreatPct;
       var sc  = 1 - (1 - parseFloat(RECEDE_SCALE)) * retreatPct;
@@ -11372,9 +11396,9 @@ function _buildEpCats(){
        via _addParallax — calling it here too would double-decrement
        _paralaxDepth and leave the background stuck. */
     if (!committed) {
-      // Snap back — restore full recession
+      // Snap back — restore full recession if panel is still open
       var sw = _getSW();
-      if (sw && _paralaxDepth > 0) {
+      if (sw && _isReceded) {
         sw.style.transition =
           'transform 320ms cubic-bezier(.25,.46,.45,.94), ' +
           'opacity 320ms cubic-bezier(.25,.46,.45,.94)';
@@ -11418,51 +11442,26 @@ function _buildEpCats(){
   _addParallax('openSchedForm',  'closeSchedForm');
   _addParallax('openCircleInfo', 'closeCircleInfo');
 
-  /* ── Swipe-back on settings calls soBack, not closeSettings.
-     When soBack reaches the root (soStack empty), it calls closeSettings
-     which IS wrapped above — so that path is fine.
-     But if the swipe threshold is met mid-sub-page, soBack pops the
-     stack without calling closeSettings, so _advanceBackground never
-     runs and #sw stays receded forever.
-     Fix: wrap soBack to force _advanceBackground when the panel is
-     actually closing (i.e. soStack would become empty). ── */
-  var _origSoBack = window.soBack;
-  window.soBack = function() {
-    var isClosing = (typeof soStack !== 'undefined' && soStack.length === 0);
-    _origSoBack && _origSoBack.apply(this, arguments);
-    /* If soBack just called closeSettings internally (isClosing=true),
-       closeSettings is already wrapped and will call _advanceBackground.
-       We don't double-call. Only call advance if a sub-page was popped
-       but the panel is NOW at root and will stay open — in that case
-       we do NOT advance. So no extra call needed here beyond the
-       closeSettings wrapper. */
-    /* Safety net: if #so is no longer .on after soBack, force advance */
-    setTimeout(function() {
-      var so = document.getElementById('so');
-      if (so && !so.classList.contains('on') && _paralaxDepth > 0) {
-        _paralaxDepth = 0;
-        _advanceBackground();
-      }
-    }, 400);
-  };
-
-  /* ── Hard safety reset on goTab: if no overlay panels are open
-     but #sw is still receded, snap it back immediately. ── */
+  /* ── goTab: always force #sw back when switching tabs.
+     Tabs are background content — if any panel is still marked .on
+     that is a bug state. Force-reset so users are never stuck. ── */
   var _origGoTab = window.goTab;
   window.goTab = function() {
     _origGoTab && _origGoTab.apply(this, arguments);
-    setTimeout(function() {
-      var anyOpen = ['cw','notif-panel','prof-screen','circle-cw',
-                     'sched-form-panel','circle-info','so'].some(function(id) {
-        var el = document.getElementById(id);
-        return el && el.classList.contains('on');
-      });
-      if (!anyOpen && _paralaxDepth > 0) {
-        _paralaxDepth = 0;
-        _advanceBackground();
-      }
-    }, 50);
+    /* Synchronous check: after tab switch, if #sw is receded but
+       no panel is actually open, restore it immediately. */
+    if (_isReceded && !_anyPanelOpen()) {
+      _forceAdvanceBackground();
+    }
   };
+
+  /* ── Periodic safety sweep: every 2 seconds check if #sw is stuck.
+     This is the last-resort catch for any edge case not covered above. ── */
+  setInterval(function() {
+    if (_isReceded && !_anyPanelOpen()) {
+      _forceAdvanceBackground();
+    }
+  }, 2000);
 
   /* ── PHASE 4: Instant touchstart press feedback ──────────────────
      CSS :active fires ~80ms after touchstart on mobile due to the
