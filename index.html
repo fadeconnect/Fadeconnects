@@ -348,11 +348,22 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* NOTIF */
 #notif-panel{display:flex;position:fixed;inset:0;background:var(--card);z-index:220;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #notif-panel.on{display:flex;transform:translateX(0);visibility:visible;pointer-events:auto}
-.ni{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer}
+.ni-wrap{position:relative;overflow:hidden;background:var(--card)}
+.ni-trash-bg{position:absolute;top:0;right:0;bottom:0;width:80px;background:#E8352A;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.ni-trash-bg.visible{opacity:1}
+.ni-trash-btn{width:80px;height:100%;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;color:#fff;flex-direction:column;gap:4px}
+.ni-trash-btn svg{transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.ni-trash-btn:active svg{transform:scale(1.2)}
+.ni{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;background:var(--card);position:relative;will-change:transform}
 .ni-av{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
 .ni-txt{flex:1;font-size:13.5px;line-height:1.5}
 .ni-time{font-size:11.5px;color:var(--sub);flex-shrink:0}
 .ni-dot{width:8px;height:8px;border-radius:50%;background:#E8352A;flex-shrink:0}
+@keyframes niSuckIn{0%{transform:translateX(var(--ni-dx,0px)) scale(1);opacity:1}40%{transform:translateX(calc(var(--ni-dx,0px) + 20px)) scale(.92);opacity:.7}100%{transform:translateX(80px) scale(.4);opacity:0}}
+@keyframes niCollapse{0%{max-height:var(--ni-h,80px);opacity:1;padding-top:0;padding-bottom:0}100%{max-height:0;opacity:0;padding-top:0;padding-bottom:0}}
+@keyframes niTrashShake{0%,100%{transform:rotate(0deg)}20%{transform:rotate(-12deg) scale(1.1)}40%{transform:rotate(10deg) scale(1.15)}60%{transform:rotate(-8deg) scale(1.1)}80%{transform:rotate(6deg) scale(1.05)}}
+.ni.ni-suckin{animation:niSuckIn .32s cubic-bezier(.4,0,1,1) both;pointer-events:none}
+.ni-wrap.ni-collapsing{animation:niCollapse .28s ease .28s both;overflow:hidden}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:60px 22px}
 .empt{font-weight:600;font-size:14.5px}
 .emps{font-size:13.5px;text-align:center;line-height:1.7;color:var(--sub)}
@@ -3540,18 +3551,100 @@ function renderNotifs(){
       }
     };
 
-    l.appendChild(el);
+    // Wrap in swipe container
+    var wrap=document.createElement('div');wrap.className='ni-wrap';
+    // Trash reveal layer (behind, revealed on left swipe)
+    var trashBg=document.createElement('div');trashBg.className='ni-trash-bg';
+    trashBg.innerHTML='<button class="ni-trash-btn" aria-label="Delete notification">'
+      +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      +'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
+      +'<path d="M10 11v6"/><path d="M14 11v6"/>'
+      +'<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
+      +'</svg></button>';
+    wrap.appendChild(trashBg);
+    wrap.appendChild(el);
+    l.appendChild(wrap);
 
-    // swipe right to dismiss
-    attachSwipeDismiss(el,(function(notifId){
-      return function(){
-        notifs=notifs.filter(function(x){return x.id!==notifId;});
-        checkUnreadDot();
-        if(!notifs.length){
-          l.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">🔔</div><div class="empt">All caught up</div><div class="emps">New likes, comments, and follows will show up here.</div></div>';
+    // Left-swipe to reveal trash, tap trash to delete with animation
+    (function(wrapEl,niEl,trashEl,notifId){
+      var sx=0,sy=0,dx=0,swiping=false,revealed=false,REVEAL=72;
+      function doDelete(){
+        // shake the trash icon then suck the notif into it
+        var trashIcon=trashEl.querySelector('svg');
+        if(trashIcon)trashIcon.style.animation='niTrashShake .35s ease both';
+        var h=niEl.offsetHeight;
+        niEl.style.setProperty('--ni-dx',dx+'px');
+        niEl.style.setProperty('--ni-h',h+'px');
+        niEl.classList.add('ni-suckin');
+        setTimeout(function(){
+          wrapEl.style.transition='max-height .28s ease,opacity .18s ease .18s';
+          wrapEl.style.maxHeight=h+'px';
+          wrapEl.style.overflow='hidden';
+          requestAnimationFrame(function(){
+            wrapEl.style.maxHeight='0';
+            wrapEl.style.opacity='0';
+          });
+          setTimeout(function(){
+            notifs=notifs.filter(function(x){return x.id!==notifId;});
+            wrapEl.remove();
+            checkUnreadDot();
+            var ll=document.getElementById('notif-list');
+            if(ll&&!ll.querySelector('.ni-wrap')){
+              ll.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">🔔</div><div class="empt">All caught up</div><div class="emps">New likes, comments, and follows will show up here.</div></div>';
+            }
+          },480);
+        },280);
+      }
+      trashEl.querySelector('.ni-trash-btn').addEventListener('click',function(e){
+        e.stopPropagation();
+        doDelete();
+      });
+      niEl.addEventListener('touchstart',function(e){
+        sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;
+      },{passive:true});
+      niEl.addEventListener('touchmove',function(e){
+        var cx=e.touches[0].clientX,cy=e.touches[0].clientY;
+        var ddx=cx-sx,ddy=Math.abs(cy-sy);
+        if(!swiping){if(Math.abs(ddx)>8&&ddy<20)swiping=true;else return;}
+        dx=ddx;
+        // Only allow left swipe (negative dx); clamp between -REVEAL and 0
+        if(dx>0)dx=Math.min(dx,0);
+        var clamped=Math.max(dx,-REVEAL);
+        niEl.style.transition='none';
+        niEl.style.transform='translateX('+clamped+'px)';
+        var prog=Math.min(1,-clamped/REVEAL);
+        trashEl.style.opacity=String(prog);
+        trashEl.classList.toggle('visible',prog>0.1);
+      },{passive:true});
+      niEl.addEventListener('touchend',function(){
+        if(!swiping){return;}
+        swiping=false;
+        if(-dx>=REVEAL*0.6){
+          // snap to reveal
+          revealed=true;
+          niEl.style.transition='transform .22s cubic-bezier(.25,.46,.45,.94)';
+          niEl.style.transform='translateX(-'+REVEAL+'px)';
+          trashEl.style.opacity='1';trashEl.classList.add('visible');
+        } else {
+          // snap back
+          revealed=false;
+          niEl.style.transition='transform .22s cubic-bezier(.25,.46,.45,.94)';
+          niEl.style.transform='translateX(0)';
+          trashEl.style.opacity='0';trashEl.classList.remove('visible');
         }
-      };
-    })(n.id));
+        setTimeout(function(){niEl.style.transition='';},240);
+      },{passive:true});
+      // Tap anywhere else to snap back if revealed
+      niEl.addEventListener('click',function(e){
+        if(revealed){e.stopPropagation();e.preventDefault();
+          revealed=false;
+          niEl.style.transition='transform .22s cubic-bezier(.25,.46,.45,.94)';
+          niEl.style.transform='translateX(0)';
+          trashEl.style.opacity='0';trashEl.classList.remove('visible');
+          setTimeout(function(){niEl.style.transition='';},240);
+          return;}
+      });
+    })(wrap,el,trashBg,n.id);
   });
   setTimeout(function(){l.scrollTop=_notifScrollY;},0);
   checkUnreadDot();
@@ -10164,74 +10257,125 @@ function setupOfflineBar(){
   update();
 }
 
-// ── SWIPE-BACK (disabled — native OS swipe handled via history API) ──────────
+// ── SWIPE-BACK — both-edge in-app gesture + History API popstate ─────────────
+// Panels slide in from the right (translateX 100%→0). Swiping RIGHT from
+// anywhere dismisses them (goes back). This complements the OS-level native
+// swipe which only fires from the LEFT physical edge on iOS; our JS layer
+// handles the RIGHT edge and any mid-screen rightward drag as well, so the
+// gesture feels native on both sides.
 function setupSwipeBack(){
-  // In-app swipe gestures removed. Native phone swipe-back works via
-  // history.pushState (added in parallax IIFE) + popstate listener.
-  return;
-  var panels=[
-    {id:'cw',     close:closeCW},
-    {id:'prof-screen', close:closeProf},
-    {id:'notif-panel', close:closeNotif},
-    {id:'so',     close:closeSettings}
+  var PANELS=[
+    {id:'cw',              closeFn:function(){closeCW();}},
+    {id:'prof-screen',     closeFn:function(){closeProf();}},
+    {id:'notif-panel',     closeFn:function(){closeNotif();}},
+    {id:'so',              closeFn:function(){closeSettings();}},
+    {id:'circle-cw',       closeFn:function(){closeCircleCW();}},
+    {id:'sched-form-panel',closeFn:function(){closeSchedForm();}},
+    {id:'circle-info',     closeFn:function(){closeCircleInfo();}}
   ];
-  panels.forEach(function(cfg){
+
+  var THRESHOLD   = 80;   // px — commit dismiss after this
+  var EDGE_W      = 28;   // px — left-edge zone always starts drag
+  var MIN_HORIZ   = 10;   // px — minimum horizontal movement to start tracking
+  var MAX_RATIO   = 2.5;  // horiz must be > 1/MAX_RATIO of vertical to qualify
+
+  PANELS.forEach(function(cfg){
     var el=document.getElementById(cfg.id);
     if(!el)return;
-    var sx=0,sy=0,dragging=false,threshold=72,maxDrag=120;
+
+    var sx=0,sy=0,dragging=false,committed=false;
+
     el.addEventListener('touchstart',function(e){
-      // Only start swipe when touch begins on left 28px (edge) OR is a clear rightward swipe
       sx=e.touches[0].clientX;
       sy=e.touches[0].clientY;
       dragging=false;
+      committed=false;
+      // Remove any leftover inline transition immediately on touch
+      el.style.transition='none';
     },{passive:true});
+
     el.addEventListener('touchmove',function(e){
-      var dx=e.touches[0].clientX-sx;
-      var dy=e.touches[0].clientY-sy;
-      // Must be moving more right than up/down, and started from left edge or pure swipe
+      if(committed)return;
+      var cx=e.touches[0].clientX;
+      var cy=e.touches[0].clientY;
+      var ddx=cx-sx;
+      var ddy=cy-sy;
+
       if(!dragging){
-        if(dx>12&&Math.abs(dy)<Math.abs(dx)){
-          // Allow swipe from anywhere, not just left edge, for naturalness
+        // Decide whether this touch is a rightward swipe:
+        // - started in left EDGE_W zone → always qualify
+        // - OR moved right more than MIN_HORIZ and more horizontally than vertically
+        var fromEdge=sx<=EDGE_W;
+        var clearSwipe=ddx>MIN_HORIZ&&Math.abs(ddx)>Math.abs(ddy)/MAX_RATIO;
+        if(fromEdge||clearSwipe){
           dragging=true;
         } else {
+          // If it's clearly vertical or leftward, bail out entirely for this touch
+          if(Math.abs(ddy)>20||ddx<-8){dragging=false;return;}
           return;
         }
       }
-      if(dx<0)return;
-      var clamped=Math.min(dx,maxDrag);
-      el.style.transition='none';
-      el.style.transform='translateX('+clamped+'px)';
-      // Prevent scroll while dragging
+
+      // Only track rightward movement
+      var dx=Math.max(0,cx-sx);
+      el.style.transform='translateX('+dx+'px)';
+
+      // Partial background de-recession proportional to drag progress
+      if(window._getSW){
+        var sw=window._getSW();
+        if(sw&&window._isReceded){
+          var prog=Math.min(1,dx/300);
+          var rT=26*(1-prog);
+          var rS=0.94+0.06*prog;
+          sw.style.transform='translateX(-'+rT+'%) scale('+rS+')';
+          sw.style.opacity=String(0.88+0.12*prog);
+        }
+      }
+
       e.preventDefault();
     },{passive:false});
+
     el.addEventListener('touchend',function(e){
       if(!dragging)return;
       dragging=false;
       var dx=e.changedTouches[0].clientX-sx;
-      el.style.transition='';
-      if(dx>threshold){
-        // Commit the dismiss — animate to full width then close
+      el.style.transition='transform .28s cubic-bezier(.25,.46,.45,.94)';
+
+      if(dx>THRESHOLD){
+        committed=true;
         el.style.transform='translateX(100%)';
-        setTimeout(function(){
-          el.classList.remove('on');
-          el.style.display='none';
-          el.style.transform='';
-          // Run any teardown logic from the existing close function
-          // but skip the re-animation since we already slid out
-          if(cfg.id==='cw'){
-            if(window._chatChannel){_sb.removeChannel(window._chatChannel);window._chatChannel=null;}
-            hideTypingBubble();
-            if(chatUser){unreadConvos.delete(chatUser.id);}
-            updateTalkDot();
-            chatUser=null;
-            renderTalkList();
-          }
-        },320);
         haptic('light');
+        // Flag this element so the popstate handler knows not to double-close
+        el.dataset.swipeClosing='1';
+        // Pop the history entry so popstate doesn't double-fire
+        history.back();
+        setTimeout(function(){
+          el.style.transition='';
+          el.style.transform='';
+          cfg.closeFn();
+        },290);
       } else {
         // Snap back
         el.style.transform='translateX(0)';
+        // Restore background recession
+        if(window._getSW){
+          var sw=window._getSW();
+          if(sw&&window._isReceded){
+            sw.style.transition='transform 340ms cubic-bezier(.33,1,.68,1),opacity 340ms cubic-bezier(.33,1,.68,1)';
+            sw.style.transform='translateX(-26%) scale(0.94)';
+            sw.style.opacity='0.88';
+          }
+        }
+        setTimeout(function(){el.style.transition='';},300);
       }
+    },{passive:true});
+
+    el.addEventListener('touchcancel',function(){
+      if(!dragging)return;
+      dragging=false;
+      el.style.transition='transform .22s cubic-bezier(.25,.46,.45,.94)';
+      el.style.transform='translateX(0)';
+      setTimeout(function(){el.style.transition='';},240);
     },{passive:true});
   });
 }
@@ -11242,7 +11386,10 @@ function _buildEpCats(){
     };
   }
 
-  // popstate: fired by native OS swipe-back or Android back button
+  // popstate: fired by native OS swipe-back, Android back button,
+  // OR by our own in-app swipe (which calls history.back() then closeFn after 290ms).
+  // Guard: if a panel element has data-swipe-closing="1" it means the in-app
+  // swipe already committed — skip calling close again to prevent double animation.
   window.addEventListener('popstate', function(e) {
     var state = e.state;
 
@@ -11267,6 +11414,12 @@ function _buildEpCats(){
     for (var i = 0; i < priority.length; i++) {
       var el = document.getElementById(priority[i]);
       if (el && el.classList.contains('on')) {
+        // Skip if in-app swipe already committed a dismiss on this panel
+        if (el.dataset.swipeClosing === '1') {
+          el.dataset.swipeClosing = '0';
+          closed = true;
+          break;
+        }
         for (var j = 0; j < _HISTORY_PANELS.length; j++) {
           if (_HISTORY_PANELS[j].panelId === priority[i]) {
             var closeFn = window[_HISTORY_PANELS[j].closeFn];
