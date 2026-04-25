@@ -38,7 +38,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',s
 .auth-inner{width:100%;min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:52px 28px max(52px,env(safe-area-inset-bottom))}
 .auth-logo{font-family:'Playfair Display',serif;font-size:68px;font-style:italic;text-align:center;line-height:1;margin-bottom:6px;animation:fadeDown 600ms cubic-bezier(.25,.46,.45,.94) both}
 .auth-tag{text-align:center;font-size:14px;color:var(--sub);margin-bottom:44px;animation:fadeIn 700ms ease 200ms both}
-.auth-form{display:flex;flex-direction:column;gap:14px;animation:fadeIn 180ms ease both}
+.auth-form{display:flex;flex-direction:column;gap:14px;animation:fadeUp 500ms cubic-bezier(.25,.46,.45,.94) 150ms both}
 .field{display:flex;flex-direction:column;gap:7px}
 .lbl{font-size:11px;color:var(--sub);font-weight:600;letter-spacing:.6px;text-transform:uppercase}
 .inp{background:var(--inp-bg);border:1.5px solid var(--inp-border);border-radius:14px;padding:14px 16px;font-size:15px;font-family:'Inter',sans-serif;color:var(--inp-text);width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none}
@@ -101,11 +101,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .prof-av-ring-active{background:var(--text)}
 .prof-av-ring-seen{background:var(--border)}
 .prof-av-ring-none{background:none}
-/* story ring on talk list / chat avatars */
-.talk-story-ring{border-radius:50%;padding:2.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:opacity .15s}
-.talk-story-ring.has-story{background:var(--text)}
-.talk-story-ring.story-seen{background:var(--border)}
-.talk-story-ring.no-story{background:none;padding:0}
 .sring-seen{background:var(--border)}
 .sring-none{background:none;border:1.5px dashed var(--border);padding:0;display:flex;align-items:center;justify-content:center}
 .sinner{width:100%;height:100%;border-radius:50%;background:var(--card);padding:2px;overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -139,8 +134,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .posthd{display:flex;align-items:center;gap:13px;padding:14px 16px 10px}
-.post{background:var(--card);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.post img{-webkit-touch-callout:none;pointer-events:none}
+.post{background:var(--card)}
 .av{width:42px;height:42px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;font-size:16px}
 .postmeta{flex:1;cursor:pointer}
 .postname{font-weight:700;font-size:14.5px;letter-spacing:-.1px}
@@ -318,28 +312,10 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .shacts{display:flex;gap:8px;align-items:center}
 .ilbl{background:var(--inp-bg);border:1.5px solid var(--inp-border);border-radius:10px;padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:13.5px;font-family:'Inter',sans-serif;font-weight:500}
 .dropbtn{background:var(--text);color:var(--card);border:none;border-radius:11px;padding:10px 22px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;margin-left:auto}
-.photo-tray{display:none;gap:8px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;padding:10px 4px 10px}
-.photo-tray::-webkit-scrollbar{display:none}
-.photo-chip{position:relative;flex-shrink:0;width:72px;height:72px}
-.photo-chip img{width:72px;height:72px;object-fit:cover;border-radius:10px;display:block;cursor:pointer}
-.photo-chip-rm{position:absolute;top:-7px;right:-7px;background:#1A1A1A;color:#fff;border:2px solid var(--card);border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.18)}
-#photo-preview-ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.93);align-items:center;justify-content:center;flex-direction:column}
-#photo-preview-ov.on{display:flex}
-#photo-preview-ov img{max-width:100%;max-height:92%;object-fit:contain;-webkit-touch-callout:none;pointer-events:none;border-radius:4px}
-#photo-preview-close{position:absolute;top:max(18px,env(safe-area-inset-top,18px));right:18px;background:rgba(20,20,20,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,.18);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 2px 12px rgba(0,0,0,.4)}
-.photo-add-btn{width:72px;height:72px;border-radius:10px;border:1.5px dashed var(--border);background:var(--inp-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--sub);transition:opacity .15s}
-.photo-add-btn:active{opacity:.5}
-/* Post carousel */
-.post-carousel{position:relative;width:100%;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none}
-.post-carousel-track{display:flex;transition:transform .28s cubic-bezier(.25,.46,.45,.94);will-change:transform}
-.post-carousel-track.no-anim{transition:none}
-.post-carousel-slide{flex:0 0 100%;width:100%}
-.post-carousel-slide img{width:100%;aspect-ratio:4/5;display:block;object-fit:cover;-webkit-touch-callout:none;pointer-events:none}
-.carousel-counter{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.52);color:#fff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;pointer-events:none;z-index:2;transition:opacity .4s ease;letter-spacing:.2px}
-.carousel-counter.fade-out{opacity:0}
-.carousel-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:5px;pointer-events:none;z-index:2}
-.carousel-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);transition:all .22s ease;flex-shrink:0}
-.carousel-dot.active{background:#fff;width:7px;height:7px}
+.pvwrap{display:none;position:relative;width:fit-content}
+.pvwrap.on{display:block}
+.pvimg{width:62px;height:62px;object-fit:cover;border-radius:9px;display:block}
+.pvrm{position:absolute;top:-6px;right:-6px;background:var(--text);color:var(--card);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center}
 
 /* EDIT PROFILE */
 #ep-bg{display:none;position:fixed;inset:0;z-index:150;align-items:flex-end}
@@ -586,7 +562,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* Entrance: fade + rise */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -606,10 +582,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
-}
-@keyframes sheetUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* Sheet: slide down to bottom */
@@ -1292,7 +1264,7 @@ body {
 <div id="sw">
   <div id="s-today" class="screen">
     <div class="topbar">
-      <div class="tb-l"><button class="ibtn" onclick="openSearch()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></button></div>
+      <div class="tb-l"><button class="ibtn" onclick="goTab('search')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></button></div>
       <span class="tb-logo">Fade</span>
       <div class="tb-r"><button class="ibtn" onclick="openNotif()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="reddot" id="notif-dot"></span></button></div>
     </div>
@@ -1303,7 +1275,7 @@ body {
     </div>
   </div>
   <div id="s-search" class="screen">
-    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="closeSearch()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
+    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="goTab('today')"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
     <div class="sbar"><div class="swrap"><span class="sico"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span><input class="sinp" id="sinp" placeholder="Search people & posts..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" autocomplete="off" style="padding-right:38px"/><button id="sinp-clear" onclick="clearSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--sub);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;align-items:center;justify-content:center;padding:0;flex-shrink:0"><svg width="9" height="9" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg></button></div></div>
     <div class="scroller" id="sresults" style="padding-top:6px"></div>
   </div>
@@ -1326,7 +1298,7 @@ body {
 
 <!-- NAV -->
 <nav id="nav"><div class="navwrap">
-  <button class="nbtn on" id="nb-today" onclick="goTab('today')">
+  <button class="nbtn on" id="nb-today" onclick="goTab('today')" ondblclick="(function(){var s=document.getElementById('today-scroll');if(s)s.scrollTo({top:0,behavior:'smooth'});})()">
     <div class="nbtn-icon" id="nbi-today"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
     <span class="nbtn-label">Today</span>
   </button>
@@ -1535,8 +1507,8 @@ body {
     <div class="handle"></div>
     <div class="shhd"><span class="shtitle">Drop</span><button class="shx" onclick="closeCompose()">✕</button></div>
     <textarea id="c-text" class="cta" placeholder="What's fading today..."></textarea>
-    <div class="photo-tray" id="c-photo-tray"></div>
-    <div class="shacts"><label class="ilbl" id="c-photo-lbl" for="c-file2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Photo</label><input id="c-file2" type="file" accept="image/*" multiple style="display:none" onchange="pickCI(event)"/><button class="dropbtn" onclick="submitPost()">Drop it</button></div>
+    <div class="pvwrap" id="c-pv"><img id="c-pi" class="pvimg" alt=""/><button class="pvrm" onclick="rmCI()">✕</button></div>
+    <div class="shacts"><label class="ilbl" for="c-file2"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Photo</label><input id="c-file2" type="file" accept="image/*" style="display:none" onchange="pickCI(event)"/><button class="dropbtn" onclick="submitPost()">Drop it</button></div>
   </div>
 </div>
 
@@ -1549,7 +1521,7 @@ body {
     <!-- Profile preview card -->
     <div id="share-preview" style="display:flex;align-items:center;gap:12px;background:var(--inp-bg);border-radius:14px;padding:13px 14px;margin-bottom:18px"></div>
     <!-- Share options grid -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px;padding:0 0 4px" id="share-grid"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px" id="share-grid"></div>
     <!-- Copy link row -->
     <div style="margin-top:6px;display:flex;align-items:center;background:var(--inp-bg);border-radius:14px;overflow:hidden">
       <div id="share-url" style="flex:1;padding:13px 14px;font-size:13.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
@@ -1664,7 +1636,7 @@ var profile=null,curTab='today',S_DARK=false,SND_ON=true,_AC=null,_tabScroll={};
 var _inboxChannel=null,_adminChannel=null,_notifChannel=null;
 var profPhotoUrl=null,newPid=null,_selectedGender='';
 var svGroups=[],svGI=0,svII=0,svTmr=null,svLiked={},svPaused=false,svBarStart=0,svBarDone=0,svViewsOpen=false,svViews={};
-var chatUser=null,cFiles=[];
+var chatUser=null,cFile=null;
 var dMsgs={},posts=[],notifs=[];
 var csReply=null,csPid=null;
 var following=new Set(),CF=new Set(),blocked=new Set(),muted=new Set();
@@ -1898,12 +1870,10 @@ var scheduled=[],_schedListEl=null,_schedEditIdx=-1,_schedImgUrl=null;
 var soStack=[];
 var _profUser=null;
 var _svFromProf=false; // when true, closeSV re-shows prof-screen
-var _svReturnCtx=null; // 'talk' | 'chat' — where to return after closeSV
 var _profFromViews=false;
 var _notifProfReturn=false;
 var _notifPostReturn=false;
 var _csProfReturn=false; // when true, closing profile returns to comment sheet
-var _profFromScrollView=false; // when true, closing profile returns to scroll-view post overlay
 var _savedSVState=null; // {gi, ii, paused} — saved when opening profile from views
 var _ctxMsg=null,_ctxBsEl=null,_ctxIsMine=false,_replyMsg=null;
 var _dobChanges=[],_emailChanges=[];
@@ -2133,7 +2103,7 @@ var SC_FONTS=[
   {l:'Script',ff:'Georgia,serif',fs:'italic',fw:'700'},
   {l:'Light',ff:'Inter,sans-serif',fs:'normal',fw:'300'},
 ];
-var TAB_IDX={today:0,clips:1,talk:2,me:3};
+var TAB_IDX={today:0,search:1,clips:2,talk:3,me:4};
 var IC={
   person:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   key:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
@@ -2202,16 +2172,6 @@ function stripStoryPrefix(c){
     var m=c.match(/\[voice:(\d+)s\]/);
     var s=m?parseInt(m[1]):0;
     return '▶ Voice · '+(s>=60?Math.floor(s/60)+'m '+(s%60?s%60+'s':''):s+'s');
-  }
-  if(c.startsWith('[postshare:')){
-    try{
-      var psJson=c.slice(11);
-      if(psJson.endsWith(']'))psJson=psJson.slice(0,-1);
-      var parsed=JSON.parse(psJson);
-      var ptype=parsed.type||'post';
-      if(ptype==='profile'){return '👤 Shared a profile';}
-      return parsed.img?'📸 Shared a drop':'📌 Shared a drop';
-    }catch(e){return '📌 Shared a drop';}
   }
   return c;
 }
@@ -2364,28 +2324,17 @@ function applyDark(on, skipSave){
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
-var _goTabLastTap={tab:'',time:0};
 function goTab(n){
-  // Double-tap same tab = scroll to top (works on touch + mouse)
-  var now=Date.now();
-  if(n===curTab&&n==='today'&&now-_goTabLastTap.time<350){
-    var s=document.getElementById('today-scroll');
-    if(s)s.scrollTo({top:0,behavior:'smooth'});
-    _goTabLastTap.time=0;
-    return;
-  }
-  _goTabLastTap={tab:n,time:now};
   try{sessionStorage.setItem('fade_tab',n);}catch(e){}
   if(!profile&&n!=='today')return;
   var newIdx=TAB_IDX[n];if(newIdx===undefined)return;
   haptic('tab');
   // Save current tab scroll before leaving
-  var _scIds={today:'today-scroll',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _scIds={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
   var _prevId=_scIds[curTab];if(_prevId){var _prevEl=document.getElementById(_prevId);if(_prevEl)_tabScroll[curTab]=_prevEl.scrollTop;}
   document.querySelectorAll('#sw .screen').forEach(function(sc){
-    var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];
-    sc.classList.remove('active','left'); // strip all first, including s-search
-    if(idx===undefined)return;           // s-search and others not in TAB_IDX stay stripped
+    var tid=sc.id.replace('s-','');var idx=TAB_IDX[tid];if(idx===undefined)return;
+    sc.classList.remove('active','left');
     if(idx===newIdx)sc.classList.add('active');
     else if(idx<newIdx)sc.classList.add('left');
   });
@@ -2414,7 +2363,7 @@ function goTab(n){
   // Refresh story strip when user returns to Today tab — no sign-out needed
   if(n==='today'&&profile)loadStories();
   // Restore saved scroll for this tab
-  var _scIds2={today:'today-scroll',clips:'clips-feed',talk:'talk-list',me:'me-body'};
+  var _scIds2={today:'today-scroll',search:'sresults',clips:'clips-feed',talk:'talk-list',me:'me-body'};
   var _nextId=_scIds2[n];
   if(_nextId&&_tabScroll[n]){setTimeout(function(){var _el=document.getElementById(_nextId);if(_el)_el.scrollTop=_tabScroll[n];},50);}
 }
@@ -2434,8 +2383,8 @@ function showLogin(){
 function showForgot(){
   document.getElementById('form-in').style.display='none';
   document.getElementById('form-up').style.display='none';
+  document.getElementById('form-forgot').style.display='flex';
   document.getElementById('form-newpw').style.display='none';
-  var f=document.getElementById('form-forgot');f.style.display='none';void f.offsetWidth;f.style.display='flex';
   setTimeout(function(){var el=document.getElementById('fp-email');if(el)el.focus();},100);
 }
 function showNewPassword(){
@@ -2694,12 +2643,10 @@ function signIn(){
   var pw    = document.getElementById('si-pw').value;
   if(!email || !email.includes('@')) return T('Enter a valid email');
   if(!pw) return T('Enter your password');
-  var btn = document.querySelector('#form-in .btn-dark');
-  if(btn){ btn.textContent = 'Signing in…'; btn.disabled = true; }
-  function resetBtn(){ if(btn){ btn.textContent = 'Sign in'; btn.disabled = false; } }
   _sb.auth.signInWithPassword({ email: email, password: pw }).then(function(res){
-    if(res.error){ resetBtn(); return T(res.error.message || 'Sign in failed'); }
-  }).catch(function(err){ resetBtn(); T(err.message || 'Sign in failed'); });
+    if(res.error) return T(res.error.message || 'Sign in failed');
+    // onAuthStateChange handles the rest
+  });
 }
 
 function trySignup(){
@@ -2745,13 +2692,6 @@ function trySignup(){
 
 function initApp(userProfile){
   profile = userProfile;
-  // Prevent double-tap text selection in browsers (already blocked in PWA via user-select:none on .post)
-  (function(){
-    var _ssTarget=document.getElementById('feed')||document.body;
-    _ssTarget.addEventListener('selectstart',function(e){
-      var t=e.target;while(t&&t!==document.body){if(t.classList&&(t.classList.contains('post')||t.classList.contains('postbody')||t.classList.contains('postcap'))){e.preventDefault();return;}t=t.parentElement;}
-    });
-  })();
   // Restore per-user dark mode preference
   try{
     var _dk=localStorage.getItem('fade_dark_'+profile.id);
@@ -2802,8 +2742,6 @@ function initApp(userProfile){
 
   loadStories();
   renderFeed();
-  // Fire event so deep link handler knows profile is ready
-  document.dispatchEvent(new Event('fadeProfileLoaded'));
   _sb.from('profiles').select('cmt_perm,story_audience,is_private,hide_likes,activity_visible,last_active').eq('id',profile.id).single().then(function(res){
     if(res.data){
       if(res.data.cmt_perm){S.cmtPerm=res.data.cmt_perm;}
@@ -3269,75 +3207,8 @@ function openNotif(){
 function closeNotif(){
   clearInterval(_notifRefreshTimer);
   var p=document.getElementById('notif-panel');
-  p.classList.remove('on'); // remove .on immediately so _advanceBackground() sees no panel open
   p.style.transform='translateX(100%)';
-  setTimeout(function(){p.style.display='';p.style.visibility='hidden';p.style.pointerEvents='none';p.style.transform='';},320);
-}
-
-function openSearch(){
-  var sw=document.getElementById('sw');
-  var ss=document.getElementById('s-search');
-  if(!ss)return;
-  /* 1. Kill any live parallax transition on #sw synchronously */
-  if(sw){
-    sw.style.transition='none';
-    sw.style.transform='none';
-    sw.style.opacity='1';
-    sw.style.borderRadius='0';
-    void sw.offsetWidth;
-    sw.style.transition='';
-  }
-  if(typeof window._isReceded!=='undefined') window._isReceded=false;
-  /* 2. Hide all other screens (no bleed), position search off-screen right */
-  document.querySelectorAll('#sw .screen').forEach(function(sc){
-    sc.classList.remove('active','left');
-  });
-  /* 3. Slide search in from the right — same motion as every other panel */
-  ss.style.transition='none';
-  ss.style.transform='translateX(100%)';
-  ss.style.opacity='0';
-  void ss.offsetWidth; /* force reflow before animating */
-  ss.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease';
-  ss.style.transform='translateX(0)';
-  ss.style.opacity='1';
-  /* Clean up inline styles once animation ends, then mark active */
-  setTimeout(function(){
-    ss.style.transition='';
-    ss.style.transform='';
-    ss.style.opacity='';
-    ss.classList.add('active');
-    var si=document.getElementById('sinp');if(si)si.focus();
-  },320);
-  showSearchHome();
-}
-function closeSearch(){
-  var ct=typeof curTab!=='undefined'?curTab:'today';
-  var ss=document.getElementById('s-search');
-  var returnSc=document.getElementById('s-'+ct);
-  if(ss){
-    /* Slide search out to right; simultaneously slide current tab in from left */
-    ss.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease';
-    ss.style.transform='translateX(100%)';
-    ss.style.opacity='0';
-    if(returnSc){
-      returnSc.style.transition='none';
-      returnSc.style.transform='translateX(-20%)';
-      returnSc.style.opacity='0.6';
-      void returnSc.offsetWidth; /* force reflow */
-      returnSc.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease';
-      returnSc.style.transform='translateX(0)';
-      returnSc.style.opacity='1';
-    }
-    setTimeout(function(){
-      ss.style.transition='';
-      ss.style.transform='';
-      ss.style.opacity='';
-      if(returnSc){returnSc.style.transition='';returnSc.style.transform='';returnSc.style.opacity='';}
-      goTab(ct);
-    },320);
-  } else {
-    goTab(ct);
-  }
+  setTimeout(function(){p.classList.remove('on');p.style.display='';p.style.visibility='hidden';p.style.pointerEvents='none';p.style.transform='';},320);
 }
 function markNotifRead(n){
   if(n.read)return;
@@ -3370,167 +3241,174 @@ function markAllRead(){
   if(btn){btn.textContent='Done';btn.style.color='var(--text)';setTimeout(function(){btn.textContent='Mark all read';btn.style.color='var(--sub)';},1200);}
   renderNotifs();
 }
-/* ── Notification swipe-to-delete styles (injected once) ── */
+/* ── NOTIFICATION SWIPE-LEFT → TRASH REVEAL ──────────────────────
+   Swipe left on a notification row to reveal a red trash button.
+   Tapping the trash plays the same lid-open → item-flies-in → lid-shut
+   animation used by the voice-record cancel button, then collapses
+   the row out.
+   
+   The row is wrapped in a clip container so the sliding content
+   never escapes its bounds. A red trash panel sits behind on the right.
+─────────────────────────────────────────────────────────────────── */
+
+// Inject shared CSS for the swipe-trash UI (runs once)
 (function(){
-  if(document.getElementById('_ntd'))return;
-  var s=document.createElement('style');s.id='_ntd';
-  s.textContent=
-    /* Row clips overflow so nothing bleeds */
-    '.ni{overflow:hidden;position:relative;}'+
-    /* Inner slide wrapper — contains all original content */
-    '.ni-s{display:flex;align-items:center;gap:12px;flex:1;min-width:0;'+
-      'transition:transform .22s cubic-bezier(.25,.46,.45,.94);}'+
-    /* Trash: plain red icon, no background, hidden off right edge */
-    '.ni-t{'+
-      'position:absolute;right:14px;top:50%;transform:translate(60px,-50%);'+
-      'width:32px;height:32px;border-radius:0;'+
-      'background:none;border:none;cursor:pointer;color:#E8352A;'+
-      'display:flex;align-items:center;justify-content:center;flex-shrink:0;'+
-      'transition:transform .22s cubic-bezier(.34,1.2,.64,1);'+
-      '-webkit-tap-highlight-color:transparent;'+
-    '}'+
-    /* Trash lid animation — mirrors voice-cancel .trash-lid-g */
-    '.ni-t .tlid{transform-box:fill-box;transform-origin:50% 100%;'+
-      'transition:transform .28s cubic-bezier(.25,.46,.45,.94);}'+
-    '.ni-t.lo .tlid{transform:rotate(-52deg);}'+
-    /* Lid-shut shake */
-    '@keyframes tsk{'+
-      '0%  {transform:translate(0,-50%) rotate(0deg)}'+
-      '25% {transform:translate(0,-50%) rotate(-12deg) scale(1.15)}'+
-      '55% {transform:translate(0,-50%) rotate(8deg)  scale(.95)}'+
-      '100%{transform:translate(0,-50%) rotate(0deg)  scale(1)}}'+
-    '.ni-t.sk{animation:tsk .26s ease forwards;}'+
-    /* Content flies right into trash then vanishes */
-    '@keyframes nfly{'+
-      '0%  {opacity:1;transform:translateX(0)   scale(1)}'+
-      '60% {opacity:.6;transform:translateX(32px) scale(.55)}'+
-      '100%{opacity:0;transform:translateX(52px) scale(.15)}'+
-    '}'+
-    '.ni-s.fly{animation:nfly .32s cubic-bezier(.55,0,1,.6) forwards;}'+
-    /* Row collapses */
-    '@keyframes ncol{from{max-height:var(--nh)}to{max-height:0;padding:0;margin:0}}'+
-    '.ni.col{overflow:hidden;animation:ncol .24s ease forwards;}';
+  if(document.getElementById('_swipe-trash-css'))return;
+  var s=document.createElement('style');
+  s.id='_swipe-trash-css';
+  s.textContent=[
+    '.ni-swipe-wrap{position:relative;overflow:hidden;border-radius:0}',
+    '.ni-swipe-track{position:relative;will-change:transform;transition:transform .22s cubic-bezier(.25,.46,.45,.94)}',
+    '.ni-trash-reveal{position:absolute;top:0;right:0;bottom:0;width:72px;',
+    '  display:flex;align-items:center;justify-content:center;',
+    '  background:#E8352A;cursor:pointer;flex-shrink:0}',
+    '.ni-trash-icon{transition:transform .28s cubic-bezier(.25,.46,.45,.94);color:#fff}',
+    '.ni-trash-icon .trash-lid-g{transform-box:fill-box;transform-origin:50% 100%;',
+    '  transition:transform .28s cubic-bezier(.25,.46,.45,.94)}',
+    '.ni-trash-reveal.lid-open .ni-trash-icon .trash-lid-g{transform:rotate(-52deg)}',
+    '@keyframes ni-trash-shake{0%{transform:scale(1)}30%{transform:scale(1.22)}65%{transform:scale(.9)}100%{transform:scale(1)}}',
+    '.ni-trash-reveal.trash-shake .ni-trash-icon{animation:ni-trash-shake .22s ease}',
+    '@keyframes ni-row-fly-to-trash{',
+    '  0%  {transform:translateX(0)    scale(1)   opacity:1}',
+    '  40% {transform:translateX(60px) scale(.82) opacity:.7}',
+    '  100%{transform:translateX(72px) scale(.4)  opacity:0}',
+    '}',
+    '.ni-swipe-track.fly-to-trash{',
+    '  animation:ni-row-fly-to-trash .32s cubic-bezier(.4,0,.2,1) forwards',
+    '}'
+  ].join('\n');
   document.head.appendChild(s);
 })();
 
-function attachSwipeDismiss(el,onDismiss){
-  /* Slide content left by this many px to reveal trash */
-  var PULL=60;
-  var SNAP=PULL*0.45;
-  var sx=0,sy=0,cx=0,sw=false,open=false,gone=false;
+function attachSwipeDismiss(el, onDismiss) {
+  // Wrap el in clip + reveal structure
+  var wrap = document.createElement('div');
+  wrap.className = 'ni-swipe-wrap';
 
-  /* Wrap existing children in slide div */
-  var slide=document.createElement('div');
-  slide.className='ni-s';
-  while(el.firstChild)slide.appendChild(el.firstChild);
-  el.appendChild(slide);
+  var trashReveal = document.createElement('div');
+  trashReveal.className = 'ni-trash-reveal';
+  trashReveal.innerHTML =
+    '<div class="ni-trash-icon">' +
+      '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
+        '<g class="trash-lid-g">' +
+          '<line x1="3" y1="6" x2="21" y2="6"/>' +
+          '<path d="M9 6V4h6v2"/>' +
+        '</g>' +
+        '<path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/>' +
+        '<line x1="10" y1="11" x2="10" y2="17"/>' +
+        '<line x1="14" y1="11" x2="14" y2="17"/>' +
+      '</svg>' +
+    '</div>';
 
-  /* Small red circle trash button */
-  var tb=document.createElement('button');
-  tb.className='ni-t';
-  tb.setAttribute('aria-label','Delete notification');
-  tb.innerHTML=
-    '<svg width="16" height="16" fill="none" stroke="currentColor"'+
-    ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'+
-    ' viewBox="0 0 24 24">'+
-      '<g class="tlid">'+
-        '<line x1="3" y1="6" x2="21" y2="6"/>'+
-        '<path d="M9 6V4h6v2"/>'+
-      '</g>'+
-      '<path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/>'+
-      '<line x1="10" y1="11" x2="10" y2="17"/>'+
-      '<line x1="14" y1="11" x2="14" y2="17"/>'+
-    '</svg>';
-  el.appendChild(tb);
+  // Insert wrap around el
+  el.parentNode.insertBefore(wrap, el);
+  wrap.appendChild(trashReveal);
+  wrap.appendChild(el);
 
-  function animSlide(nx,anim){
-    slide.style.transition=anim?'transform .22s cubic-bezier(.25,.46,.45,.94)':'none';
-    slide.style.transform='translateX('+nx+'px)';
-    /* 60=fully hidden; at nx=-60 → trx=0 = sits flush at right:14px */
-    var trx=60+nx;
-    tb.style.transition=anim?'transform .22s cubic-bezier(.34,1.2,.64,1)':'none';
-    tb.style.transform='translate('+trx+'px,-50%)';
+  // Make el the sliding track
+  el.classList.add('ni-swipe-track');
+
+  var REVEAL_W = 72;     // px – width of trash zone
+  var SNAP_THRESHOLD = REVEAL_W * 0.55;
+  var startX = 0, startY = 0, curX = 0;
+  var swiping = false, revealed = false, dismissed = false;
+
+  function snapOpen() {
+    revealed = true;
+    el.style.transition = 'transform .22s cubic-bezier(.25,.46,.45,.94)';
+    el.style.transform = 'translateX(-' + REVEAL_W + 'px)';
+    trashReveal.classList.add('lid-open');
+    haptic('light');
+  }
+  function snapClose() {
+    revealed = false;
+    el.style.transition = 'transform .22s cubic-bezier(.25,.46,.45,.94)';
+    el.style.transform = '';
+    trashReveal.classList.remove('lid-open');
   }
 
-  function doOpen(){
-    open=true;
-    animSlide(-PULL,true);
-    if(typeof haptic==='function')haptic('light');
-  }
-  function doClose(){
-    open=false;
-    animSlide(0,true);
-  }
+  el.addEventListener('touchstart', function(e) {
+    if (dismissed) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    curX = 0; swiping = false;
+    el.style.transition = 'none';
+  }, { passive: true });
 
-  /* Touch on slide (not on trash button) */
-  slide.addEventListener('touchstart',function(e){
-    if(gone)return;
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;cx=0;sw=false;
-    slide.style.transition='none';tb.style.transition='none';
-  },{passive:true});
+  el.addEventListener('touchmove', function(e) {
+    if (dismissed) return;
+    var dx = e.touches[0].clientX - startX;
+    var dy = Math.abs(e.touches[0].clientY - startY);
+    if (!swiping) {
+      if (Math.abs(dx) < 6) return;
+      if (dy > Math.abs(dx)) return; // vertical scroll wins
+      swiping = true;
+    }
+    // Only allow leftward swipe (negative dx). If already revealed allow
+    // rightward to close, but never go positive of 0.
+    var base = revealed ? -REVEAL_W : 0;
+    var newX = base + dx;
+    // Clamp: max open = -REVEAL_W * 1.2, max close = 0
+    newX = Math.max(-REVEAL_W * 1.2, Math.min(0, newX));
+    curX = newX;
+    el.style.transform = 'translateX(' + newX + 'px)';
+  }, { passive: true });
 
-  slide.addEventListener('touchmove',function(e){
-    if(gone)return;
-    var dx=e.touches[0].clientX-sx;
-    var dy=Math.abs(e.touches[0].clientY-sy);
-    if(!sw){if(Math.abs(dx)<6)return;if(dy>Math.abs(dx))return;sw=true;}
-    var base=open?-PULL:0;
-    cx=Math.max(-PULL*1.1,Math.min(0,base+dx));
-    animSlide(cx,false);
-  },{passive:true});
+  el.addEventListener('touchend', function() {
+    if (!swiping) return;
+    var base = revealed ? -REVEAL_W : 0;
+    var totalDx = curX - base; // how far from the snapped state
+    if (!revealed) {
+      // Opening: committed if dragged > threshold
+      if (curX < -SNAP_THRESHOLD) { snapOpen(); }
+      else { snapClose(); }
+    } else {
+      // Closing: snap back if dragged right > threshold
+      if (totalDx > SNAP_THRESHOLD) { snapClose(); }
+      else { snapOpen(); }
+    }
+  }, { passive: true });
 
-  slide.addEventListener('touchend',function(){
-    if(!sw)return;
-    var base=open?-PULL:0;
-    var moved=cx-base;
-    if(!open){cx<-SNAP?doOpen():doClose();}
-    else{moved>SNAP?doClose():doOpen();}
-  },{passive:true});
+  // Tapping the trash icon: fly content into trash, then collapse row
+  trashReveal.addEventListener('click', function() {
+    if (dismissed) return;
+    dismissed = true;
+    haptic('destructive');
 
-  /* Trash tap: lid opens → content flies in → lid shuts → collapse */
-  tb.addEventListener('click',function(e){
-    e.stopPropagation();
-    if(gone)return;
-    gone=true;
-    if(typeof haptic==='function')haptic('destructive');
+    // Lid-shut shake
+    trashReveal.classList.remove('lid-open');
+    trashReveal.classList.add('trash-shake');
 
-    /* 1. Open lid */
-    tb.classList.add('lo');
+    // Fly the row content into the trash icon
+    el.style.transition = 'none';
+    el.classList.add('fly-to-trash');
 
-    /* 2. After 100ms: fly content into trash */
-    setTimeout(function(){
-      slide.style.transition='none';
-      slide.classList.add('fly');
-    },100);
-
-    /* 3. After 320ms: close lid with shake */
-    setTimeout(function(){
-      tb.classList.remove('lo');
-      tb.style.transition='none';
-      tb.style.animation='none';
-      void tb.offsetWidth;
-      tb.classList.add('sk');
-    },320);
-
-    /* 4. After 400ms: collapse row */
-    setTimeout(function(){
-      var h=el.offsetHeight;
-      el.style.setProperty('--nh',h+'px');
-      el.classList.add('col');
-    },400);
-
-    /* 5. After 640ms: remove from DOM */
-    setTimeout(function(){
-      if(el.parentNode)el.parentNode.removeChild(el);
-      onDismiss();
-    },640);
+    // After fly animation, collapse the whole row height
+    setTimeout(function() {
+      var h = wrap.offsetHeight;
+      wrap.style.transition = 'max-height .28s cubic-bezier(.4,0,.2,1) .1s, opacity .18s ease .1s';
+      wrap.style.maxHeight = h + 'px';
+      wrap.style.overflow = 'hidden';
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          wrap.style.maxHeight = '0';
+          wrap.style.opacity = '0';
+        });
+      });
+      setTimeout(function() {
+        if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        onDismiss();
+      }, 420);
+    }, 300);
   });
 
-  /* Tap outside → close */
-  document.addEventListener('touchstart',function _cl(e){
-    if(!open||gone){document.removeEventListener('touchstart',_cl);return;}
-    if(!el.contains(e.target))doClose();
-  },{passive:true});
+  // Tap elsewhere on the page to close revealed state
+  document.addEventListener('touchstart', function _closeReveal(e) {
+    if (!revealed || dismissed) { document.removeEventListener('touchstart', _closeReveal); return; }
+    if (!wrap.contains(e.target)) {
+      snapClose();
+    }
+  }, { passive: true });
 }
 var _notifScrollY=0; // saved scroll position inside notifications panel
 
@@ -3634,9 +3512,7 @@ function renderNotifs(){
     if(postTypes.indexOf(n.type)>-1&&n.pid){
       var thumbPost=posts.find(function(x){return x.id===n.pid;});
       if(thumbPost&&thumbPost.img){
-        var _ti=thumbPost.img;
-        try{var _ta=JSON.parse(_ti);if(Array.isArray(_ta)&&_ta[0])_ti=_ta[0];}catch(_e){}
-        postThumb='<div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--border)"><img src="'+_ti+'" style="width:100%;height:100%;object-fit:cover;display:block"/></div>';
+        postThumb='<div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--border)"><img src="'+thumbPost.img+'" style="width:100%;height:100%;object-fit:cover;display:block"/></div>';
       }
     }
 
@@ -3829,7 +3705,7 @@ function renderNotifs(){
 
     l.appendChild(el);
 
-    // swipe right to dismiss
+    // swipe left reveals trash → tap trash to delete with animation
     attachSwipeDismiss(el,(function(notifId){
       return function(){
         notifs=notifs.filter(function(x){return x.id!==notifId;});
@@ -3939,7 +3815,6 @@ function tapNewPostsBanner(){
   if(scroller)scroller.scrollTo({top:0,behavior:'smooth'});
   renderFeed();
 }
-var _feedHasEverLoaded=false;
 function renderFeed(){
   var f=document.getElementById('feed');
   // Reset pagination state
@@ -3948,19 +3823,16 @@ function renderFeed(){
   _feedLoading=false;
   // Tear down previous sentinel observer
   if(_feedSentinelObs){_feedSentinelObs.disconnect();_feedSentinelObs=null;}
-  // Only show skeleton on a true cold load (DOM is empty AND no cached posts).
-  // If we already have content rendered, keep it visible while the fetch runs —
-  // this eliminates the blink on every tab-switch and pull-to-refresh.
-  var hasDOMContent=f.children.length>0;
-  var hasCachedPosts=posts.length>0;
-  if(!hasDOMContent&&!hasCachedPosts){
+  // Only show skeleton on cold load (no existing posts in DOM).
+  // On refresh/pull-to-refresh keep existing content visible — no blink.
+  var hasPosts=posts.length>0;
+  if(!hasPosts){
     var skHTML='';
     for(var si=0;si<4;si++){
       skHTML+='<div class="skeleton-post" style="opacity:'+(1-si*0.18)+'"><div class="skeleton-post-hd"><div class="skeleton skeleton-avatar" style="width:42px;height:42px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="skeleton skeleton-text" style="width:36%"></div><div class="skeleton skeleton-text" style="width:20%"></div></div></div>'+(si%2===0?'<div class="skeleton skeleton-img" style="width:100%;aspect-ratio:4/5"></div>':'<div class="skeleton skeleton-text" style="width:78%"></div><div class="skeleton skeleton-text" style="width:58%"></div>')+'<div style="display:flex;gap:16px;padding-top:2px"><div class="skeleton skeleton-round" style="width:52px;height:20px"></div><div class="skeleton skeleton-round" style="width:52px;height:20px"></div></div></div>';
     }
     f.innerHTML=skHTML;
   }
-  // Keep posts array intact so existing DOM stays correct; _loadFeedPage will replace it
   posts=[];
   _loadFeedPage(true);
 }
@@ -4028,39 +3900,32 @@ function renderFeedRows(rows,likedIds,isFirst){
   });
 
   if(isFirst){
-    // Build into a DocumentFragment first — swap atomically to kill the blink
+    // Full re-render
     posts=newPosts;
     var ranked=rankFeed(posts);
-    var frag=document.createDocumentFragment();
     if(!ranked.length){
-      var emptyDiv=document.createElement('div');
-      emptyDiv.className='empty anim-fade-up';
-      emptyDiv.style.cssText='padding:48px 28px;text-align:center';
-      emptyDiv.innerHTML='<div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="openSearch()" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button>';
-      frag.appendChild(emptyDiv);
-      f.innerHTML='';
-      f.appendChild(frag);
+      f.innerHTML='<div class="empty anim-fade-up" style="padding:48px 28px;text-align:center"><div style="font-size:36px;margin-bottom:16px">👋</div><div class="empt" style="font-size:17px;font-weight:700;margin-bottom:8px">Nothing here yet</div><div class="emps" style="font-size:14px;line-height:1.6;color:var(--sub)">Follow people to see their drops.<br>Everything fades in 24 hours.</div><button onclick="goTab(\'search\')" style="margin-top:22px;background:var(--text);color:var(--card);border:none;border-radius:14px;padding:13px 28px;font-family:Inter,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Find people</button></div>';
       return;
     }
-    var isCold=!_feedHasEverLoaded;
-    _feedHasEverLoaded=true;
+    f.innerHTML='';
     var lastGroup=-1,animIdx=0;
     ranked.forEach(function(p){
       var g=getPostGroup(p);
       if(g!==lastGroup&&g!==0&&GROUP_LABELS[g]){
         var div=document.createElement('div');div.style.cssText='padding:20px 14px 6px';
-        if(isCold){div.classList.add('anim-fade-up');div.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';}
+        div.classList.add('anim-fade-up');div.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';
         div.innerHTML='<span style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px">'+GROUP_LABELS[g]+'</span>';
-        frag.appendChild(div);animIdx++;
+        f.appendChild(div);animIdx++;
       }
       lastGroup=g;
       var el=buildPost(p,false);
-      if(isCold){el.classList.add('anim-fade-up');el.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';}
-      animIdx++;frag.appendChild(el);
+      el.classList.add('anim-fade-up');el.style.animationDelay=(Math.min(animIdx,8)*30)+'ms';
+      animIdx++;f.appendChild(el);
       if(p.liked){
-        var h=el.querySelector('#hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
-        var lb=el.querySelector('#lb-'+p.id);if(lb)lb.classList.add('liked');
+        var h=document.getElementById('hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
+        var lb=document.getElementById('lb-'+p.id);if(lb)lb.classList.add('liked');
       }
+      // Mark suggested posts as seen when they scroll into view
       if(g===4){
         (function(pid,postEl){
           var obs=new IntersectionObserver(function(entries){
@@ -4070,9 +3935,6 @@ function renderFeedRows(rows,likedIds,isFirst){
         })(p.id,el);
       }
     });
-    // Single atomic DOM swap — no blank frame ever shown
-    f.innerHTML='';
-    f.appendChild(frag);
   } else {
     // Append mode — remove old sentinel first
     var oldSentinel=document.getElementById('feed-sentinel');if(oldSentinel)oldSentinel.remove();
@@ -4101,86 +3963,6 @@ function renderFeedRows(rows,likedIds,isFirst){
     _feedSentinelObs.observe(sentinel);
   }
 }
-// ── CAROUSEL HELPERS ──────────────────────────────────────────────────────────
-function _buildCarouselHTML(pid,imgs){
-  var slides=imgs.map(function(url,i){
-    return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="'+(i===0?'eager':'lazy')+'"/></div>';
-  }).join('');
-  var dots=imgs.map(function(_,i){
-    return '<div class="carousel-dot'+(i===0?' active':'')+'"></div>';
-  }).join('');
-  return '<div class="post-carousel" data-carousel-pid="'+pid+'">'
-    +'<div class="post-carousel-track">'+slides+'</div>'
-    +'<div class="carousel-counter">1/'+imgs.length+'</div>'
-    +'<div class="carousel-dots">'+dots+'</div>'
-    +'</div>';
-}
-function _wireCarousel(carousel){
-  var track=carousel.querySelector('.post-carousel-track');
-  var counter=carousel.querySelector('.carousel-counter');
-  var allDots=carousel.querySelectorAll('.carousel-dot');
-  var slides=carousel.querySelectorAll('.post-carousel-slide');
-  var n=slides.length;
-  if(!track||n<2)return;
-  var cur=0,cTimer=null;
-
-  function showCounter(){
-    if(!counter)return;
-    counter.classList.remove('fade-out');
-    clearTimeout(cTimer);
-    cTimer=setTimeout(function(){counter.classList.add('fade-out');},1800);
-  }
-  function goTo(idx,animate){
-    if(idx<0||idx>=n)return;
-    cur=idx;
-    if(!animate)track.classList.add('no-anim');
-    else track.classList.remove('no-anim');
-    track.style.transform='translateX(-'+(cur*100)+'%)';
-    if(counter)counter.textContent=(cur+1)+'/'+n;
-    allDots.forEach(function(d,i){d.classList.toggle('active',i===cur);});
-    showCounter();
-  }
-  // Initial counter auto-fade
-  showCounter();
-  // Touch swipe — stopPropagation when carousel is handling the gesture
-  // so the tab-swipe IIFE on #sw never sees horizontal moves and stays blocked
-  var sx=0,sy=0,tracking=false;
-  carousel.addEventListener('touchstart',function(e){
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=false;
-  },{passive:true});
-  carousel.addEventListener('touchmove',function(e){
-    var dx=e.touches[0].clientX-sx;
-    var dy=Math.abs(e.touches[0].clientY-sy);
-    if(!tracking){
-      if(Math.abs(dx)>8&&Math.abs(dx)>dy*1.3){tracking=true;}
-      else if(dy>10){return;} // vertical scroll — let parent handle
-    }
-    if(!tracking)return;
-    // We own this gesture — stop it reaching the #sw tab-swipe handler
-    e.stopPropagation();
-    track.classList.add('no-anim');
-    var base=-(cur*100);
-    var pct=base+(dx/carousel.offsetWidth)*100;
-    pct=Math.max(-((n-1)*100),Math.min(0,pct));
-    track.style.transform='translateX('+pct+'%)';
-  },{passive:true});
-  carousel.addEventListener('touchend',function(e){
-    if(!tracking)return;
-    // Also stop propagation on touchend so tab-swipe touchend never commits
-    e.stopPropagation();
-    var dx=e.changedTouches[0].clientX-sx;
-    track.classList.remove('no-anim');
-    if(dx<-44&&cur<n-1)goTo(cur+1,true);
-    else if(dx>44&&cur>0)goTo(cur-1,true);
-    else goTo(cur,true);
-    tracking=false;
-  },{passive:true});
-  carousel.addEventListener('touchcancel',function(){
-    if(tracking)e.stopPropagation();
-    tracking=false;goTo(cur,true);
-  },{passive:true});
-}
-
 function buildPost(p, showDelete){
   var el=document.createElement('div');el.className='post';el.dataset.pid=p.id;
   var a=p.author||{};
@@ -4191,17 +3973,8 @@ function buildPost(p, showDelete){
   var avatarClick=isOwn?"goTab('me')":'openProf('+uJ+')';
   var hdr='<div class="posthd"><div class="av" onclick=\''+avatarClick+'\'>'+avH(avUrl,avName)+'</div><div class="postmeta" onclick=\''+avatarClick+'\'>  <div class="postname" style="display:flex;align-items:center;gap:4px">'+E(a.display_name||'User')+badgeFor(p.uid)+'</div><div class="posttm" data-ts="'+p.ts+'">'+ago(p.ts)+' · fades in '+fadeIn(p.ts)+'</div></div><button class="post-menu-btn" onclick="openPostMenu(\''+p.id+'\',\''+p.uid+'\',event)" style="background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--sub);display:flex;flex-direction:column;gap:3.5px;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;transition:opacity .15s" onmousedown="event.stopPropagation()"><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i></button></div>';
   var mediaHTML='',textHTML='';
-  if(p.img){
-    var _imgs=null;
-    try{var _pa=JSON.parse(p.img);if(Array.isArray(_pa)&&_pa.length>0)_imgs=_pa;}catch(_e){}
-    if(_imgs&&_imgs.length>1){
-      mediaHTML=_buildCarouselHTML(p.id,_imgs);
-    } else {
-      var _si=_imgs?_imgs[0]:p.img;
-      mediaHTML='<div style="width:100%;overflow:hidden"><img src="'+_si+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="lazy"/></div>';
-    }
-    if(p.text)textHTML='<div class="post-caption">'+E(p.text)+'</div>';
-  } else if(p.text){textHTML='<div class="postbody">'+E(p.text)+'</div>';}
+  if(p.img){mediaHTML='<div style="width:100%;overflow:hidden"><img src="'+p.img+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" loading="lazy"/></div>';if(p.text)textHTML='<div class="post-caption">'+E(p.text)+'</div>';}
+  else if(p.text){textHTML='<div class="postbody">'+E(p.text)+'</div>';}
   var _likeOwnerU=isOwn?null:(USERS.find(function(x){return x.id===p.uid;})||null);
   var _hideLikeCount=isOwn?S.hideLikes:(_likeOwnerU?!!_likeOwnerU.hide_likes:false);
   var lc=_hideLikeCount?'':'<span id="lc-'+p.id+'">'+(p.likes||0)+'</span>';
@@ -4212,9 +3985,6 @@ function buildPost(p, showDelete){
   var canCmt=isOwn||(_ownerCmtPerm==='everyone')||(_ownerCmtPerm==='followers'&&following.has(p.uid));
   var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="24" height="24" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'</div>';
   el.innerHTML=hdr+mediaHTML+textHTML+acts;
-  // Wire carousel if multi-photo
-  var _carouselEl=el.querySelector('.post-carousel');
-  if(_carouselEl)_wireCarousel(_carouselEl);
   // Double-tap to like
   var _lastTap=0;
   el.addEventListener('touchend',function(e){
@@ -4222,9 +3992,8 @@ function buildPost(p, showDelete){
     var tgt=e.target;
     // Don't fire on buttons, avatars, or action row
     if(tgt.closest('.postacts')||tgt.closest('.post-menu-btn')||tgt.closest('.av'))return;
-    // Always prevent default to block native text-selection menu on any tap
-    e.preventDefault();
     if(now-_lastTap<300){
+      e.preventDefault();
       if(!p.liked){
         likePost(p.id,el.querySelector('#lb-'+p.id));
         // Show heart overlay
@@ -4386,63 +4155,9 @@ function openChangeAudience(postId){
 function sharePost(postId){
   var p=posts.find(function(x){return x.id===postId;});if(!p)return;
   var url=window.location.origin+'?post='+postId;
-  var textPreview=(p.text?p.text.slice(0,60)+'…':'📸 Photo drop');
-  var authorName=(p.author&&(p.author.display_name||p.author.username))||'Someone';
-
-  // Build a share sheet similar to profile share
-  var ex=document.getElementById('post-share-ov');if(ex)ex.remove();
-  var ov=document.createElement('div');ov.id='post-share-ov';
-  ov.style.cssText='position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.45);display:flex;align-items:flex-end';
-  var sheet=document.createElement('div');
-  sheet.style.cssText='position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(28px,env(safe-area-inset-bottom));animation:sheetUp .28s ease both';
-
-  var handle=document.createElement('div');handle.style.cssText='width:36px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0';
-  var hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px';
-  hdr.innerHTML='<div style="font-weight:700;font-size:15px">Share Drop</div><button onclick="document.getElementById(\'post-share-ov\').remove()" style="background:var(--inp-bg);border:none;cursor:pointer;color:var(--sub);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">✕</button>';
-
-  // Post preview
-  var prev=document.createElement('div');
-  prev.style.cssText='display:flex;align-items:center;gap:12px;background:var(--inp-bg);border-radius:14px;padding:12px 14px;margin:0 16px 16px';
-  var _ssThumb=p.img||null;
-  if(_ssThumb){try{var _ssA=JSON.parse(_ssThumb);if(Array.isArray(_ssA)&&_ssA.length>0)_ssThumb=_ssA[0];}catch(_e){}}
-  prev.innerHTML='<div style="width:42px;height:42px;border-radius:10px;overflow:hidden;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center">'+(_ssThumb?'<img src="'+_ssThumb+'" style="width:100%;height:100%;object-fit:cover"/>':'<svg width="18" height="18" fill="none" stroke="var(--sub)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3C12 3 6 9.5 6 14a6 6 0 0 0 12 0C18 9.5 12 3 12 3z"/></svg>')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+E(authorName)+'\'s drop</div><div style="font-size:12px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">'+E(textPreview)+'</div></div>';
-
-  // Share options grid
-  var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 16px 12px';
-  var shareOpts=[
-    {label:'Messages',color:'#22C55E',ico:'<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',act:function(){ov.remove();window.open('sms:?&body='+encodeURIComponent('Check out this drop on Fade: '+url),'_blank');}},
-    {label:'WhatsApp',color:'#25D366',ico:'<svg width="22" height="22" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C8.82 3 3 8.82 3 16c0 2.3.6 4.5 1.74 6.44L3 29l6.72-1.72A13 13 0 0 0 16 29c7.18 0 13-5.82 13-13S23.18 3 16 3zm6.38 18.15c-.28.78-1.63 1.49-2.24 1.55-.57.05-.6.44-3.87-.95-3.27-1.42-5.16-4.76-5.32-4.98-.15-.22-1.27-1.76-1.19-3.32.08-1.55.88-2.28 1.19-2.58.31-.31.67-.38.9-.38h.63c.2 0 .48-.08.75.63.28.72.94 2.47 1.02 2.65.08.18.13.39.03.62-.1.23-.16.37-.32.57-.16.2-.34.45-.48.6-.16.16-.33.34-.14.66.19.32.83 1.43 1.79 2.32 1.23 1.14 2.26 1.49 2.58 1.65.32.17.51.14.7-.08.19-.22.8-.93 1.01-1.25.21-.32.43-.27.72-.16.3.11 1.87.88 2.19 1.04.32.16.53.24.61.37.08.14.08.78-.2 1.56z"/></svg>',act:function(){ov.remove();window.open('https://wa.me/?text='+encodeURIComponent('Check out this drop on Fade: '+url),'_blank');}},
-    {label:'Instagram',color:'#E1306C',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-g2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#ig-g2)"/><circle cx="12" cy="12" r="4.5" stroke="#fff" stroke-width="1.6" fill="none"/><circle cx="17.2" cy="6.8" r="1.1" fill="#fff"/></svg>',act:function(){ov.remove();if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('Link copied — paste in Instagram');}).catch(function(){});setTimeout(function(){window.open('instagram://','_blank');},300);}},
-    {label:'X',color:'var(--text)',ico:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',act:function(){ov.remove();window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Check out this drop on Fade')+'&url='+encodeURIComponent(url),'_blank');}},
-    {label:'More',color:'#6B7280',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9 12h6M12 9v6" stroke-linecap="round"/></svg>',act:function(){ov.remove();if(navigator.share){navigator.share({title:'Drop on Fade',url:url}).catch(function(){});}else{if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('Link copied');});else T(url);}}}
-  ];
-  shareOpts.forEach(function(o){
-    var cell=document.createElement('div');
-    cell.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent';
-    cell.innerHTML='<div style="width:54px;height:54px;border-radius:16px;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;color:'+o.color+';transition:opacity .15s,transform .12s">'+o.ico+'</div><div style="font-size:11px;font-weight:500;color:var(--sub);text-align:center;line-height:1.3">'+o.label+'</div>';
-    cell.addEventListener('click',o.act);
-    cell.addEventListener('touchstart',function(){cell.querySelector('div').style.opacity='.5';cell.querySelector('div').style.transform='scale(.9)';},{passive:true});
-    cell.addEventListener('touchend',function(){cell.querySelector('div').style.opacity='';cell.querySelector('div').style.transform='';},{passive:true});
-    grid.appendChild(cell);
-  });
-
-  // Copy link row at bottom
-  var copyRow=document.createElement('div');
-  copyRow.style.cssText='display:flex;align-items:center;background:var(--inp-bg);border-radius:14px;overflow:hidden;margin:4px 16px 0';
-  var urlLabel=document.createElement('div');
-  urlLabel.style.cssText='flex:1;padding:13px 14px;font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-  urlLabel.textContent=url.replace('https://','');
-  var copyBtn=document.createElement('button');
-  copyBtn.style.cssText='background:var(--text);color:var(--card);border:none;padding:13px 18px;font-size:13.5px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap';
-  copyBtn.textContent='Copy';
-  copyBtn.onclick=function(){ov.remove();if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('Link copied');}).catch(function(){T(url);});else T(url);};
-  copyRow.appendChild(urlLabel);copyRow.appendChild(copyBtn);
-
-  sheet.appendChild(handle);sheet.appendChild(hdr);sheet.appendChild(prev);sheet.appendChild(grid);sheet.appendChild(copyRow);
-  ov.appendChild(sheet);
-  ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  document.body.appendChild(ov);
+  var text=(p.text?p.text.slice(0,80)+' — ':'')+' shared from Fade';
+  if(navigator.share){navigator.share({title:'Check this drop on Fade',text:text,url:url}).catch(function(){});return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){T('Link copied');}).catch(function(){T(url);});}else{T(url);}
 }
 
 
@@ -4456,71 +4171,10 @@ function doDelPost(id){
 }
 
 // ── COMPOSE ───────────────────────────────────────────────────────────────────
-function openCompose(){cFiles=[];renderPhotoTray();var bg=document.getElementById('compose-bg');bg.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){bg.querySelector('.sheet').style.transform='translateY(0)';});});setTimeout(function(){var t=document.getElementById('c-text');if(t)t.focus();},350);}
+function openCompose(){var bg=document.getElementById('compose-bg');bg.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){bg.querySelector('.sheet').style.transform='translateY(0)';});});setTimeout(function(){var t=document.getElementById('c-text');if(t)t.focus();},350);}
 function closeCompose(){closeSheet('compose-bg');}
-function pickCI(e){
-  var files=Array.from(e.target.files||[]);
-  e.target.value='';
-  if(!files.length)return;
-  var remaining=5-cFiles.length;
-  if(remaining<=0){T('Max 5 photos');return;}
-  // Deduplicate: skip files already selected (same name + size)
-  var existing=cFiles.map(function(f){return f.name+'|'+f.size;});
-  var newFiles=files.filter(function(f){return existing.indexOf(f.name+'|'+f.size)<0;});
-  if(!newFiles.length){T('Already selected');return;}
-  newFiles.slice(0,remaining).forEach(function(f){cFiles.push(f);});
-  renderPhotoTray();
-}
-function rmCI(idx){
-  cFiles.splice(idx,1);
-  renderPhotoTray();
-}
-function openPhotoPreview(src){
-  var ov=document.getElementById('photo-preview-ov');
-  document.getElementById('photo-preview-img').src=src;
-  ov.classList.add('on');
-}
-function closePhotoPreview(){
-  document.getElementById('photo-preview-ov').classList.remove('on');
-  document.getElementById('photo-preview-img').src='';
-}
-function renderPhotoTray(){
-  var tray=document.getElementById('c-photo-tray');
-  var lbl=document.getElementById('c-photo-lbl');
-  if(!tray)return;
-  tray.innerHTML='';
-  if(!cFiles.length){
-    tray.style.display='none';
-    if(lbl)lbl.style.display='';
-    return;
-  }
-  tray.style.display='flex';
-  cFiles.forEach(function(f,i){
-    var chip=document.createElement('div');chip.className='photo-chip';
-    var objUrl=URL.createObjectURL(f);
-    var img=document.createElement('img');
-    img.src=objUrl;
-    img.style.borderRadius='10px';
-    // Tap thumbnail → fullscreen preview
-    (function(url){
-      img.addEventListener('click',function(e){e.stopPropagation();openPhotoPreview(url);});
-    })(objUrl);
-    // Order badge (shows position e.g. "1" "2")
-    var badge=document.createElement('div');
-    badge.style.cssText='position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--card);border:2px solid var(--card);border-radius:999px;min-width:18px;height:18px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:2;padding:0 3px;pointer-events:none';
-    badge.textContent=(i+1)+(cFiles.length>1?'/'+cFiles.length:'');
-    var rm=document.createElement('button');rm.className='photo-chip-rm';rm.textContent='✕';
-    (function(idx){rm.onclick=function(ev){ev.preventDefault();ev.stopPropagation();rmCI(idx);};})(i);
-    chip.appendChild(img);chip.appendChild(rm);chip.appendChild(badge);
-    tray.appendChild(chip);
-  });
-  if(cFiles.length<5){
-    var add=document.createElement('label');add.className='photo-add-btn';add.setAttribute('for','c-file2');
-    add.innerHTML='<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    tray.appendChild(add);
-  }
-  if(lbl)lbl.style.display='none';
-}
+function pickCI(e){var f=e.target.files[0];if(!f)return;cFile=f;document.getElementById('c-pi').src=URL.createObjectURL(f);document.getElementById('c-pv').classList.add('on');}
+function rmCI(){cFile=null;document.getElementById('c-pv').classList.remove('on');document.getElementById('c-pi').src='';document.getElementById('c-file2').value='';}
 
 // ── IMAGE COMPRESSION ─────────────────────────────────────────────────────────
 // Compresses a File/Blob to JPEG at maxDim px and quality q (0-1).
@@ -4555,56 +4209,47 @@ function compressImage(file, maxDim, quality){
 }
 
 function submitPost(){
-  var txt=document.getElementById('c-text').value.trim();if(!txt&&!cFiles.length)return T('Add text or a photo');
+  var txt=document.getElementById('c-text').value.trim();if(!txt&&!cFile)return T('Add text or a photo');
   var btn=document.querySelector('#compose-bg .dropbtn');
   if(btn){btn.textContent='Dropping…';btn.disabled=true;}
   function resetBtn(){if(btn){btn.textContent='Drop it';btn.disabled=false;}}
 
-  function doInsert(imgVal){
+  function doInsert(imgUrl){
     var expires=new Date(Date.now()+86400000).toISOString();
     _sb.from('posts').insert({
-      user_id:profile.id, text:txt||null, img_url:imgVal||null, expires_at:expires
+      user_id:profile.id, text:txt||null, img_url:imgUrl||null, expires_at:expires
     }).select('*, profiles:user_id(id,username,display_name,avatar_url)').single()
     .then(function(res){
       resetBtn();
       if(res.error){T('Could not post. Try again.');return;}
       var r=res.data,au=r.profiles||{};
-      var np={id:r.id,uid:r.user_id,author:{display_name:au.display_name||au.username,username:au.username,avatar_url:au.avatar_url},text:r.text||'',img:imgVal||null,likes:0,liked:false,comments:[],ts:r.created_at};
+      var np={id:r.id,uid:r.user_id,author:{display_name:au.display_name||au.username,username:au.username,avatar_url:au.avatar_url},text:r.text||'',img:r.img_url||null,likes:0,liked:false,comments:[],ts:r.created_at};
       newPid=np.id;posts.unshift(np);
-      document.getElementById('c-text').value='';
-      cFiles=[];renderPhotoTray();
-      closeCompose();SFX('drop');haptic('success');renderFeed();if(curTab==='me')renderMe();T('Dropped');
+      document.getElementById('c-text').value='';rmCI();closeCompose();SFX('drop');haptic('success');renderFeed();if(curTab==='me')renderMe();T('Dropped');
       setTimeout(function(){if(newPid===np.id)newPid=null;},5000);
     });
   }
 
-  if(!cFiles.length){doInsert(null);return;}
-
-  // Upload all files, then store URLs (1 file = plain string, 2-5 = JSON array)
-  var uploads=cFiles.map(function(f){
-    return compressImage(f,1280,0.82).then(function(compressed){
-      var path=profile.id+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg';
-      return _sb.storage.from('post-images').upload(path,compressed,{contentType:'image/jpeg',upsert:true})
-        .then(function(sr){
-          if(sr.error){
-            return new Promise(function(resolve){
-              var reader=new FileReader();
-              reader.onload=function(ev){resolve(ev.target.result);};
-              reader.readAsDataURL(f);
-            });
-          }
-          var pub=_sb.storage.from('post-images').getPublicUrl(path);
-          return(pub.data&&pub.data.publicUrl)||null;
-        });
+  if(cFile){
+    compressImage(cFile, 1280, 0.82).then(function(compressed){
+      var ext = 'jpg';
+      var path = profile.id+'/'+Date.now()+'.jpg';
+      _sb.storage.from('post-images').upload(path, compressed, {contentType:'image/jpeg', upsert:true})
+      .then(function(sr){
+        if(sr.error){
+          // fallback: read original as data URL
+          var reader = new FileReader();
+          reader.onload = function(ev){ doInsert(ev.target.result); };
+          reader.readAsDataURL(cFile);
+        } else {
+          var pub = _sb.storage.from('post-images').getPublicUrl(path);
+          doInsert(pub.data&&pub.data.publicUrl||null);
+        }
+      });
     });
-  });
-
-  Promise.all(uploads).then(function(urls){
-    urls=urls.filter(Boolean);
-    if(!urls.length){resetBtn();T('Upload failed. Try again.');return;}
-    var imgVal=urls.length===1?urls[0]:JSON.stringify(urls);
-    doInsert(imgVal);
-  }).catch(function(){resetBtn();T('Upload failed. Try again.');});
+  } else {
+    doInsert(null);
+  }
 }
 
 // ── STORY STRIP ───────────────────────────────────────────────────────────────
@@ -4677,8 +4322,6 @@ function renderStrip(){
     (function(idx){el.onclick=function(){openSV(idx);};})(gi);
     strip.appendChild(el);
   });
-  // Re-render talk list so story rings reflect current svGroups state
-  if(typeof _renderTalkFromCache==='function')_renderTalkFromCache();
 }
 
 // ── STORY CREATOR ─────────────────────────────────────────────────────────────
@@ -4922,8 +4565,7 @@ function openSV(gi){
   var body=document.getElementById('svbody');
   body.addEventListener('touchstart',svHoldStart,{passive:true});body.addEventListener('touchend',svHoldEnd,{passive:true});
   body.addEventListener('mousedown',svHoldStart);body.addEventListener('mouseup',svHoldEnd);body.addEventListener('mouseleave',svHoldEnd);
-  var sv=document.getElementById('sv');
-  sv.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){sv.style.opacity='1';});});
+  var sv=document.getElementById('sv');sv.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){sv.style.opacity='1';});});
   renderSVFrame(false);startSVTmr();
 }
 function svHoldStart(){if(svPaused||svViewsOpen)return;svPaused=true;clearTimeout(svTmr);var elapsed=Date.now()-svBarStart;svBarDone=Math.min(svBarDone+elapsed,5000);var f=document.getElementById('svf-'+svII);if(f){var pct=(svBarDone/5000)*100;f.style.transition='none';f.style.width=pct+'%';}}
@@ -4933,9 +4575,7 @@ function closeSV(){
   var body=document.getElementById('svbody');
   body.removeEventListener('touchstart',svHoldStart);body.removeEventListener('touchend',svHoldEnd);
   body.removeEventListener('mousedown',svHoldStart);body.removeEventListener('mouseup',svHoldEnd);body.removeEventListener('mouseleave',svHoldEnd);
-  var sv=document.getElementById('sv');
-  sv.style.opacity='0';
-  var returnCtx=_svReturnCtx;_svReturnCtx=null;
+  var sv=document.getElementById('sv');sv.style.opacity='0';
   setTimeout(function(){
     sv.style.display='none';
     // if opened from profile screen, restore it
@@ -4943,22 +4583,9 @@ function closeSV(){
       _svFromProf=false;
       var ps=document.getElementById('prof-screen');
       if(ps){
+        // display was kept, just animate .on back in
         requestAnimationFrame(function(){requestAnimationFrame(function(){ps.classList.add('on');});});
       }
-      return;
-    }
-    // Return to chat window if opened from inside chat
-    if(returnCtx==='chat'){
-      var cw=document.getElementById('cw');
-      if(cw&&chatUser){
-        cw.style.display='';cw.style.visibility='';cw.style.pointerEvents='';
-        cw.classList.add('on');
-      }
-      return;
-    }
-    // Return to talk tab if opened from talk list
-    if(returnCtx==='talk'){
-      goTab('talk');
     }
   },220);
 }
@@ -5043,21 +4670,7 @@ function svRiBlur(){
   if(ri&&ri.value.trim())return;
   if(svPaused)svHoldEnd();
 }
-function svProfTap(){
-  var g=svGroups[svGI];
-  if(!g||g.user.id==='demo')return;
-  var u=g.user;
-  var ctx=_svReturnCtx;
-  // Close SV silently — no tab switch side-effect
-  clearTimeout(svTmr);svPaused=false;svBarDone=0;svViewsOpen=false;
-  var sv=document.getElementById('sv');
-  sv.style.opacity='0';
-  _svReturnCtx=null;
-  setTimeout(function(){sv.style.display='none';},220);
-  // Open profile with correct back context
-  if(ctx==='chat'){_profFromChat=true;}
-  openProf(u);
-}
+function svProfTap(){var g=svGroups[svGI];if(g&&g.user.id!=='demo'){closeSV();openProf(g.user);}}
 function renderSVFrame(animate){
   var g=svGroups[svGI];if(!g||!g.items||!g.items.length){closeSV();return;}
   var item=g.items[svII];if(!item){closeSV();return;}
@@ -5105,9 +4718,8 @@ function startSVTmr(){
   if(f){f.style.transition='none';f.style.width='0%';requestAnimationFrame(function(){requestAnimationFrame(function(){if(!isOwn){f.style.transition='width 5s linear';f.style.width='100%';}else{f.style.width='100%';}});});}
   if(!isOwn){svTmr=setTimeout(function(){svBarDone=0;svNext();},5000);}
 }
-function svNext(){if(svViewsOpen)return;clearTimeout(svTmr);svBarDone=0;svPaused=false;var g=svGroups[svGI];if(!g)return closeSV();var isOwn=g.user.id==='demo';if(svII<g.items.length-1){svII++;renderSVFrame(true);startSVTmr();}else if(!isOwn){// If opened from talk or chat, close instead of jumping to another user's story
-if(_svReturnCtx==='talk'||_svReturnCtx==='chat'){closeSV();return;}var nextGI=-1;for(var i=svGI+1;i<svGroups.length;i++){if(svGroups[i].items&&svGroups[i].items.length>0){nextGI=i;break;}}if(nextGI>=0){svGI=nextGI;svII=0;renderSVFrame(true);startSVTmr();}else closeSV();}}
-function svPrev(){if(svViewsOpen)return;clearTimeout(svTmr);svBarDone=0;svPaused=false;if(svII>0){svII--;}else if(svGI>0&&_svReturnCtx!=='talk'&&_svReturnCtx!=='chat'){for(var i=svGI-1;i>=0;i--){if(svGroups[i].items&&svGroups[i].items.length>0){svGI=i;svII=svGroups[svGI].items.length-1;break;}}}renderSVFrame(true);startSVTmr();}
+function svNext(){if(svViewsOpen)return;clearTimeout(svTmr);svBarDone=0;svPaused=false;var g=svGroups[svGI];if(!g)return closeSV();var isOwn=g.user.id==='demo';if(svII<g.items.length-1){svII++;renderSVFrame(true);startSVTmr();}else if(!isOwn){var nextGI=-1;for(var i=svGI+1;i<svGroups.length;i++){if(svGroups[i].items&&svGroups[i].items.length>0){nextGI=i;break;}}if(nextGI>=0){svGI=nextGI;svII=0;renderSVFrame(true);startSVTmr();}else closeSV();}}
+function svPrev(){if(svViewsOpen)return;clearTimeout(svTmr);svBarDone=0;svPaused=false;if(svII>0){svII--;}else if(svGI>0){for(var i=svGI-1;i>=0;i--){if(svGroups[i].items&&svGroups[i].items.length>0){svGI=i;svII=svGroups[svGI].items.length-1;break;}}}renderSVFrame(true);startSVTmr();}
 
 // ── VIEWS SHEET ───────────────────────────────────────────────────────────────
 function openViewsSheet(){
@@ -5385,25 +4997,13 @@ function _renderTalkFromCache(){
       row.style.cssText='display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;background:var(--card);-webkit-tap-highlight-color:transparent';
       row.classList.add('anim-fade-up');
 
-      // Avatar with story ring
-      var gi=storyGIForUser(uid);
-      var hasStory=gi>=0;
-      var storySeen=hasStory&&svGroups[gi]&&svGroups[gi].seen;
-
       var avWrap=document.createElement('div');
       avWrap.setAttribute('data-av-wrap','1');
-      avWrap.style.cssText='position:relative;width:58px;height:58px;min-width:58px;flex-shrink:0';
-
-      var storyRing=document.createElement('div');
-      storyRing.style.cssText='width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;'+(hasStory?(storySeen?'background:var(--border)':'background:var(--text)'):'');
-
-      var avPad=document.createElement('div');
-      avPad.style.cssText='width:'+(hasStory?'52px':'58px')+';height:'+(hasStory?'52px':'58px')+';border-radius:50%;overflow:hidden;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;'+(hasStory?'border:2.5px solid var(--card)':'');
-      avPad.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-
-      storyRing.appendChild(avPad);
-      avWrap.appendChild(storyRing);
-
+      avWrap.style.cssText='position:relative;width:54px;height:54px;min-width:54px;flex-shrink:0';
+      var avInner=document.createElement('div');
+      avInner.style.cssText='width:54px;height:54px;border-radius:50%;overflow:hidden;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700';
+      avInner.innerHTML=avH(u.avatar_url,u.display_name||u.username);
+      avWrap.appendChild(avInner);
       if(_active){
         var gd=document.createElement('div');
         gd.setAttribute('data-green-dot','1');
@@ -5439,23 +5039,6 @@ function _renderTalkFromCache(){
       row.addEventListener('touchend',function(){clearTimeout(_holdT);},{passive:true});
       row.addEventListener('touchmove',function(){clearTimeout(_holdT);},{passive:true});
       row.addEventListener('contextmenu',function(e){e.preventDefault();showConvoMenu(u,row);});
-
-      // Avatar taps open story (if user has one); row taps open chat
-      (function(userId,storyRingEl){
-        storyRingEl.addEventListener('click',function(e){
-          e.stopPropagation();
-          if(_holdFired)return;
-          var sgi=storyGIForUser(userId);
-          if(sgi>=0){openSVFromTalk(userId);}
-          else{
-            // no story — open chat normally
-            _sb.from('messages').update({is_read:true})
-              .eq('sender_id',userId).eq('receiver_id',profile.id).eq('is_read',false).then(function(){});
-            unreadConvos.delete(userId);updateTalkDot();openChat(u);
-          }
-        });
-      })(uid,storyRing);
-
       row.onclick=function(){
         if(_holdFired)return;
         _sb.from('messages').update({is_read:true})
@@ -5532,25 +5115,6 @@ function setChatHeader(u){
   var cwavEl=document.getElementById('cwav');
   cwavEl.style.background=nc(u.display_name);
   setAv(cwavEl,u.avatar_url,u.display_name);
-
-  // Story ring on chat avatar
-  var cwavWrap=document.getElementById('cwav-wrap');
-  if(cwavWrap){
-    var gi=storyGIForUser(u.id);
-    var hasStory=gi>=0;
-    var storySeen=hasStory&&svGroups[gi]&&svGroups[gi].seen;
-    cwavWrap.style.cssText='position:relative;flex-shrink:0;width:'+(hasStory?'42px':'38px')+';height:'+(hasStory?'42px':'38px');
-    cwavWrap.style.borderRadius='50%';
-    cwavWrap.style.padding=hasStory?'2.5px':'0';
-    cwavWrap.style.background=hasStory?(storySeen?'var(--border)':'var(--text)'):'';
-    cwavWrap.style.cursor=hasStory?'pointer':'default';
-    cwavWrap.onclick=hasStory?function(e){e.stopPropagation();openSVFromChat(u.id);}:null;
-    // Resize inner avatar to fit ring
-    cwavEl.style.width=hasStory?'37px':'38px';
-    cwavEl.style.height=hasStory?'37px':'38px';
-    cwavEl.style.border=hasStory?'2.5px solid var(--card)':'';
-  }
-
   var active=isActiveNow(u.id);
   var statusEl=document.getElementById('cw-status');
   var dotEl=document.getElementById('cw-dot');
@@ -5610,7 +5174,6 @@ function openChat(u){
         }
         var rawContent=r.content||'';
         var storyPreviewParsed=null;
-        var postShareParsed=null;
         var displayText=rawContent;
         if(rawContent.startsWith('[storyreply:')){
           var nlIdx=rawContent.indexOf('\n');
@@ -5618,11 +5181,6 @@ function openChat(u){
           if(jsonPart.endsWith(']'))jsonPart=jsonPart.slice(0,-1);
           try{storyPreviewParsed=JSON.parse(jsonPart);}catch(e){}
           displayText=nlIdx>0?rawContent.slice(nlIdx+1):'';
-        } else if(rawContent.startsWith('[postshare:')){
-          var psJson=rawContent.slice(11);
-          if(psJson.endsWith(']'))psJson=psJson.slice(0,-1);
-          try{postShareParsed=JSON.parse(psJson);}catch(e){}
-          displayText='';
         }
         var m={
           id:r.id,
@@ -5636,7 +5194,6 @@ function openChat(u){
           replyTo:replyToText,
           replyToSender:replyToSender,
           preview:storyPreviewParsed,
-          postShare:postShareParsed,
           ts:new Date(r.created_at).getTime(),
           isRead:r.is_read
         };
@@ -5729,7 +5286,6 @@ function subscribeToChat(partnerId){
       }
       var rawContent2=r.content||r.text||'';
       var storyPreview2=null;
-      var postShare2=null;
       var displayText2=rawContent2;
       if(rawContent2.startsWith('[storyreply:')){
         var nlIdx2=rawContent2.indexOf('\n');
@@ -5737,11 +5293,6 @@ function subscribeToChat(partnerId){
         if(jsonPart2.endsWith(']'))jsonPart2=jsonPart2.slice(0,-1);
         try{storyPreview2=JSON.parse(jsonPart2);}catch(e){}
         displayText2=nlIdx2>0?rawContent2.slice(nlIdx2+1):'';
-      } else if(rawContent2.startsWith('[postshare:')){
-        var psJson2=rawContent2.slice(11);
-        if(psJson2.endsWith(']'))psJson2=psJson2.slice(0,-1);
-        try{postShare2=JSON.parse(psJson2);}catch(e){}
-        displayText2='';
       }
       var m={
         id:r.id,
@@ -5754,7 +5305,6 @@ function subscribeToChat(partnerId){
         replyTo:null,
         replyToSender:null,
         preview:storyPreview2,
-        postShare:postShare2,
         ts:new Date(r.created_at).getTime(),
         isRead:r.is_read
       };
@@ -6145,13 +5695,7 @@ function appendBubble(m){
     b.classList.add('anim-bubble-in');
     b.style.transformOrigin=isMine?'bottom right':'bottom left';
 
-    if(m.postShare){
-      // Post share card
-      b.style.cssText='display:inline-flex;flex-direction:column;gap:0;background:none;align-items:'+(isMine?'flex-end':'flex-start');
-      var psc=buildPostShareCard(m.postShare,isMine);
-      b.appendChild(psc);
-      attachHold(b,m,wrap,bs,isMine);
-    } else if(m.preview){
+    if(m.preview){
       // Story reply — Instagram style: compact card above, reply bubble below, aligned to side
       b.style.cssText='display:inline-flex;flex-direction:column;gap:6px;background:none;align-items:'+(isMine?'flex-end':'flex-start');
       // Story preview card (compact, auto-width)
@@ -6318,153 +5862,6 @@ function buildSRC(p,isMine){
 
   return card;
 }
-// == POST SHARE CARD (in DM bubbles) ==========================================
-function buildPostShareCard(p,isMine){
-  var card=document.createElement('div');
-  card.style.cssText='width:220px;border-radius:16px;overflow:hidden;cursor:pointer;background:var(--card);border:1.5px solid var(--border)';
-  var hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 12px 9px';
-  var avDiv=document.createElement('div');
-  avDiv.style.cssText='width:24px;height:24px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:'+nc(p.authorName||'?');
-  avDiv.innerHTML=avH(p.authorAvatar||null,p.authorName||'?');
-  var meta=document.createElement('div');
-  meta.style.cssText='flex:1;min-width:0';
-  meta.innerHTML='<div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(p.authorName||'Someone')+'</div><div style="font-size:11px;color:var(--sub);margin-top:1px">shared a drop</div>';
-  hdr.appendChild(avDiv);hdr.appendChild(meta);
-  // Tap author name → open their profile above the scroll-view overlay
-  var authorUser2=p.authorId?USERS.find(function(x){return x.id===p.authorId;})||{id:p.authorId,display_name:p.authorName||'Someone',username:(p.authorName||'someone').toLowerCase(),avatar_url:p.authorAvatar||null}:null;
-  if(authorUser2){
-    hdr.style.cursor='pointer';
-    hdr.addEventListener('click',function(e){
-      e.stopPropagation();
-      var sv=document.getElementById('scroll-view');
-      var svOpen=sv&&sv.classList.contains('on');
-      var ps=document.getElementById('prof-screen');
-      if(svOpen){
-        // Keep scroll-view alive underneath — lift prof-screen above it
-        ps.style.zIndex='670';
-        sv.style.zIndex='660';
-        _profFromScrollView=true;
-      } else {
-        // From chat window
-        _chatBackCtx='prof';
-        _profFromChat=true;
-      }
-      openProf(authorUser2);
-    });
-  }
-  card.appendChild(hdr);
-  var divEl=document.createElement('div');divEl.style.cssText='height:1px;background:var(--border)';card.appendChild(divEl);
-  if(p.img){
-    var imgEl=document.createElement('img');imgEl.src=p.img;
-    imgEl.style.cssText='width:100%;height:130px;display:block;object-fit:cover';
-    imgEl.onerror=function(){this.style.display='none';};
-    card.appendChild(imgEl);
-    if(p.caption){var capEl=document.createElement('div');capEl.style.cssText='padding:9px 12px;font-size:12.5px;color:var(--sub);line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';capEl.textContent=p.caption;card.appendChild(capEl);}
-  } else if(p.caption){
-    var txtBox=document.createElement('div');txtBox.style.cssText='padding:12px;min-height:72px;display:flex;align-items:center';
-    var txtEl=document.createElement('p');txtEl.style.cssText='font-size:13.5px;line-height:1.55;color:var(--text);margin:0;word-break:break-word;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden';
-    txtEl.textContent=p.caption;txtBox.appendChild(txtEl);card.appendChild(txtBox);
-  } else {
-    var fadedB=document.createElement('div');fadedB.style.cssText='padding:14px 12px;text-align:center';fadedB.innerHTML='<span style="font-size:12px;color:var(--sub)">Drop</span>';card.appendChild(fadedB);
-  }
-  var foot=document.createElement('div');foot.style.cssText='padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)';
-  foot.innerHTML='<span style="font-size:11.5px;color:var(--sub);font-weight:500">Tap to view</span><svg width="12" height="12" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
-  card.appendChild(foot);
-  card.onclick=function(){
-    if(!p.postId){T('This drop has faded');return;}
-    openNotifPost(p.postId,null);
-  };
-  return card;
-}
-function sendPostShareMsg(toUser,postId){
-  if(!profile||!toUser)return;
-  var p=posts.find(function(x){return x.id===postId;});
-  if(!p){T('Post not found');return;}
-  var _scThumb=p.img||null;
-  if(_scThumb){try{var _scA=JSON.parse(_scThumb);if(Array.isArray(_scA)&&_scA.length>0)_scThumb=_scA[0];}catch(_e){}}
-  var cardData={postId:p.id,authorName:(p.author&&(p.author.display_name||p.author.username))||'Someone',authorAvatar:(p.author&&p.author.avatar_url)||null,authorId:p.uid||null,caption:(p.text||'').slice(0,120),img:_scThumb};
-  var encoded='[postshare:'+JSON.stringify(cardData)+']';
-  var expires=new Date(Date.now()+86400000).toISOString();
-  var tempId='tmp-'+Date.now();
-  var m={id:tempId,sid:'demo',text:encoded,postShare:cardData,ts:Date.now()};
-  if(chatUser&&chatUser.id===toUser.id){appendBubble(m);var msgs=document.getElementById('msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;}
-  var cv=convos.find(function(x){return x.user.id===toUser.id;});
-  if(cv){cv.lastMsg='[postshare:'+JSON.stringify(cardData)+']';cv.lastSid='demo';cv.ts=Date.now();convos.sort(function(a,b){return b.ts-a.ts;});}
-  else{convos.unshift({user:toUser,lastMsg:'[postshare:'+JSON.stringify(cardData)+']',lastSid:'demo',ts:Date.now()});}
-  _sb.from('messages').insert({sender_id:profile.id,receiver_id:toUser.id,content:encoded,is_read:false,expires_at:expires}).select('id').single().then(function(res){
-    if(res.error){T('Send failed ('+res.error.code+')');return;}
-    var el=document.querySelector('[data-msgid="'+tempId+'"]');if(el)el.dataset.msgid=res.data.id;m.id=res.data.id;
-    _sb.auth.getSession().then(function(sr){
-      var token=sr.data&&sr.data.session&&sr.data.session.access_token;if(!token)return;
-      fetch('https://xmgmpewuevzgriqgsoct.supabase.co/functions/v1/send-push',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({recipientId:toUser.id,type:'message',actor:{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},extra:{msgText:'Shared a drop with you'}})}).catch(function(){});
-    });
-  });
-  T('Sent to '+(toUser.display_name||toUser.username));SFX('send');haptic('send');
-}
-function sendProfileShareMsg(toUser){
-  if(!profile||!toUser)return;
-  var url=window.location.origin+'?user='+(profile.username||'');
-  var txt='\uD83D\uDC64 '+(profile.display_name||profile.username)+' on Fade\n'+url;
-  var expires=new Date(Date.now()+86400000).toISOString();
-  var tempId='tmp-'+Date.now();
-  var m={id:tempId,sid:'demo',text:txt,ts:Date.now()};
-  if(chatUser&&chatUser.id===toUser.id){appendBubble(m);var msgs=document.getElementById('msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;}
-  var cv=convos.find(function(x){return x.user.id===toUser.id;});
-  if(cv){cv.lastMsg=txt.slice(0,40);cv.lastSid='demo';cv.ts=Date.now();convos.sort(function(a,b){return b.ts-a.ts;});}
-  else{convos.unshift({user:toUser,lastMsg:txt.slice(0,40),lastSid:'demo',ts:Date.now()});}
-  _sb.from('messages').insert({sender_id:profile.id,receiver_id:toUser.id,content:txt,is_read:false,expires_at:expires}).select('id').single().then(function(res){
-    if(res.error){T('Send failed ('+res.error.code+')');return;}
-    var el=document.querySelector('[data-msgid="'+tempId+'"]');if(el)el.dataset.msgid=res.data.id;
-  });
-  T('Sent to '+(toUser.display_name||toUser.username));SFX('send');haptic('send');
-}
-function openPostSharePicker(postId){_openFadePicker(function(u){sendPostShareMsg(u,postId);},'Share Drop');}
-function openProfileSharePicker(){_openFadePicker(function(u){sendProfileShareMsg(u);},'Share Profile');}
-function _openFadePicker(onSelect,title){
-  var ex=document.getElementById('fade-picker-ov');if(ex)ex.remove();
-  var ov=document.createElement('div');ov.id='fade-picker-ov';
-  ov.style.cssText='position:fixed;inset:0;z-index:820;background:rgba(0,0,0,.45);display:flex;align-items:flex-end';
-  var sheet=document.createElement('div');
-  sheet.style.cssText='background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(28px,env(safe-area-inset-bottom));max-height:75vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.25,.46,.45,.94);will-change:transform';
-  var handle=document.createElement('div');handle.style.cssText='width:36px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0';
-  var hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0';
-  hdr.innerHTML='<span style="font-weight:700;font-size:15px">'+E(title||'Send in Fade')+'</span><button id="fade-picker-x" style="background:var(--inp-bg);border:none;cursor:pointer;color:var(--sub);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-family:Inter,sans-serif">&#10005;</button>';
-  var searchWrap=document.createElement('div');searchWrap.style.cssText='padding:0 16px 10px;flex-shrink:0';
-  var searchInp=document.createElement('input');searchInp.type='text';searchInp.placeholder='Search people...';searchInp.className='inp';searchInp.style.cssText='width:100%;padding:11px 14px;font-size:14px;border-radius:12px';searchInp.autocomplete='off';
-  searchWrap.appendChild(searchInp);
-  var list=document.createElement('div');list.style.cssText='overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch';
-  function close(){sheet.style.transform='translateY(100%)';setTimeout(function(){ov.remove();},300);}
-  function renderPickerList(query){
-    list.innerHTML='';query=(query||'').toLowerCase().trim();
-    var seen={},candidates=[];
-    convos.forEach(function(c){if(!c.user||c.user.id===profile.id)return;seen[c.user.id]=true;candidates.push({user:c.user,section:'Recent'});});
-    USERS.forEach(function(u){if(u.id===profile.id||!following.has(u.id)||seen[u.id])return;seen[u.id]=true;candidates.push({user:u,section:'Following'});});
-    if(query){candidates=candidates.filter(function(c){var n=(c.user.display_name||'').toLowerCase(),un=(c.user.username||'').toLowerCase();return n.includes(query)||un.includes(query);});}
-    if(!candidates.length){list.innerHTML='<div style="padding:28px 16px;text-align:center;font-size:14px;color:var(--sub)">No people found</div>';return;}
-    var lastSec=null;
-    candidates.forEach(function(c){
-      var u=c.user;
-      if(!query&&c.section!==lastSec){lastSec=c.section;var sec=document.createElement('div');sec.style.cssText='padding:10px 18px 4px;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--sub);text-transform:uppercase';sec.textContent=c.section;list.appendChild(sec);}
-      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 18px;cursor:pointer;-webkit-tap-highlight-color:transparent';
-      var avD=document.createElement('div');avD.style.cssText='width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;background:'+nc(u.display_name||u.username);avD.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-      var inf=document.createElement('div');inf.style.cssText='flex:1;min-width:0';
-      inf.innerHTML='<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username)+' '+badgeFor(u.id)+'</div><div style="font-size:12.5px;color:var(--sub);margin-top:1px">@'+E(u.username||'')+'</div>';
-      var sendBtn=document.createElement('button');sendBtn.style.cssText='background:var(--text);color:var(--card);border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;flex-shrink:0';sendBtn.textContent='Send';
-      (function(user){sendBtn.onclick=function(e){e.stopPropagation();close();onSelect(user);};row.onclick=function(){close();onSelect(user);};})(u);
-      row.appendChild(avD);row.appendChild(inf);row.appendChild(sendBtn);list.appendChild(row);
-    });
-  }
-  renderPickerList('');
-  searchInp.oninput=function(){renderPickerList(this.value);};
-  sheet.appendChild(handle);sheet.appendChild(hdr);sheet.appendChild(searchWrap);sheet.appendChild(list);
-  ov.appendChild(sheet);document.body.appendChild(ov);
-  ov.onclick=function(e){if(e.target===ov)close();};
-  document.getElementById('fade-picker-x').onclick=close;
-  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
-}
-
-
 function attachHold(el,m,w,bs,isMine){
   var t=null,fired=false;
   el.style.userSelect='none';
@@ -6684,7 +6081,7 @@ function closeCW(){
   if(chatUser){unreadConvos.delete(chatUser.id);}
   updateTalkDot();
   cw.style.transform='translateX(100%)';
-  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.zIndex='';cw.style.visibility='hidden';cw.style.pointerEvents='none';chatUser=null;renderTalkList();},320);
+  setTimeout(function(){cw.classList.remove('on');cw.style.display='';cw.style.transform='';cw.style.visibility='hidden';cw.style.pointerEvents='none';chatUser=null;renderTalkList();},320);
 }
 function renderMentions(text){
   return E(text).replace(/@(\w+)/g,function(match,handle){
@@ -6704,19 +6101,12 @@ function openProfFromCS(u){
   var full=USERS.find(function(x){return x.id===u.id||x.username===u.username||x.display_name===u.display_name;})||u;
   var csBg=document.getElementById('cs-bg');
   var csSheet=document.getElementById('cs-sheet');
-  // Slide CS sheet out — but keep cs-bg history entry alive.
-  // We replace it with a prof-screen entry so the stack stays 1:1 with visible screens.
   csBg.classList.remove('on');
   csSheet.style.transform='translateY(100%)';
   setTimeout(function(){
     csBg.style.display='none';
     _csProfReturn=true;
-    // openProf is wrapped — it will push its own history entry.
-    // But we must first consume the cs-bg history entry so there's no phantom.
-    // Replace current history state with prof-screen so swipe back lands correctly.
-    history.replaceState({ _fade: 'prof-screen' }, '');
-    var origOpenProf = window._origOpenProf || window.openProf;
-    origOpenProf(full);
+    openProf(full);
   },200);
 }
 
@@ -6724,30 +6114,6 @@ function openCS(pid){
   csPid=pid;csReply=null;document.getElementById('cs-rb').classList.remove('on');
   var p=posts.find(function(x){return x.id===pid;});if(!p){T('Post not found');return;}
   document.getElementById('cs-pp').innerHTML='';
-
-  // ── Sync live counts from DB whenever a post is opened ──
-  _sb.from('posts').select('likes_count,comments_count').eq('id',pid).single().then(function(res){
-    if(!res.data)return;
-    if(res.data.likes_count!=null&&res.data.likes_count!==p.likes){
-      p.likes=res.data.likes_count;
-      document.querySelectorAll('#lc-'+pid).forEach(function(el){el.textContent=p.likes;});
-    }
-    if(res.data.comments_count!=null&&res.data.comments_count!==p.commentsCount){
-      p.commentsCount=res.data.comments_count;
-      document.querySelectorAll('#cc-'+pid).forEach(function(el){el.textContent=p.commentsCount;});
-    }
-  });
-  // Sync own like state
-  if(profile){
-    _sb.from('likes').select('id',{head:true,count:'exact'}).eq('post_id',pid).eq('user_id',profile.id).then(function(res){
-      var nowLiked=(res.count||0)>0;
-      if(p.liked!==nowLiked){
-        p.liked=nowLiked;
-        document.querySelectorAll('#lb-'+pid).forEach(function(b){b.classList.toggle('liked',nowLiked);});
-        document.querySelectorAll('#hi-'+pid).forEach(function(h){h.setAttribute('fill',nowLiked?'currentColor':'none');});
-      }
-    });
-  }
 
   // Clear stale comments BEFORE sheet opens — nothing old ever flashes
   p.comments=[];
@@ -7205,25 +6571,11 @@ function openNotifPost(pid, csHint){
       var now=Date.now();
       if(r.expires_at&&new Date(r.expires_at).getTime()<now){T('Post has expired');return;}
       var author=USERS.find(function(x){return x.id===r.user_id;})||{id:r.user_id,display_name:'User',username:'user',avatar_url:null};
-      var fetchedPost={id:r.id,uid:r.user_id,author:{display_name:author.display_name,username:author.username,avatar_url:author.avatar_url},text:r.content||'',img:r.img_url||null,likes:r.likes_count||0,liked:false,commentsCount:r.comments_count||0,comments:[],ts:r.created_at};
+      var fetchedPost={id:r.id,uid:r.user_id,author:{display_name:author.display_name,username:author.username,avatar_url:author.avatar_url},text:r.content||'',img:r.img_url||null,likes:r.likes_count||0,liked:false,comments:[],ts:r.created_at};
       posts.push(fetchedPost);
       openNotifPost(pid,csHint);
     });
     return;
-  }
-  // ── Always sync live counts from DB before rendering ──
-  _sb.from('posts').select('likes_count,comments_count').eq('id',pid).single().then(function(res){
-    if(res.data){
-      if(res.data.likes_count!=null){p.likes=res.data.likes_count;document.querySelectorAll('#lc-'+pid).forEach(function(el){el.textContent=p.likes;});}
-      if(res.data.comments_count!=null){p.commentsCount=res.data.comments_count;document.querySelectorAll('#cc-'+pid).forEach(function(el){el.textContent=p.commentsCount;});}
-    }
-  });
-  // Also sync own liked state from DB
-  if(profile){
-    _sb.from('likes').select('id',{head:true,count:'exact'}).eq('post_id',pid).eq('user_id',profile.id).then(function(res){
-      var nowLiked=(res.count||0)>0;
-      if(p.liked!==nowLiked){p.liked=nowLiked;document.querySelectorAll('#lb-'+pid).forEach(function(b){b.classList.toggle('liked',nowLiked);});document.querySelectorAll('#hi-'+pid).forEach(function(h){h.setAttribute('fill',nowLiked?'currentColor':'none');});}
-    });
   }
   _notifPostReturn=true;
   var f=document.getElementById('sv-feed');f.innerHTML='';
@@ -7233,30 +6585,6 @@ function openNotifPost(pid, csHint){
     if(onc&&onc.indexOf('openCS')>-1){
       var m=onc.match(/openCS\('([^']+)'\)/);
       if(m){btn.removeAttribute('onclick');(function(id){btn.addEventListener('click',function(e){e.stopPropagation();openCS(id);});})(m[1]);}
-    }
-  });
-  // Fix: avatar/name clicks inside scroll-view must set _profFromScrollView so back returns here
-  el.querySelectorAll('.av,.postmeta').forEach(function(av){
-    var onc=av.getAttribute('onclick');
-    if(onc&&onc.indexOf('openProf')>-1){
-      var m=onc.match(/openProf\((.+)\)/);
-      if(m){
-        av.removeAttribute('onclick');
-        (function(jsonStr){
-          av.addEventListener('click',function(e){
-            e.stopPropagation();
-            try{
-              var u=JSON.parse(jsonStr);
-              var sv2=document.getElementById('scroll-view');
-              var ps2=document.getElementById('prof-screen');
-              ps2.style.zIndex='670';
-              sv2.style.zIndex='660';
-              _profFromScrollView=true;
-              openProf(u);
-            }catch(ex){}
-          });
-        })(m[1]);
-      }
     }
   });
   f.appendChild(el);
@@ -7283,8 +6611,6 @@ function openNotifPost(pid, csHint){
     });
   }
   sv.style.display='flex';
-  sv.style.visibility='';
-  sv.style.pointerEvents='';
   requestAnimationFrame(function(){requestAnimationFrame(function(){
     sv.classList.add('on');
     // after scroll view slides in, open comment sheet + scroll to target
@@ -7444,8 +6770,6 @@ function openProf(u){
   _renderProfBody(full, full.followers||0, full.following||0);
   document.getElementById('prof-back-btn').onclick=closeProf;
   var ps=document.getElementById('prof-screen');
-  // If coming from chat (which may be elevated to z-index 660), ensure prof-screen sits above it
-  if(_profFromChat){ps.style.zIndex='670';}
   ps.style.display='';ps.style.visibility='';ps.style.pointerEvents='';ps.classList.add('on');
   // Fetch live profile data (avatar, counts) from Supabase
   var uid=full.id;
@@ -7490,26 +6814,9 @@ function closeProf(){
     ps.style.display='';ps.style.visibility='hidden';ps.style.pointerEvents='none';
     _profUser=null;
 
-    // Return to scroll-view post overlay if we came from a postshare card tap
-    if(_profFromScrollView){
-      _profFromScrollView=false;
-      var psEl=document.getElementById('prof-screen');
-      psEl.style.zIndex=''; // reset back to CSS default (650)
-      var svEl2=document.getElementById('scroll-view');
-      if(svEl2){
-        svEl2.style.zIndex='660';
-        svEl2.style.visibility='';
-        svEl2.style.pointerEvents='';
-        svEl2.classList.add('on');
-      }
-      return;
-    }
-
     // Return to chat if we came from the chat window header
     if(_profFromChat){
       _profFromChat=false;
-      var psEl2=document.getElementById('prof-screen');
-      if(psEl2)psEl2.style.zIndex=''; // reset back to CSS default (650)
       // Chat window is still open underneath — just ensure it's visible
       var cw=document.getElementById('cw');
       if(cw&&chatUser){
@@ -7534,9 +6841,6 @@ function closeProf(){
           csSheet.style.transition='';
           csSheet.style.transform='translateY(0)';
           csBg.classList.add('on');
-          // The cs-bg history entry is already in the stack (from when openCS was called).
-          // openProfFromCS did replaceState(prof-screen) so the entry below is cs-bg.
-          // No extra push needed — swipe back from here will pop cs-bg correctly.
         });});
       }
       return;
@@ -7738,10 +7042,6 @@ function openPostMenu(postId,uid,e){
     ca.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Change audience';
     ca.onclick=function(ev){ev.stopPropagation();closeDD();setTimeout(function(){openChangeAudience(postId);},340);};
     items.appendChild(ca);
-    var sif2=document.createElement('div');sif2.className='dd-item';
-    sif2.innerHTML='<svg width="16" height="16" fill="none" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Send in Fade';
-    sif2.onclick=function(){closeDD();openPostSharePicker(postId);};
-    items.appendChild(sif2);
     var sh2=document.createElement('div');sh2.className='dd-item';
     sh2.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share post';
     sh2.onclick=function(){closeDD();sharePost(postId);};
@@ -7752,19 +7052,13 @@ function openPostMenu(postId,uid,e){
     items.appendChild(d);
   } else {
     items.innerHTML='';
-    var sif=document.createElement('div');sif.className='dd-item';
-    sif.innerHTML='<svg width="16" height="16" fill="none" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Send in Fade';
-    sif.onclick=function(){closeDD();openPostSharePicker(postId);};
-    var sh3=document.createElement('div');sh3.className='dd-item';
-    sh3.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share post';
-    sh3.onclick=function(){closeDD();sharePost(postId);};
     var r=document.createElement('div');r.className='dd-item red';
     r.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Report post';
     r.onclick=function(){showPostReport(postId);};
     var b=document.createElement('div');b.className='dd-item';
     b.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Block user';
     b.onclick=function(){closeDD();_blockUser(uid);renderFeed();T('Blocked');};
-    items.appendChild(sif);items.appendChild(sh3);items.appendChild(r);items.appendChild(b);
+    items.appendChild(r);items.appendChild(b);
   }
   var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');
   bg.style.display='flex';
@@ -7862,11 +7156,7 @@ function ddAct(a){
   else if(a==='block'){_blockUser(u.id);closeProf();T('Blocked');}
   else if(a==='restrict'){_restrictUser(u.id);}
   else if(a==='about'){T('Connect Supabase for account info');}
-  else if(a==='copyurl'){
-    var url=window.location.origin+'?user='+(u.username||u.id);
-    if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('Profile URL copied');}).catch(function(){T(url);});
-    else T(url);
-  }
+  else if(a==='copyurl'){var url='fade.app/'+u.username;if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('URL copied');}).catch(function(){T(url);});else T(url);}
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
@@ -8324,43 +7614,51 @@ function buildCFPage(el){el.innerHTML='';var wrap=document.createElement('div');
 function buildReportPage(el){el.innerHTML='';var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px;display:flex;flex-direction:column;gap:14px';var desc=document.createElement('div');desc.style.cssText='font-size:14px;color:var(--sub);line-height:1.6';desc.textContent='Tell us what went wrong and we will look into it.';wrap.appendChild(desc);var cats=['Bug or technical issue','Inappropriate content','Spam','Harassment','Something else'];var f1=document.createElement('div');f1.className='field';f1.innerHTML='<label class="lbl">Category</label>';var sel=document.createElement('select');sel.className='inp';cats.forEach(function(c){var opt=document.createElement('option');opt.value=c;opt.textContent=c;sel.appendChild(opt);});f1.appendChild(sel);wrap.appendChild(f1);var f2=document.createElement('div');f2.className='field';f2.innerHTML='<label class="lbl">Description</label>';var ta=document.createElement('textarea');ta.className='inp';ta.rows=4;ta.placeholder='What happened?';f2.appendChild(ta);wrap.appendChild(f2);var btn=document.createElement('button');btn.className='btn btn-dark';btn.textContent='Submit Report';btn.onclick=function(){if(!ta.value.trim())return T('Write something first');T('Got it, thanks.');soBack();};wrap.appendChild(btn);el.appendChild(wrap);}
 
 // ── SHARE SHEET ───────────────────────────────────────────────────────────────
-function getShareURL(){return window.location.origin+'?user='+(profile&&profile.username||'user');}
-function getShareText(){return'Check out '+(profile&&profile.display_name||'my profile')+' on Fade — gone in 24h';}
+function getShareURL(){return window.location.origin+'/'+(profile&&profile.username||'user');}
+function getShareText(){return'Check out '+(profile&&profile.display_name||'my')+' on Fade — gone in 24h';}
 var SHARE_OPTIONS=[
-  {label:'Send in Fade',ico:'<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',color:'var(--text)',act:function(){
+  {label:'Messages',ico:'<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',color:'#22C55E',act:function(){
+    var url=getShareURL(),txt=getShareText();
+    // iOS iMessage deep link
+    window.open('sms:?&body='+encodeURIComponent(txt+' '+url),'_blank');
     closeShareSheet();
-    openProfileSharePicker();
   }},
-  {label:'WhatsApp',ico:'<svg width="22" height="22" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C8.82 3 3 8.82 3 16c0 2.3.6 4.5 1.74 6.44L3 29l6.72-1.72A13 13 0 0 0 16 29c7.18 0 13-5.82 13-13S23.18 3 16 3zm6.38 18.15c-.28.78-1.63 1.49-2.24 1.55-.57.05-.6.44-3.87-.95-3.27-1.42-5.16-4.76-5.32-4.98-.15-.22-1.27-1.76-1.19-3.32.08-1.55.88-2.28 1.19-2.58.31-.31.67-.38.9-.38h.63c.2 0 .48-.08.75.63.28.72.94 2.47 1.02 2.65.08.18.13.39.03.62-.1.23-.16.37-.32.57-.16.2-.34.45-.48.6-.16.16-.33.34-.14.66.19.32.83 1.43 1.79 2.32 1.23 1.14 2.26 1.49 2.58 1.65.32.17.51.14.7-.08.19-.22.8-.93 1.01-1.25.21-.32.43-.27.72-.16.3.11 1.87.88 2.19 1.04.32.16.53.24.61.37.08.14.08.78-.2 1.56z"/></svg>',color:'#25D366',act:function(){
+  {label:'WhatsApp',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.979-1.406A9.95 9.95 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm4.93 13.667c-.207.583-1.216 1.114-1.663 1.154-.447.04-.46.352-2.896-.713-2.436-1.064-3.857-3.571-3.972-3.733-.116-.163-.946-1.315-.887-2.478.059-1.163.663-1.706.893-1.938.23-.232.499-.284.666-.284h.473c.152 0 .36-.058.563.473.207.543.703 1.851.764 1.985.062.133.1.29.02.463-.082.173-.123.28-.243.43-.12.15-.252.335-.36.45-.12.12-.245.25-.105.49.14.24.623 1.073 1.336 1.737.917.85 1.69 1.113 1.93 1.237.24.124.38.104.52-.063.14-.166.6-.696.76-.936.16-.24.32-.2.54-.12.22.08 1.397.658 1.636.778.24.12.4.18.46.28.06.1.06.583-.147 1.166z"/></svg>',color:'#25D366',act:function(){
     var url=getShareURL(),txt=getShareText();
     window.open('https://wa.me/?text='+encodeURIComponent(txt+' '+url),'_blank');
     closeShareSheet();
   }},
-  {label:'Instagram',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-g" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#ig-g)"/><circle cx="12" cy="12" r="4.5" stroke="#fff" stroke-width="1.6" fill="none"/><circle cx="17.2" cy="6.8" r="1.1" fill="#fff"/></svg>',color:'#E1306C',act:function(){
+  {label:'Instagram',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>',color:'#E1306C',act:function(){
+    // Instagram has no share URL API — copy link then open app
     copyProfileLink();
     setTimeout(function(){window.open('instagram://','_blank');},400);
     closeShareSheet();
     T('Link copied — paste it in Instagram');
   }},
-  {label:'X',ico:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',color:'var(--text)',act:function(){
+  {label:'X',ico:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',color:'#000',act:function(){
     var url=getShareURL(),txt=getShareText();
     window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt)+'&url='+encodeURIComponent(url),'_blank');
     closeShareSheet();
   }},
-  {label:'More',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9 12h6M12 9v6" stroke-linecap="round"/></svg>',color:'#6B7280',act:function(){
+  {label:'Telegram',ico:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.93 6.82-1.68 7.92c-.12.54-.45.67-.91.42l-2.52-1.86-1.22 1.17c-.13.14-.25.25-.5.25l.18-2.57 4.66-4.21c.2-.18-.04-.28-.32-.1L7.8 14.18l-2.47-.77c-.54-.17-.55-.54.11-.8l9.64-3.72c.45-.16.84.11.75.79z"/></svg>',color:'#26A5E4',act:function(){
+    var url=getShareURL(),txt=getShareText();
+    window.open('https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+encodeURIComponent(txt),'_blank');
+    closeShareSheet();
+  }},
+  {label:'Copy Link',ico:'<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',color:'#7C3AED',act:function(){copyProfileLink();closeShareSheet();}},
+  {label:'QR Code',ico:'<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="14" y1="17" x2="17" y2="17"/><line x1="14" y1="21" x2="17" y2="21"/></svg>',color:'#0EA5E9',act:function(){
+    var url=getShareURL();
+    window.open('https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(url),'_blank');
+    closeShareSheet();
+  }},
+  {label:'More',ico:'<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>',color:'#6B7280',act:function(){
     var url=getShareURL(),txt=getShareText();
     if(navigator.share){navigator.share({title:txt,url:url}).catch(function(){});}
-    else{copyProfileLink();T('Link copied');}
+    else{copyProfileLink();}
     closeShareSheet();
   }},
 ];
 function openShareSheet(){
-  var prev=document.getElementById('share-preview');
-  var dName=profile&&profile.display_name||'You';
-  var uname='@'+(profile&&profile.username||'you');
-  var avContent=profPhotoUrl?'<img src="'+profPhotoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>':('<div class="lav" style="font-size:18px;background:'+nc(dName)+'">'+nl(dName)+'</div>');
-  prev.innerHTML='<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0">'+avContent+'</div><div><div style="font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:4px">'+E(dName)+badgeSVGFor(profile&&profile.id)+'</div><div style="font-size:13px;color:var(--sub);margin-top:2px">'+E(uname)+' · '+E((profile&&profile.bio||'').slice(0,32)||(profile&&profile.bio?'':'Living in the now'))+'</div></div>';
-  var grid=document.getElementById('share-grid');grid.innerHTML='';
   var prev=document.getElementById('share-preview');
   var dName=profile&&profile.display_name||'You';
   var uname='@'+(profile&&profile.username||'you');
@@ -8376,14 +7674,14 @@ function openShareSheet(){
     cell.addEventListener('touchend',function(){cell.querySelector('div').style.opacity='';cell.querySelector('div').style.transform='';},{passive:true});
     grid.appendChild(cell);
   });
-  var url=getShareURL();
-  document.getElementById('share-url').textContent=url.replace('https://','');
+  var url='fade.app/'+(profile&&profile.username||'user');
+  document.getElementById('share-url').textContent=url;
   var bg=document.getElementById('share-bg');bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.querySelector('.sheet').style.transform='translateY(0)';});});
 }
 function closeShareSheet(){closeSheet('share-bg');}
 function copyProfileLink(){
-  var url=window.location.origin+'?user='+(profile&&profile.username||'user');
+  var url='https://fade.app/'+(profile&&profile.username||'user');
   if(navigator.clipboard)navigator.clipboard.writeText(url).then(function(){T('Link copied');}).catch(function(){T(url);});
   else T(url);
 }
@@ -8438,170 +7736,25 @@ function saveProfile(){
   });
 }
 
-// ── PHOTO VIEWER (pinch-zoom + double-tap + history-aware) ───────────────────
+// ── PHOTO VIEWER ──────────────────────────────────────────────────────────────
 (function(){
   var overlay=document.createElement('div');
   overlay.id='photo-viewer';
-  overlay.style.cssText='display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.96);flex-direction:column;align-items:center;justify-content:center;overflow:hidden;touch-action:none';
-
+  overlay.style.cssText='display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.96);flex-direction:column;align-items:center;justify-content:center';
   var topBar=document.createElement('div');
-  topBar.style.cssText='position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 16px 12px;z-index:2;pointer-events:none';
-
+  topBar.style.cssText='position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 16px 12px';
   var closeBtn=document.createElement('button');
-  closeBtn.style.cssText='background:rgba(20,20,20,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,.18);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4);pointer-events:auto;flex-shrink:0';
-  closeBtn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  closeBtn.onclick=function(e){e.stopPropagation();_pvClose();};
+  closeBtn.style.cssText='background:rgba(255,255,255,.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px';
+  closeBtn.innerHTML='✕';
+  closeBtn.onclick=function(){overlay.style.display='none';};
   topBar.appendChild(closeBtn);
-
-  // Wrapper for transform (zoom/pan)
-  var wrap=document.createElement('div');
-  wrap.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-origin:center center;will-change:transform;touch-action:none';
-
   var img=document.createElement('img');
-  img.style.cssText='max-width:100%;max-height:100dvh;object-fit:contain;border-radius:4px;padding:60px 12px max(60px,env(safe-area-inset-bottom));pointer-events:none;user-select:none;-webkit-user-drag:none';
-  img.draggable=false;
-
-  wrap.appendChild(img);
-  overlay.appendChild(wrap);
-  overlay.appendChild(topBar);
+  img.style.cssText='max-width:100%;max-height:100dvh;object-fit:contain;border-radius:4px;padding:60px 12px max(60px,env(safe-area-inset-bottom))';
+  overlay.appendChild(topBar);overlay.appendChild(img);
   document.getElementById('root').appendChild(overlay);
-
-  // ── State ──────────────────────────────────────────────────────────────────
-  var curScale=1, minScale=1, maxScale=5;
-  var panX=0, panY=0;
-  var _pvOpen=false;
-
-  function applyTransform(animate){
-    if(animate){wrap.style.transition='transform .2s cubic-bezier(.25,.46,.45,.94)';}
-    else{wrap.style.transition='none';}
-    wrap.style.transform='scale('+curScale+') translate('+panX/curScale+'px,'+panY/curScale+'px)';
-  }
-  function resetZoom(animate){curScale=1;panX=0;panY=0;applyTransform(animate);}
-
-  function _pvClose(){
-    if(!_pvOpen)return;
-    _pvOpen=false;
-    resetZoom(false);
-    overlay.style.transition='opacity .18s ease';
-    overlay.style.opacity='0';
-    setTimeout(function(){overlay.style.display='none';overlay.style.opacity='';overlay.style.transition='';},200);
-  }
-  window._pvClose=_pvClose;
-
-  // ── Pinch-zoom & pan ───────────────────────────────────────────────────────
-  var touches={};        // active touches by identifier
-  var pinchStart=null;   // {dist, scale, midX, midY, panX, panY}
-  var panStart=null;     // {x, y, panX, panY}
-
-  function dist(t1,t2){
-    var dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
-    return Math.sqrt(dx*dx+dy*dy);
-  }
-  function clampPan(){
-    if(curScale<=1){panX=0;panY=0;return;}
-    var maxPX=(curScale-1)*overlay.clientWidth/2;
-    var maxPY=(curScale-1)*overlay.clientHeight/2;
-    panX=Math.max(-maxPX,Math.min(maxPX,panX));
-    panY=Math.max(-maxPY,Math.min(maxPY,panY));
-  }
-
-  overlay.addEventListener('touchstart',function(e){
-    // Don't intercept close-button touches
-    if(e.target===closeBtn||closeBtn.contains(e.target))return;
-    for(var i=0;i<e.changedTouches.length;i++)touches[e.changedTouches[i].identifier]=e.changedTouches[i];
-    var ids=Object.keys(touches);
-    if(ids.length===2){
-      // Pinch start
-      var t1=touches[ids[0]],t2=touches[ids[1]];
-      pinchStart={dist:dist(t1,t2),scale:curScale,panX:panX,panY:panY};
-      panStart=null;
-    } else if(ids.length===1){
-      panStart={x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY,panX:panX,panY:panY};
-      pinchStart=null;
-    }
-    e.preventDefault();
-  },{passive:false});
-
-  overlay.addEventListener('touchmove',function(e){
-    if(e.target===closeBtn||closeBtn.contains(e.target))return;
-    for(var i=0;i<e.changedTouches.length;i++)touches[e.changedTouches[i].identifier]=e.changedTouches[i];
-    var ids=Object.keys(touches);
-    if(ids.length===2&&pinchStart){
-      var t1=touches[ids[0]],t2=touches[ids[1]];
-      var newDist=dist(t1,t2);
-      var ratio=newDist/pinchStart.dist;
-      curScale=Math.max(minScale,Math.min(maxScale,pinchStart.scale*ratio));
-      clampPan();
-      applyTransform(false);
-    } else if(ids.length===1&&panStart&&curScale>1){
-      var t=e.changedTouches[0];
-      panX=panStart.panX+(t.clientX-panStart.x);
-      panY=panStart.panY+(t.clientY-panStart.y);
-      clampPan();
-      applyTransform(false);
-    }
-    e.preventDefault();
-  },{passive:false});
-
-  overlay.addEventListener('touchend',function(e){
-    if(e.target===closeBtn||closeBtn.contains(e.target))return;
-    for(var i=0;i<e.changedTouches.length;i++)delete touches[e.changedTouches[i].identifier];
-    var ids=Object.keys(touches);
-    if(ids.length<2)pinchStart=null;
-    if(ids.length<1)panStart=null;
-    // Snap back if slightly under minScale
-    if(curScale<1.05){resetZoom(true);}
-    else{clampPan();applyTransform(false);}
-  },{passive:false});
-
-  // ── Double-tap to zoom ─────────────────────────────────────────────────────
-  var _lastTap=0;
-  overlay.addEventListener('touchend',function(e){
-    if(e.target===closeBtn||closeBtn.contains(e.target))return;
-    var now=Date.now();
-    if(now-_lastTap<280){
-      if(curScale>1.1){resetZoom(true);}
-      else{curScale=2.5;clampPan();applyTransform(true);}
-    }
-    _lastTap=now;
-  });
-
-  // ── Swipe-down to close (only at 1x zoom, single touch) ─────────────────────
-  var swipeDownStart=null;
-  overlay.addEventListener('touchstart',function(e){
-    if(e.touches.length===1&&curScale<=1.05){
-      swipeDownStart={y:e.touches[0].clientY,x:e.touches[0].clientX};
-    } else {swipeDownStart=null;}
-  },{passive:true,capture:true});
-  overlay.addEventListener('touchmove',function(e){
-    if(!swipeDownStart||e.touches.length!==1||curScale>1.05){swipeDownStart=null;return;}
-    var dy=e.touches[0].clientY-swipeDownStart.y;
-    var dx=Math.abs(e.touches[0].clientX-swipeDownStart.x);
-    if(dy>0&&dy>dx){
-      // Pulling down — move overlay + fade
-      overlay.style.transition='none';
-      overlay.style.transform='translateY('+dy+'px)';
-      overlay.style.opacity=Math.max(0,1-dy/300)+'';
-    }
-  },{passive:true,capture:true});
-  overlay.addEventListener('touchend',function(e){
-    if(!swipeDownStart){return;}
-    var el2=document.getElementById('photo-viewer');
-    var ty=el2&&el2.style.transform?parseFloat(el2.style.transform.replace('translateY(',''))||0:0;
-    overlay.style.transform='';
-    overlay.style.opacity='';
-    swipeDownStart=null;
-    if(ty>90){_pvClose();}
-    else{overlay.style.transition='transform .2s ease,opacity .2s ease';requestAnimationFrame(function(){overlay.style.transform='translateY(0)';overlay.style.opacity='1';setTimeout(function(){overlay.style.transition='';},220);});}
-  },{passive:true,capture:true});
-
-  // ── Open ───────────────────────────────────────────────────────────────────
   window.openPhotoViewer=function(src,opts){
     opts=opts||{};
-    img.src=src;
-    resetZoom(false);
-    touches={};pinchStart=null;panStart=null;
-
+    overlay._src=src;img.src=src;
     var chgBtn=overlay.querySelector('#pv-change-btn');
     if(opts.isProfile){
       if(opts.canChange){
@@ -8609,23 +7762,22 @@ function saveProfile(){
           chgBtn=document.createElement('label');
           chgBtn.id='pv-change-btn';
           chgBtn.htmlFor='me-photo-input';
-          chgBtn.style.cssText='background:rgba(20,20,20,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,.18);border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:7px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:600;font-family:Inter,sans-serif;pointer-events:auto';
-          chgBtn.innerHTML='<svg width="15" height="15" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Change';
-          chgBtn.onclick=function(){_pvClose();};
+          chgBtn.style.cssText='background:rgba(255,255,255,.15);border:none;border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:7px;cursor:pointer;color:#fff;font-size:13.5px;font-weight:600;font-family:Inter,sans-serif';
+          chgBtn.innerHTML='<svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Change';
+          chgBtn.onclick=function(){overlay.style.display='none';};
           topBar.appendChild(chgBtn);
         } else { chgBtn.style.display='flex'; }
       } else { if(chgBtn)chgBtn.style.display='none'; }
     } else {
       if(chgBtn)chgBtn.style.display='none';
     }
-
-    _pvOpen=true;
-    history.pushState({_fade:'photo-viewer'},'');
     overlay.style.display='flex';
     overlay.style.opacity='0';
     overlay.style.transition='opacity .2s ease';
-    requestAnimationFrame(function(){requestAnimationFrame(function(){overlay.style.opacity='1';overlay.style.transition='';});});
+    requestAnimationFrame(function(){requestAnimationFrame(function(){overlay.style.opacity='1';});});
   };
+  // close on backdrop tap (not on img)
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.style.display='none';});
 })();
 
 // ── AVATAR HOLD-PEEK & STORY RING HELPERS ────────────────────────────────────
@@ -8677,47 +7829,7 @@ function attachAvatarInteractions(el,avatarUrl,isOwn,uid){
 
 
 
-// ── OPEN STORY FROM TALK / CHAT CONTEXT ──────────────────────────────────────
-function openSVFromTalk(uid){
-  var gi=storyGIForUser(uid);
-  if(gi<0){T('No active moments');return;}
-  _svReturnCtx='talk';
-  history.pushState({_fade:'sv'},'');
-  openSV(gi);
-}
-function openSVFromChat(uid){
-  var gi=storyGIForUser(uid);
-  if(gi<0){T('No active moments');return;}
-  _svReturnCtx='chat';
-  history.pushState({_fade:'sv'},'');
-  openSV(gi);
-}
-// ── TALK LIST STORY RING HELPER ───────────────────────────────────────────────
-function buildTalkAvWithRing(u,size){
-  // Returns a wrapper element: story ring around avatar if user has story
-  var uid=u.id;
-  var gi=storyGIForUser(uid);
-  var hasStory=gi>=0;
-  var seen=hasStory&&svGroups[gi]&&svGroups[gi].seen;
-
-  var outer=document.createElement('div');
-  outer.style.cssText='position:relative;width:'+(size+2)+'px;height:'+(size+2)+'px;flex-shrink:0;min-width:'+(size+2)+'px';
-
-  var ring=document.createElement('div');
-  ring.className='talk-story-ring '+(hasStory?(seen?'story-seen':'has-story'):'no-story');
-  ring.style.cssText='width:'+(size+2)+'px;height:'+(size+2)+'px;border-radius:50%;display:flex;align-items:center;justify-content:center';
-
-  var avInner=document.createElement('div');
-  avInner.style.cssText='width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:'+(size*0.37)+'px;font-weight:700;'+(hasStory?'padding:2px;background:var(--card)':'');
-  // actual avatar circle inside ring
-  var avCircle=document.createElement('div');
-  avCircle.style.cssText='width:100%;height:100%;border-radius:50%;overflow:hidden;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:'+(size*0.37)+'px;font-weight:700';
-  avCircle.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-  avInner.appendChild(avCircle);
-  ring.appendChild(avInner);
-  outer.appendChild(ring);
-  return{el:outer,ring:ring,avWrap:outer};
-}
+// ── SCHEDULED PERSISTENCE ─────────────────────────────────────────────────────
 function saveScheduled(){
   try{localStorage.setItem('fade_scheduled',JSON.stringify(scheduled));}catch(e){}
 }
@@ -9603,8 +8715,9 @@ function closeFollowSheet(){
 // ── KEYBOARD AVOID ────────────────────────────────────────────────────────────
 (function(){
   var authScroll=document.querySelector('#s-auth > div');
-  function adjustAuth(){if(!window.visualViewport)return;var vv=window.visualViewport;var visH=vv.height;var fullH=window.innerHeight;var kbH=Math.max(0,fullH-visH-vv.offsetTop);if(authScroll){authScroll.style.height=(fullH-kbH)+'px';authScroll.style.maxHeight=(fullH-kbH)+'px';}}
+  function adjustAuth(){if(!window.visualViewport)return;var vv=window.visualViewport;var visH=vv.height;var fullH=window.innerHeight;var kbH=Math.max(0,fullH-visH-vv.offsetTop);if(authScroll){authScroll.style.height=(fullH-kbH)+'px';authScroll.style.maxHeight=(fullH-kbH)+'px';}var active=document.activeElement;if(active&&active.closest&&active.closest('#s-auth')){setTimeout(function(){active.scrollIntoView({behavior:'smooth',block:'center'});},60);}}
   if(window.visualViewport){window.visualViewport.addEventListener('resize',adjustAuth,{passive:true});window.visualViewport.addEventListener('scroll',adjustAuth,{passive:true});}
+  document.addEventListener('focusin',function(e){var el=e.target;if(!el||!el.closest('#s-auth'))return;var tag=el.tagName;if(tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT')return;setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'center'});},320);});
 })();
 (function(){if(!window.visualViewport)return;window.visualViewport.addEventListener('resize',function(){if(typeof _epOpen!=='undefined'&&_epOpen)return;var kbH=Math.max(0,window.innerHeight-window.visualViewport.height);var cw=document.getElementById('cw'),foot=cw&&cw.querySelector('.chatfoot'),msgs=document.getElementById('msgs');if(cw&&cw.classList.contains('on')&&foot){foot.style.marginBottom=kbH>0?kbH+'px':'0';if(kbH>0&&msgs)msgs.scrollTop=msgs.scrollHeight;}},{passive:true});})();
 
@@ -11654,301 +10767,8 @@ function _sendVoiceNote(blob){
 }
 
 
-// ── DEEP LINK HANDLER ─────────────────────────────────────────────────────────
-// Reads ?user=username or ?post=postId from the URL and opens the right content.
-// Works for signed-in users (redirect), signed-out users (preview + sign in),
-// and guests with no account (preview, gated interactions).
-
-var _deepLinkHandled=false;
-
-function _showGuestAuthPrompt(action){
-  // Show a modal prompting sign in / sign up
-  var ex=document.getElementById('guest-auth-modal');if(ex)ex.remove();
-  var ov=document.createElement('div');ov.id='guest-auth-modal';
-  ov.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:24px';
-  var modal=document.createElement('div');
-  modal.style.cssText='background:var(--card);border-radius:20px;width:100%;max-width:320px;padding:28px 22px;display:flex;flex-direction:column;gap:16px;animation:modalPop .25s cubic-bezier(.34,1.3,.64,1)';
-  var logo=document.createElement('div');
-  logo.style.cssText='font-family:"Playfair Display",serif;font-size:40px;font-style:italic;text-align:center;line-height:1';
-  logo.textContent='Fade';
-  var title=document.createElement('div');
-  title.style.cssText='font-weight:700;font-size:17px;text-align:center';
-  title.textContent='Join Fade to '+(action||'interact');
-  var sub=document.createElement('div');
-  sub.style.cssText='font-size:13.5px;color:var(--sub);text-align:center;line-height:1.55';
-  sub.textContent='Sign in or create a free account to like, comment, follow, and message on Fade.';
-  var signInBtn=document.createElement('button');
-  signInBtn.className='btn btn-dark';signInBtn.textContent='Sign in';
-  signInBtn.onclick=function(){ov.remove();var gOv=document.getElementById('guest-preview-ov');if(gOv)gOv.remove();var authEl=document.getElementById('s-auth');if(authEl){authEl.style.display='flex';authEl.style.opacity='1';authEl.style.pointerEvents='auto';showLogin();}};
-  var signUpBtn=document.createElement('button');
-  signUpBtn.className='btn btn-ghost';signUpBtn.textContent='Create account';
-  signUpBtn.onclick=function(){ov.remove();var gOv=document.getElementById('guest-preview-ov');if(gOv)gOv.remove();var authEl=document.getElementById('s-auth');if(authEl){authEl.style.display='flex';authEl.style.opacity='1';authEl.style.pointerEvents='auto';showSignup();}};
-  var cancelBtn=document.createElement('button');
-  cancelBtn.style.cssText='background:none;border:none;font-size:14px;color:var(--sub);cursor:pointer;font-family:Inter,sans-serif;padding:4px;text-align:center';
-  cancelBtn.textContent='Maybe later';
-  cancelBtn.onclick=function(){ov.remove();};
-  modal.appendChild(logo);modal.appendChild(title);modal.appendChild(sub);modal.appendChild(signInBtn);modal.appendChild(signUpBtn);modal.appendChild(cancelBtn);
-  ov.appendChild(modal);
-  ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  document.body.appendChild(ov);
-}
-
-// Patch interactive elements on a post/profile for guest mode (no account)
-function _patchGuestActions(container){
-  if(!container)return;
-  // Intercept all action buttons
-  var actionSels=['.actbtn','[onclick*="likePost"]','[onclick*="openCS"]','[onclick*="toggleFollow"]','[onclick*="openChat"]','[onclick*="startConvo"]'];
-  actionSels.forEach(function(sel){
-    container.querySelectorAll(sel).forEach(function(el){
-      // Replace onclick with guest prompt
-      var originalOnclick=el.onclick;
-      el.onclick=null;
-      el.removeAttribute('onclick');
-      el.addEventListener('click',function(e){
-        e.stopPropagation();
-        var action='interact';
-        if(el.textContent.trim().toLowerCase().indexOf('like')>-1||el.querySelector&&el.querySelector('svg'))action='like posts';
-        if(el.textContent.trim().toLowerCase().indexOf('comment')>-1)action='comment';
-        if(el.textContent.trim().toLowerCase().indexOf('follow')>-1)action='follow users';
-        if(el.textContent.trim().toLowerCase().indexOf('message')>-1)action='send messages';
-        _showGuestAuthPrompt(action);
-      });
-    });
-  });
-}
-
-function _handleDeepLink(){
-  if(_deepLinkHandled)return;
-  var params=new URLSearchParams(window.location.search);
-  var userParam=params.get('user');
-  var postParam=params.get('post');
-  if(!userParam&&!postParam)return;
-  _deepLinkHandled=true;
-
-  // If user is already signed in, handle redirect immediately
-  if(profile){
-    if(postParam){
-      // Open post view
-      closeNotif&&closeNotif();
-      var p=posts.find(function(x){return x.id===postParam;});
-      if(p){
-        openNotifPost(postParam,null);
-      } else {
-        // Fetch from DB
-        _sb.from('posts').select('id,user_id,text,img_url,likes_count,comments_count,created_at,expires_at,profiles:user_id(id,username,display_name,avatar_url)').eq('id',postParam).single().then(function(res){
-          if(res.error||!res.data){T('Post not found or has expired');return;}
-          var r=res.data;var now=Date.now();
-          if(r.expires_at&&new Date(r.expires_at).getTime()<now){T('This drop has faded');return;}
-          var au=r.profiles||{id:r.user_id,display_name:'User',username:'user',avatar_url:null};
-          var np={id:r.id,uid:r.user_id,author:{display_name:au.display_name||au.username,username:au.username,avatar_url:au.avatar_url},text:r.text||'',img:r.img_url||null,likes:r.likes_count||0,liked:false,commentsCount:r.comments_count||0,comments:[],ts:r.created_at};
-          if(!posts.find(function(x){return x.id===np.id;}))posts.push(np);
-          if(!USERS.find(function(x){return x.id===au.id;}))USERS.push(au);
-          openNotifPost(postParam,null);
-        });
-      }
-    } else if(userParam){
-      // Open profile
-      var u=USERS.find(function(x){return x.username===userParam||x.id===userParam;});
-      if(u){
-        setTimeout(function(){openProf(u);},400);
-      } else {
-        _sb.from('profiles').select('id,username,display_name,avatar_url,bio,is_verified,badge_type').eq('username',userParam).single().then(function(res){
-          if(res.error||!res.data){T('User not found');return;}
-          var u2=res.data;
-          if(!USERS.find(function(x){return x.id===u2.id;}))USERS.push(u2);
-          setTimeout(function(){openProf(u2);},400);
-        });
-      }
-    }
-    // Clean up URL
-    history.replaceState({},'',window.location.pathname);
-    return;
-  }
-
-  // ── Not signed in: show a guest preview ──────────────────────────────────
-  // Hide the auth screen so we can show preview first
-  var authEl=document.getElementById('s-auth');
-  if(authEl){authEl.style.display='none';}
-
-  // Show a full-screen guest preview overlay
-  var guestOv=document.createElement('div');
-  guestOv.id='guest-preview-ov';
-  guestOv.style.cssText='position:fixed;inset:0;z-index:600;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none';
-
-  // Top bar
-  var topBar=document.createElement('div');
-  topBar.style.cssText='display:flex;align-items:center;padding:max(16px,env(safe-area-inset-top)) 16px 12px;background:var(--card);flex-shrink:0;gap:12px';
-  var logoEl=document.createElement('div');
-  logoEl.style.cssText='font-family:"Playfair Display",serif;font-size:24px;font-style:italic;flex:1;text-align:center';
-  logoEl.textContent='Fade';
-  var signInTopBtn=document.createElement('button');
-  signInTopBtn.style.cssText='background:var(--text);color:var(--card);border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap';
-  signInTopBtn.textContent='Sign in';
-  signInTopBtn.onclick=function(){guestOv.remove();if(authEl){authEl.style.display='flex';authEl.style.opacity='1';authEl.style.pointerEvents='auto';showLogin();}};
-  topBar.appendChild(logoEl);topBar.appendChild(signInTopBtn);
-  guestOv.appendChild(topBar);
-
-  var content=document.createElement('div');
-  content.style.cssText='flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;';
-  guestOv.appendChild(content);
-
-  // Bottom CTA bar
-  var ctaBar=document.createElement('div');
-  ctaBar.style.cssText='background:var(--card);border-top:1px solid var(--border);padding:14px 16px max(24px,env(safe-area-inset-bottom));flex-shrink:0;display:flex;flex-direction:column;gap:10px';
-  var ctaTitle=document.createElement('div');
-  ctaTitle.style.cssText='font-size:14px;font-weight:600;text-align:center;color:var(--text)';
-  ctaTitle.textContent='Join Fade to like, comment, follow, and message';
-  var ctaBtns=document.createElement('div');
-  ctaBtns.style.cssText='display:flex;gap:10px';
-  var ctaSignIn=document.createElement('button');
-  ctaSignIn.className='btn btn-ghost';ctaSignIn.style.flex='1';ctaSignIn.textContent='Sign in';
-  ctaSignIn.onclick=function(){guestOv.remove();if(authEl){authEl.style.display='flex';authEl.style.opacity='1';authEl.style.pointerEvents='auto';showLogin();}};
-  var ctaSignUp=document.createElement('button');
-  ctaSignUp.className='btn btn-dark';ctaSignUp.style.flex='1';ctaSignUp.textContent='Create account';
-  ctaSignUp.onclick=function(){guestOv.remove();if(authEl){authEl.style.display='flex';authEl.style.opacity='1';authEl.style.pointerEvents='auto';showSignup();}};
-  ctaBtns.appendChild(ctaSignIn);ctaBtns.appendChild(ctaSignUp);
-  ctaBar.appendChild(ctaTitle);ctaBar.appendChild(ctaBtns);
-  guestOv.appendChild(ctaBar);
-
-  document.getElementById('root').appendChild(guestOv);
-  history.replaceState({},'',window.location.pathname);
-
-  // ── Render content in guest overlay ──────────────────────────────────────
-  function _renderGuestPost(postData){
-    var authorName=(postData.author&&(postData.author.display_name||postData.author.username))||'User';
-    var authorUser=postData.author||{};
-    var avBg=nc(authorName);
-    var avContent=authorUser.avatar_url?'<img src="'+authorUser.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>'
-      :'<span style="font-size:16px;font-weight:700;color:#fff">'+nl(authorName)+'</span>';
-    var timeAgo=postData.ts?ago(postData.ts):'';
-
-    // Parse multi-photo: img_url may be a JSON array
-    var _gImgs=[];
-    if(postData.img){
-      try{var _gpa=JSON.parse(postData.img);if(Array.isArray(_gpa)&&_gpa.length>0)_gImgs=_gpa;}catch(_e){_gImgs=[postData.img];}
-      if(!_gImgs.length)_gImgs=[postData.img];
-    }
-
-    // Build image HTML — carousel for multi, single img for one
-    var imgHTML='';
-    if(_gImgs.length>1){
-      var slides=_gImgs.map(function(url,i){return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="'+(i===0?'eager':'lazy')+'"/></div>';}).join('');
-      var dots=_gImgs.map(function(_,i){return '<div class="carousel-dot'+(i===0?' active':'')+'"></div>';}).join('');
-      imgHTML='<div class="post-carousel" style="position:relative;width:100%;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none">'
-        +'<div class="post-carousel-track" style="display:flex;transition:transform .28s cubic-bezier(.25,.46,.45,.94);will-change:transform">'+slides+'</div>'
-        +'<div class="carousel-counter" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.52);color:#fff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;pointer-events:none;z-index:2">1/'+_gImgs.length+'</div>'
-        +'<div style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:5px;pointer-events:none;z-index:2">'+dots+'</div>'
-        +'</div>';
-    } else if(_gImgs.length===1){
-      imgHTML='<img src="'+_gImgs[0]+'" style="width:100%;display:block;max-height:480px;object-fit:cover"/>';
-    }
-
-    var card=document.createElement('div');
-    card.style.cssText='background:var(--card);margin-bottom:1px';
-    card.innerHTML=
-      '<div style="display:flex;align-items:center;gap:13px;padding:14px 16px 10px">'+
-        '<div style="width:42px;height:42px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">'+avContent+'</div>'+
-        '<div><div style="font-weight:700;font-size:14.5px">'+E(authorName)+'</div><div style="font-size:11.5px;color:var(--sub)">'+timeAgo+'</div></div>'+
-      '</div>'+
-      (postData.text?'<div style="font-size:15px;line-height:1.75;padding:8px 16px 2px">'+E(postData.text)+'</div>':'')+
-      imgHTML+
-      '<div style="display:flex;gap:20px;padding:10px 16px 18px;align-items:center">'+
-        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'like posts\')"><svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+(postData.likes||0)+'</button>'+
-        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'comment\')"><svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+(postData.commentsCount||0)+'</button>'+
-      '</div>';
-    content.appendChild(card);
-
-    // Wire carousel swipe if multi-photo
-    if(_gImgs.length>1){
-      var _gc=card.querySelector('.post-carousel');
-      if(_gc)_wireCarousel(_gc);
-    }
-  }
-
-  function _renderGuestProfile(userData){
-    var dName=userData.display_name||userData.username||'User';
-    var avBg=nc(dName);
-    var avContent=userData.avatar_url?'<img src="'+userData.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>':'<span style="font-size:28px;font-weight:700;color:#fff">'+nl(dName)+'</span>';
-    var profCard=document.createElement('div');
-    profCard.style.cssText='background:var(--card);padding:20px 16px 16px';
-    profCard.innerHTML=
-      '<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">'+
-        '<div style="width:76px;height:76px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:28px">'+avContent+'</div>'+
-        '<div><div style="font-weight:700;font-size:16px;margin-bottom:2px">'+E(dName)+'</div><div style="font-size:13px;color:var(--sub)">@'+E(userData.username||'')+'</div>'+
-        (userData.bio?'<div style="font-size:13.5px;margin-top:8px;line-height:1.5;color:var(--text)">'+E(userData.bio)+'</div>':'')+
-        '</div>'+
-      '</div>'+
-      '<div style="display:flex;gap:8px;margin-bottom:4px">'+
-        '<button style="flex:1;background:var(--text);color:var(--card);border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer" onclick="_showGuestAuthPrompt(\'follow users\')">Follow</button>'+
-        '<button style="flex:1;background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:13px;padding:13px 16px;font-size:15px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer" onclick="_showGuestAuthPrompt(\'send messages\')">Message</button>'+
-      '</div>';
-    content.appendChild(profCard);
-
-    // Divider label
-    var dropsLabel=document.createElement('div');
-    dropsLabel.style.cssText='font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);padding:16px 16px 8px';
-    dropsLabel.textContent='Recent drops';
-    content.appendChild(dropsLabel);
-  }
-
-  // Fetch and render
-  if(postParam){
-    var loadingEl=document.createElement('div');
-    loadingEl.style.cssText='display:flex;justify-content:center;padding:48px';
-    loadingEl.innerHTML='<div class="ptr-ring"></div>';
-    content.appendChild(loadingEl);
-    _sb.from('posts').select('id,user_id,text,img_url,likes_count,comments_count,created_at,expires_at,profiles:user_id(id,username,display_name,avatar_url)').eq('id',postParam).single().then(function(res){
-      content.innerHTML='';
-      if(res.error||!res.data){
-        content.innerHTML='<div class="empty"><div class="empt">Post not found</div><div class="emps">This drop may have faded or doesn\'t exist.</div></div>';
-        return;
-      }
-      var r=res.data;var now=Date.now();
-      if(r.expires_at&&new Date(r.expires_at).getTime()<now){
-        content.innerHTML='<div class="empty"><div class="empt">This drop has faded ✨</div><div class="emps">Fade posts disappear after 24 hours. Join to see what\'s happening now.</div></div>';
-        return;
-      }
-      var au=r.profiles||{id:r.user_id,display_name:'User',username:'user',avatar_url:null};
-      _renderGuestPost({id:r.id,uid:r.user_id,author:{display_name:au.display_name||au.username,username:au.username,avatar_url:au.avatar_url},text:r.text||'',img:r.img_url||null,likes:r.likes_count||0,commentsCount:r.comments_count||0,ts:r.created_at});
-    });
-  } else if(userParam){
-    var loadingEl2=document.createElement('div');
-    loadingEl2.style.cssText='display:flex;justify-content:center;padding:48px';
-    loadingEl2.innerHTML='<div class="ptr-ring"></div>';
-    content.appendChild(loadingEl2);
-    _sb.from('profiles').select('id,username,display_name,avatar_url,bio,is_verified,badge_type').eq('username',userParam).single().then(function(res){
-      if(res.error||!res.data){
-        content.innerHTML='<div class="empty"><div class="empt">User not found</div><div class="emps">This profile doesn\'t exist on Fade.</div></div>';
-        return;
-      }
-      var u2=res.data;
-      content.innerHTML='';
-      _renderGuestProfile(u2);
-      // Load their recent posts
-      var since=new Date(Date.now()-86400000).toISOString();
-      _sb.from('posts').select('id,user_id,text,img_url,likes_count,comments_count,created_at').eq('user_id',u2.id).gte('created_at',since).order('created_at',{ascending:false}).limit(5).then(function(pr){
-        if(pr.error||!pr.data||!pr.data.length){
-          var empty=document.createElement('div');
-          empty.style.cssText='padding:32px;text-align:center;color:var(--sub);font-size:14px';
-          empty.textContent='No drops yet today.';
-          content.appendChild(empty);
-          return;
-        }
-        pr.data.forEach(function(r){
-          _renderGuestPost({id:r.id,uid:r.user_id,author:{display_name:u2.display_name||u2.username,username:u2.username,avatar_url:u2.avatar_url},text:r.text||'',img:r.img_url||null,likes:r.likes_count||0,commentsCount:r.comments_count||0,ts:r.created_at});
-        });
-      });
-    });
-  }
-}
-
-// Run deep link check after a brief delay to let Supabase session resolve
-setTimeout(function(){_handleDeepLink();},800);
-// Also run immediately in case session was cached and profile loaded fast
-document.addEventListener('fadeProfileLoaded',function(){
-  if(!_deepLinkHandled)_handleDeepLink();
-},{once:true});
-
+// ── EMOJI PANEL ──────────────────────────────────────────────────────────────
+var _epOpen=false;
 var _recentEmoji=[];
 try{_recentEmoji=JSON.parse(localStorage.getItem('fade_recent_emoji')||'[]');}catch(e){}
 
@@ -12545,19 +11365,12 @@ function _buildEpCats(){
     { openFn: 'openCircleCW',   closeFn: 'closeCircleCW',    panelId: 'circle-cw'        },
     { openFn: 'openSchedForm',  closeFn: 'closeSchedForm',   panelId: 'sched-form-panel' },
     { openFn: 'openCircleInfo', closeFn: 'closeCircleInfo',  panelId: 'circle-info'      },
-    { openFn: 'openSearch',      closeFn: 'closeSearch',      panelId: 's-search'         },
-    { openFn: 'openScrollView',  closeFn: 'closeScrollView',  panelId: 'scroll-view'      },
-    { openFn: 'openCS',          closeFn: 'closeCS',          panelId: 'cs-bg'            },
-    { openFn: 'openNotifPost',   closeFn: 'closeScrollView',  panelId: 'scroll-view'      },
   ];
 
   // Push a base state so the very first popstate has somewhere to land
   if (!history.state || !history.state._fade) {
     history.replaceState({ _fade: 'base' }, '');
   }
-
-  // Save originals before wrapping (used by openProfFromCS to avoid double-push)
-  window._origOpenProf = window.openProf;
 
   // Wrap each open function to push a history entry
   _HISTORY_PANELS.forEach(function(cfg) {
@@ -12572,13 +11385,7 @@ function _buildEpCats(){
   // Wrap each close function to strip .on BEFORE running, so
   // _anyPanelOpen() returns false and _advanceBackground() always
   // restores #sw — regardless of whether called from back button or popstate.
-  // NOTE: notif-panel is excluded — closeNotif manages its own .on removal.
-  var _wrappedCloseFns = {};
   _HISTORY_PANELS.forEach(function(cfg) {
-    if (cfg.panelId === 'notif-panel') return; // notif manages itself
-    var key = cfg.closeFn + '::' + cfg.panelId;
-    if (_wrappedCloseFns[key]) return; // already wrapped this exact pair
-    _wrappedCloseFns[key] = true;
     var origClose = window[cfg.closeFn];
     if (!origClose) return;
     window[cfg.closeFn] = function() {
@@ -12598,16 +11405,79 @@ function _buildEpCats(){
     };
   }
 
+  /* ── NATIVE TAB SWIPE (left & right) ────────────────────────────
+     Intercepts horizontal touch gestures on #sw (the tab container)
+     and translates them into goTab() calls — matching the direction
+     a user expects:
+       • swipe RIGHT → go to previous tab (lower index)
+       • swipe LEFT  → go to next tab (higher index)
+
+     The right-swipe previously showed the Fade logo because the
+     browser tried to navigate forward in history. We intercept it
+     here before it reaches the browser.
+
+     We only activate when:
+       - No overlay panel is open (_anyPanelOpen() === false)
+       - The gesture starts outside the 20px left-edge zone reserved
+         for panel swipe-back
+       - The gesture is more horizontal than vertical
+  ──────────────────────────────────────────────────────────────────*/
+  (function() {
+    var TAB_ORDER = ['today','search','clips','talk','me'];
+    var _swTouchStartX = 0;
+    var _swTouchStartY = 0;
+    var _swTracking = false;
+    var _swEdgeBlocked = false;
+    var SWIPE_THRESHOLD = 52; // px needed to commit
+    var EDGE_ZONE = 24;       // px from left edge reserved for panel back-swipe
+
+    var sw = document.getElementById('sw');
+    if (!sw) return;
+
+    sw.addEventListener('touchstart', function(e) {
+      _swTouchStartX = e.touches[0].clientX;
+      _swTouchStartY = e.touches[0].clientY;
+      _swTracking = false;
+      // Block if any panel is open OR touch starts in left edge zone
+      _swEdgeBlocked = _anyPanelOpen() || _swTouchStartX < EDGE_ZONE;
+    }, { passive: true });
+
+    sw.addEventListener('touchmove', function(e) {
+      if (_swEdgeBlocked) return;
+      var dx = e.touches[0].clientX - _swTouchStartX;
+      var dy = e.touches[0].clientY - _swTouchStartY;
+      // Must be more horizontal than vertical
+      if (!_swTracking && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        _swTracking = true;
+      }
+    }, { passive: true });
+
+    sw.addEventListener('touchend', function(e) {
+      if (_swEdgeBlocked || !_swTracking) return;
+      var dx = e.changedTouches[0].clientX - _swTouchStartX;
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+      if (_anyPanelOpen()) return; // re-check at end
+
+      var curIdx = TAB_ORDER.indexOf(curTab);
+      if (curIdx < 0) return;
+
+      if (dx < 0) {
+        // Swipe LEFT → next tab
+        if (curIdx < TAB_ORDER.length - 1) {
+          goTab(TAB_ORDER[curIdx + 1]);
+        }
+      } else {
+        // Swipe RIGHT → previous tab
+        if (curIdx > 0) {
+          goTab(TAB_ORDER[curIdx - 1]);
+        }
+      }
+    }, { passive: true });
+  })();
+
   // popstate: fired by native OS swipe-back or Android back button
   window.addEventListener('popstate', function(e) {
     var state = e.state;
-
-    // Story viewer: native swipe-back closes it and returns to talk/chat
-    var svEl = document.getElementById('sv');
-    if (svEl && svEl.style.display === 'flex') {
-      if (typeof window.closeSV === 'function') window.closeSV();
-      return;
-    }
 
     // Settings sub-page back — go one level inside settings
     if (state && state._fade === 'so-sub') {
@@ -12623,46 +11493,22 @@ function _buildEpCats(){
       return;
     }
 
-    // Notifications panel: OS back/swipe closes it (same as the back arrow)
-    var notifEl = document.getElementById('notif-panel');
-    if (notifEl && notifEl.classList.contains('on')) {
-      if (typeof window.closeNotif === 'function') window.closeNotif();
-      return;
-    }
-
+    // Any named panel — find the topmost open panel and close it.
+    // close functions are already wrapped above to strip .on first.
     var closed = false;
-
-    // Close the topmost visible layer first (highest z-index wins).
-    // photo-viewer:1000, cs-bg:700, scroll-view:660, prof-screen:650, notif/cw:200-220
-    var _toClose = [
-      ['photo-viewer',     function(){ if(typeof window._pvClose==='function')window._pvClose(); }],
-      ['cs-bg',            'closeCS'         ],
-      ['prof-screen',      'closeProf'       ],
-      ['scroll-view',      'closeScrollView' ],
-      ['sched-form-panel', 'closeSchedForm'  ],
-      ['circle-info',      'closeCircleInfo' ],
-      ['cw',               'closeCW'         ],
-      ['circle-cw',        'closeCircleCW'   ],
-      ['so',               'closeSettings'   ],
-    ];
-    for (var i = 0; i < _toClose.length; i++) {
-      var el = document.getElementById(_toClose[i][0]);
-      var closeFnOrStr = _toClose[i][1];
-      var isOpen = el && (el.style.display==='flex' || el.classList.contains('on'));
-      if (isOpen) {
-        if(typeof closeFnOrStr==='function'){closeFnOrStr();}
-        else{var fn = window[closeFnOrStr];if (typeof fn === 'function') fn();}
-        closed = true;
-        break;
-      }
-    }
-
-    // Search screen uses .active (not .on)
-    if (!closed) {
-      var searchEl = document.getElementById('s-search');
-      if (searchEl && searchEl.classList.contains('active')) {
-        if (typeof window.closeSearch === 'function') window.closeSearch();
-        closed = true;
+    var priority = ['prof-screen', 'sched-form-panel', 'circle-info', 'notif-panel', 'cw', 'circle-cw', 'so'];
+    for (var i = 0; i < priority.length; i++) {
+      var el = document.getElementById(priority[i]);
+      if (el && el.classList.contains('on')) {
+        for (var j = 0; j < _HISTORY_PANELS.length; j++) {
+          if (_HISTORY_PANELS[j].panelId === priority[i]) {
+            var closeFn = window[_HISTORY_PANELS[j].closeFn];
+            if (typeof closeFn === 'function') closeFn();
+            closed = true;
+            break;
+          }
+        }
+        if (closed) break;
       }
     }
 
@@ -12808,89 +11654,8 @@ function _buildEpCats(){
     setTimeout(initPanels, 0);
   }
 
-  /* ── NATIVE TAB SWIPE (left & right) ────────────────────────────
-     Intercepts horizontal touch gestures on #sw (the tab container)
-     and translates them into goTab() calls — matching the direction
-     a user expects:
-       • swipe RIGHT → go to previous tab (lower index)
-       • swipe LEFT  → go to next tab (higher index)
-
-     Only activates when:
-       - No overlay panel is open (_anyPanelOpen() === false)
-       - The gesture starts outside the 20px left-edge zone reserved
-         for panel swipe-back
-       - The gesture is more horizontal than vertical
-       - Passes either distance threshold OR velocity threshold
-  ──────────────────────────────────────────────────────────────────*/
-  (function() {
-    var TAB_ORDER = ['today','clips','talk','me'];
-    var _swTouchStartX = 0;
-    var _swTouchStartY = 0;
-    var _swTouchStartT = 0;
-    var _swTracking = false;
-    var _swEdgeBlocked = false;
-    var SWIPE_THRESHOLD = 48;   // px distance to commit
-    var VELOCITY_THRESHOLD = 0.3; // px/ms — fast flick commits even under 48px
-    var EDGE_ZONE = 24;         // px from left edge reserved for panel back-swipe
-
-    var sw = document.getElementById('sw');
-    if (!sw) return;
-
-    sw.addEventListener('touchstart', function(e) {
-      _swTouchStartX = e.touches[0].clientX;
-      _swTouchStartY = e.touches[0].clientY;
-      _swTouchStartT = Date.now();
-      _swTracking = false;
-      /* Also block when notif panel is open — it manages its own .on state */
-      var notifOpen = (function(){var n=document.getElementById('notif-panel');return n&&n.classList.contains('on');})();
-      /* Block if touch started on a post carousel — the carousel handles it */
-      var onCarousel = !!(e.target && e.target.closest && e.target.closest('.post-carousel'));
-      _swEdgeBlocked = _anyPanelOpen() || notifOpen || _swTouchStartX < EDGE_ZONE || onCarousel;
-    }, { passive: true });
-
-    sw.addEventListener('touchmove', function(e) {
-      if (_swEdgeBlocked) return;
-      var dx = e.touches[0].clientX - _swTouchStartX;
-      var dy = e.touches[0].clientY - _swTouchStartY;
-      if (!_swTracking && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        _swTracking = true;
-      }
-    }, { passive: true });
-
-    sw.addEventListener('touchend', function(e) {
-      if (_swEdgeBlocked || !_swTracking) return;
-      var dx = e.changedTouches[0].clientX - _swTouchStartX;
-      var dt = Date.now() - _swTouchStartT;
-      var velocity = Math.abs(dx) / Math.max(dt, 1);
-      var committed = Math.abs(dx) >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD;
-      if (!committed) return;
-      var notifOpen = (function(){var n=document.getElementById('notif-panel');return n&&n.classList.contains('on');})();
-      if (_anyPanelOpen() || notifOpen) return;
-
-      var curIdx = TAB_ORDER.indexOf(curTab);
-      if (curIdx < 0) return;
-
-      if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
-        goTab(TAB_ORDER[curIdx + 1]); // swipe LEFT → next tab
-      } else if (dx > 0 && curIdx > 0) {
-        goTab(TAB_ORDER[curIdx - 1]); // swipe RIGHT → previous tab
-      }
-    }, { passive: true });
-
-    sw.addEventListener('touchcancel', function() {
-      _swTracking = false;
-      _swEdgeBlocked = false;
-    }, { passive: true });
-  })();
-
-  // Block browser context menu (save/copy/share/open) on ALL images app-wide
-  document.addEventListener('contextmenu', function(e){
-    if(e.target && e.target.tagName === 'IMG') e.preventDefault();
-  }, true);
-
 })();
 </script>
 
-<div id="photo-preview-ov" onclick="if(event.target===this)closePhotoPreview()"><img id="photo-preview-img" src=""/><button id="photo-preview-close" onclick="closePhotoPreview()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 </body>
 </html>
