@@ -778,18 +778,12 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .circle-sub{font-size:11.5px;color:var(--sub);margin-top:1px}
 .circle-msgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;overscroll-behavior:contain}
 .circle-msgs::-webkit-scrollbar{display:none}
-.cbwrap{display:flex;flex-direction:column;margin-bottom:14px}
-.cbwrap.cme{align-items:flex-end}
-.cbwrap.cthem{flex-direction:row;align-items:flex-end;gap:6px}
-.cme-bs,.cthem-bs{display:flex;flex-direction:column;gap:1px}
-.cme-bs{align-items:flex-end}
-.cthem-bs{align-items:flex-start}
 .c-sender-name{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:3px;padding-left:2px}
 .c-seen-bar{font-size:11px;color:var(--sub);text-align:right;padding:2px 6px 4px;cursor:pointer}
 .c-seen-bar:active{opacity:.6}
-.circle-chatfoot{background:var(--card);flex-shrink:0;padding:8px 14px max(12px,env(safe-area-inset-bottom));position:relative}
-.circle-chatrow{display:flex;gap:9px;align-items:flex-end}
-.circle-chatinp{flex:1;border:none;border-radius:22px;padding:10px 16px;font-size:15px;font-family:'Inter',sans-serif;background:var(--inp-bg);color:var(--inp-text);outline:none;resize:none;max-height:86px;line-height:1.4;-webkit-user-select:text;user-select:text}
+.circle-chatfoot{background:var(--card);flex-shrink:0;padding:10px 16px max(16px,env(safe-area-inset-bottom));position:relative}
+.circle-chatrow{display:flex;gap:0;align-items:center}
+.circle-chatinp{flex:1;border:none;background:transparent;padding:12px 4px 12px 2px;font-size:15px;font-family:'Inter',sans-serif;color:var(--inp-text);outline:none;resize:none;max-height:90px;line-height:1.45;-webkit-user-select:text;user-select:text;align-self:center}
 .circle-chatinp::placeholder{color:var(--inp-ph)}
 .circle-reply-bar{display:none;align-items:center;padding:7px 14px;background:var(--inp-bg);gap:8px;font-size:13px;color:var(--sub)}
 .circle-reply-bar.on{display:flex}
@@ -1346,6 +1340,10 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #cw .chat-send.has-text{background:var(--text);color:var(--card);width:32px;height:32px}
 #cw .chat-send.recording{background:#E8352A !important;color:#fff;width:38px;height:38px}
 #cw .chat-send:active{opacity:.7;transform:scale(.88)}
+/* Circle chat — same idle/typing states as DM */
+#circle-cw .chat-send{background:none;border:none;color:color-mix(in srgb,var(--text) 60%,transparent);width:40px;height:40px;border-radius:50%;margin-right:2px}
+#circle-cw .chat-send.has-text{background:var(--text);color:var(--card);width:32px;height:32px}
+#circle-cw .chat-send:active{opacity:.7;transform:scale(.88)}
 /* EMOJI PANEL */
 #emoji-panel{position:fixed;left:0;right:0;bottom:0;z-index:830;background:var(--card);border-top:1px solid var(--border);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);will-change:transform;display:flex;flex-direction:column;height:320px}.ep-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:10px auto 2px;flex-shrink:0}
 #emoji-panel.on{transform:translateY(0)}
@@ -13080,6 +13078,8 @@ function closeFollowSheet(){
   if(window.visualViewport){window.visualViewport.addEventListener('resize',adjustAuth,{passive:true});window.visualViewport.addEventListener('scroll',adjustAuth,{passive:true});}
 })();
 (function(){if(!window.visualViewport)return;window.visualViewport.addEventListener('resize',function(){if(typeof _epOpen!=='undefined'&&_epOpen)return;var kbH=Math.max(0,window.innerHeight-window.visualViewport.height);var cw=document.getElementById('cw'),foot=cw&&cw.querySelector('.chatfoot'),msgs=document.getElementById('msgs');if(cw&&cw.classList.contains('on')&&foot){foot.style.marginBottom=kbH>0?kbH+'px':'';if(kbH>0&&msgs)msgs.scrollTop=msgs.scrollHeight;}},{passive:true});})();
+// -- CIRCLE CHAT KEYBOARD AVOID (same logic as DM) --
+(function(){if(!window.visualViewport)return;window.visualViewport.addEventListener('resize',function(){var kbH=Math.max(0,window.innerHeight-window.visualViewport.height);var ccw=document.getElementById('circle-cw'),foot=ccw&&ccw.querySelector('.circle-chatfoot'),msgs=document.getElementById('circle-msgs');if(ccw&&ccw.classList.contains('on')&&foot){foot.style.marginBottom=kbH>0?kbH+'px':'';if(kbH>0&&msgs)msgs.scrollTop=msgs.scrollHeight;}},{passive:true});})();
 
 // -- COMMENT SHEET KEYBOARD AVOID ---------------------------------------------
 (function(){
@@ -13493,13 +13493,16 @@ function postClip(){
     <div id="mention-picker"></div>
     <div class="circle-chatrow">
       <div class="chat-pill">
-        <label for="circle-photo-inp" class="chat-pill-photo" aria-label="Photo">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <label for="circle-photo-inp" class="chat-ico-btn" aria-label="Photo">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </label>
         <input id="circle-photo-inp" type="file" accept="image/*" style="display:none" onchange="sendCirclePhoto(event)"/>
-        <textarea class="chatinp circle-chatinp" id="circle-chatinp" placeholder="Message..." rows="1" oninput="grow(this);handleMentionInput(this)" onkeydown="circleKD(event)"></textarea>
+        <textarea class="chatinp circle-chatinp" id="circle-chatinp" placeholder="Message..." rows="1" oninput="grow(this);handleMentionInput(this);_circleUpdateSendBtn()" onkeydown="circleKD(event)"></textarea>
+        <button id="circle-send-btn" onclick="sendCircleMsg()" class="chat-send" aria-label="Send" style="margin-right:4px">
+          <span class="ic-send"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></span>
+          <span class="ic-mic"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></span>
+        </button>
       </div>
-      <button onclick="sendCircleMsg()" class="chat-send has-text" aria-label="Send"><span class="ic-send"><svg width="17" height="17" fill="none" stroke="var(--card)" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></span><span class="ic-mic" style="display:none"></span></button>
     </div>
   </div>
 </div>
@@ -13682,25 +13685,22 @@ function buildCircleRow(c,i){
 }
 
 function buildCircleAvStack(c,size){
+  // Always single clean avatar — no stacking. Group photo > first other member > initial.
   var wrap=document.createElement('div');
-  wrap.style.cssText='position:relative;width:'+size+'px;height:'+size+'px;flex-shrink:0;min-width:'+size+'px';
-  var s1=size*0.7,s2=size*0.56;
+  wrap.style.cssText='position:relative;width:'+size+'px;height:'+size+'px;flex-shrink:0;min-width:'+size+'px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:'+(size*0.38)+'px;font-weight:700;flex-shrink:0';
   var others=c.members.filter(function(m){return m.id!==profile.id;});
-  var m1=c.photo_url?null:(others[0]||c.members[0]);
-  var m2=others[1]||c.members[1]||null;
-  // First (larger) circle
-  var a1=document.createElement('div');
-  a1.style.cssText='position:absolute;top:0;left:0;width:'+s1+'px;height:'+s1+'px;border-radius:50%;overflow:hidden;border:2.5px solid var(--card);z-index:2;display:flex;align-items:center;justify-content:center;font-size:'+(s1*0.38)+'px;font-weight:700;background:'+(m1?nc(m1.display_name||m1.username):(c.photo_url?'var(--border)':nc(c.name||'C')));
-  if(c.photo_url){a1.innerHTML='<img src="'+c.photo_url+'" style="width:100%;height:100%;object-fit:cover"/>';}
-  else if(m1){a1.innerHTML=avH(m1.avatar_url,m1.display_name||m1.username);}
-  else{a1.innerHTML='<span style="color:#fff">'+(c.name||'C').charAt(0).toUpperCase()+'</span>';}
-  wrap.appendChild(a1);
-  // Second (smaller) circle
-  if(m2){
-    var a2=document.createElement('div');
-    a2.style.cssText='position:absolute;bottom:0;right:0;width:'+s2+'px;height:'+s2+'px;border-radius:50%;overflow:hidden;border:2.5px solid var(--card);z-index:1;display:flex;align-items:center;justify-content:center;font-size:'+(s2*0.38)+'px;font-weight:700;background:'+nc(m2.display_name||m2.username);
-    a2.innerHTML=avH(m2.avatar_url,m2.display_name||m2.username);
-    wrap.appendChild(a2);
+  if(c.photo_url){
+    wrap.style.background='var(--border)';
+    wrap.innerHTML='<img src="'+c.photo_url+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>';
+  } else {
+    var u=others[0]||c.members[0];
+    if(u){
+      wrap.style.background=nc(u.display_name||u.username||'?');
+      wrap.innerHTML=avH(u.avatar_url,u.display_name||u.username);
+    } else {
+      wrap.style.background=nc(c.name||'C');
+      wrap.innerHTML='<span style="color:#fff;font-weight:700">'+(c.name||'C').charAt(0).toUpperCase()+'</span>';
+    }
   }
   // Pulse dot if recent activity
   var isPulse=c.lastTs&&(Date.now()-c.lastTs<3600000)&&c.lastSenderId&&c.lastSenderId!==profile.id;
@@ -13849,46 +13849,56 @@ function addCircleSysMsg(txt){
 function appendCircleBubble(m){
   var msgs=document.getElementById('circle-msgs');
   var isMine=m.isMine||(m.sid===profile.id);
+  // Reuse exact same structure as DM appendBubble: bwrap/me/them, me-bs/them-bs, .tav, .bubble
   var wrap=document.createElement('div');
-  wrap.className='cbwrap '+(isMine?'cme':'cthem');
+  wrap.className='bwrap '+(isMine?'me':'them');
   wrap.dataset.msgid=m.id||'';
   wrap.dataset.ts=m.ts||'';
   var bs=document.createElement('div');
-  bs.className=isMine?'cme-bs':'cthem-bs';
-  // Sender name for group (only for "them" side)
+  bs.className=isMine?'me-bs':'them-bs';
+  // Sender name above bubble — only for others, in group context
   if(!isMine){
     var senderUser=USERS.find(function(u){return u.id===m.sid;});
     var sName=senderUser?(senderUser.display_name||senderUser.username):'Someone';
-    var sColor=nc(sName);
     var snEl=document.createElement('div');
     snEl.className='c-sender-name';
     snEl.textContent=sName;
-    snEl.style.color=sColor;
+    snEl.style.color=nc(sName);
     bs.appendChild(snEl);
   }
   // Reply quote
   if(m.replyTo){
     var rl=document.createElement('div');
     rl.style.cssText='font-size:11.5px;color:var(--sub);margin-bottom:4px;text-align:'+(isMine?'right':'left')+';padding:'+(isMine?'0 6px 0 0':'0 0 0 6px');
-    rl.textContent=(isMine?'You':'')+ ' replied';
+    rl.textContent=isMine?'You replied':(m.replyToSender||'Someone')+' replied';
     bs.appendChild(rl);
     var qb=document.createElement('div');
     qb.style.cssText='display:inline-block;padding:8px 13px;border-radius:16px;font-size:13.5px;line-height:1.4;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;opacity:.5;'+(isMine?'background:#7C3AED;color:#fff;border-radius:16px 16px 6px 16px;':'background:var(--bubble-them);color:var(--bubble-them-text);border-radius:16px 16px 16px 6px;');
     qb.textContent=(m.replyTo||'').slice(0,50)+((m.replyTo&&m.replyTo.length>50)?'...':'');
     bs.appendChild(qb);
   }
-  // Bubble
+  // Bubble — same as DM
   var b;
   if(m.isPhoto&&m.img){
-    b=document.createElement('div');b.style.cssText='display:inline-flex;line-height:0';b.classList.add('anim-bubble-in');
-    var imgEl=document.createElement('img');imgEl.src=m.img;imgEl.style.cssText='display:block;border-radius:14px;max-width:220px;max-height:260px;object-fit:cover;cursor:pointer;min-width:80px;min-height:80px;background:var(--inp-bg)';
+    b=document.createElement('div');
+    b.style.cssText='display:inline-flex;line-height:0';
+    b.classList.add('anim-bubble-in');
+    var imgEl=document.createElement('img');
+    imgEl.src=m.img;
+    imgEl.style.cssText='display:block;border-radius:14px;max-width:220px;max-height:260px;object-fit:cover;cursor:pointer;min-width:80px;min-height:80px;background:var(--inp-bg)';
     imgEl.onclick=function(e){e.stopPropagation();openPhotoViewer(this.src);};
     b.appendChild(imgEl);
   } else if(m.gif){
-    b=document.createElement('div');b.style.cssText='display:inline-flex;line-height:0;position:relative';b.classList.add('anim-bubble-in');
-    var gifEl=document.createElement('img');gifEl.src=m.gif;gifEl.style.cssText='display:block;border-radius:14px;max-width:220px;max-height:220px;object-fit:cover;cursor:pointer;min-width:80px;min-height:80px;background:var(--inp-bg)';
+    b=document.createElement('div');
+    b.style.cssText='display:inline-flex;line-height:0;position:relative';
+    b.classList.add('anim-bubble-in');
+    var gifEl=document.createElement('img');
+    gifEl.src=m.gif;
+    gifEl.style.cssText='display:block;border-radius:14px;max-width:220px;max-height:220px;object-fit:cover;cursor:pointer;min-width:80px;min-height:80px;background:var(--inp-bg)';
     gifEl.onclick=function(e){e.stopPropagation();openPhotoViewer(this.src);};
-    var gb=document.createElement('span');gb.style.cssText='position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px;pointer-events:none';gb.textContent='GIF';
+    var gb=document.createElement('span');
+    gb.style.cssText='position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px;pointer-events:none';
+    gb.textContent='GIF';
     b.appendChild(gifEl);b.appendChild(gb);
   } else {
     b=document.createElement('div');
@@ -13896,14 +13906,13 @@ function appendCircleBubble(m){
     b.classList.add('anim-bubble-in');
     b.style.transformOrigin=isMine?'bottom right':'bottom left';
     if(m.text){
-      // Render @mentions
       var html=E(m.text).replace(/@(\w+)/g,function(match,handle){
         return'<span style="color:#3897F0;font-weight:600">@'+handle+'</span>';
       });
       b.innerHTML=html;
     }
   }
-  // Reaction badge
+  // Reaction badge — same as DM
   if(m.reaction){
     var rxn=document.createElement('div');
     rxn.className='rxn-badge '+(isMine?'me':'them');
@@ -13912,7 +13921,7 @@ function appendCircleBubble(m){
   } else {
     bs.appendChild(b);
   }
-  // Long-press context on bubble
+  // Long-press context
   (function(bubble,msg,bsEl,mine){
     var lt=null,lf=false;
     function startHold(){lf=false;lt=setTimeout(function(){lf=true;showCircleMsgCtx(bubble,msg,bsEl,mine);},480);}
@@ -13922,18 +13931,18 @@ function appendCircleBubble(m){
     bubble.addEventListener('touchmove',endHold,{passive:true});
     bubble.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();showCircleMsgCtx(bubble,msg,bsEl,mine);});
   })(b,m,bs,isMine);
-  // Small avatar for others
+  // Small .tav avatar for others — same as DM
   if(!isMine){
     var sUser=USERS.find(function(u){return u.id===m.sid;});
     var tav=document.createElement('div');
     tav.className='tav';
-    tav.style.background=nc(sUser?sUser.display_name:'?');
-    tav.innerHTML=avH(sUser?sUser.avatar_url:null,sUser?sUser.display_name:'?');
+    tav.style.background=nc(sUser?(sUser.display_name||sUser.username):'?');
+    tav.innerHTML=avH(sUser?sUser.avatar_url:null,sUser?(sUser.display_name||sUser.username):'?');
     wrap.appendChild(tav);
   }
   wrap.appendChild(bs);
   msgs.appendChild(wrap);
-  // Seen-by count
+  // Seen-by count (mine only)
   if(isMine&&m.id&&!String(m.id).startsWith('tmp')){
     var si=document.createElement('div');
     si.className='c-seen-bar';
@@ -13943,13 +13952,12 @@ function appendCircleBubble(m){
     msgs.appendChild(si);
     _loadSeenCount(m.id,si);
   }
-  // Timestamp
-  if(!isMine){
-    var rt=document.createElement('div');
-    rt.style.cssText='font-size:11px;color:var(--sub);padding:2px 6px 4px;text-align:left;margin-left:34px';
-    rt.textContent=m.ts?new Date(m.ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
-    msgs.appendChild(rt);
-  }
+  // Timestamp below — same as DM seen-ind style
+  var tsEl=document.createElement('div');
+  tsEl.className='seen-ind';
+  tsEl.style.cssText=isMine?'text-align:right;padding-right:6px':'text-align:left;padding-left:'+(isMine?'6':'38')+'px';
+  tsEl.textContent=m.ts?new Date(m.ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
+  msgs.appendChild(tsEl);
   msgs.scrollTop=msgs.scrollHeight;
 }
 
@@ -14021,7 +14029,7 @@ function circleKD(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCir
 function sendCircleMsg(){
   var inp=document.getElementById('circle-chatinp');
   var txt=inp.value.trim();if(!txt||!activeCircle)return;
-  inp.value='';inp.style.height='';
+  inp.value='';inp.style.height='';_circleUpdateSendBtn();
   hideMentionPicker();
   cancelCircleReply();
   var replyToId=_circleReplyMsg&&_circleReplyMsg.id||null;
@@ -14793,6 +14801,13 @@ var _waveAnim=null, _analyser=null, _waveData=null;
 function _cwUpdateSendBtn(){
   var ta=document.getElementById('chatinp');
   var btn=document.getElementById('cw-send-btn');
+  if(!btn)return;
+  if(ta&&ta.value.trim().length>0){btn.classList.add('has-text');}
+  else{btn.classList.remove('has-text');}
+}
+function _circleUpdateSendBtn(){
+  var ta=document.getElementById('circle-chatinp');
+  var btn=document.getElementById('circle-send-btn');
   if(!btn)return;
   if(ta&&ta.value.trim().length>0){btn.classList.add('has-text');}
   else{btn.classList.remove('has-text');}
