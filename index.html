@@ -3265,6 +3265,7 @@ function initApp(userProfile){
   setupPTR();
   setupOfflineBar();
   setupSwipeBack();
+  setupSwipeToReply();
   // Defer loadNotifs until the notif-dot element is guaranteed visible in DOM
   (function checkNotifDotReady(attempt){
     var dot=document.getElementById('notif-dot');
@@ -9567,6 +9568,7 @@ function appendBubble(m){
     msgs.appendChild(rt);
   }
   msgs.scrollTop=msgs.scrollHeight;
+  if(m&&m.id)_dmMsgMap[m.id]=m;
 }
 function makeBadge(m,isMine,bs){var badge=document.createElement('div');badge.className='rxn-badge '+(isMine?'me':'them');badge.textContent=m.reaction;badge.addEventListener('click',function(e){e.stopPropagation();openReactSheet(m,bs,isMine);});return badge;}
 function buildSRC(p,isMine){
@@ -13580,7 +13582,10 @@ function postClip(){
   <div class="circle-cwbar">
     <button class="ibtn" onclick="closeCircleCW()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
     <div class="circle-cwinfo" id="circle-cwinfo" onclick="openCircleInfo()">
-      <div id="circle-cw-avstack" style="flex-shrink:0"></div>
+      <div style="position:relative;flex-shrink:0">
+        <div id="circle-cw-avstack"></div>
+        <div id="circle-cw-dot" style="display:none;position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:#22C55E;border:2px solid var(--card);z-index:2"></div>
+      </div>
       <div style="display:flex;flex-direction:column;min-width:0">
         <span class="circle-title" id="circle-cw-name"></span>
         <span class="circle-sub" id="circle-cw-members"></span>
@@ -13865,7 +13870,20 @@ function openCircleCW(c){
   var membersEl=document.getElementById('circle-cw-members');
   var avStack=document.getElementById('circle-cw-avstack');
   if(nameEl)nameEl.textContent=c.name||'Circle';
-  if(membersEl)membersEl.textContent=c.members.length+' members';
+  // For 2-member circles show "Active X ago" like DM; for groups show member count
+  var others=c.members.filter(function(u){return u.id!==profile.id;});
+  var cwDot=document.getElementById('circle-cw-dot');
+  if(c.members.length<=2&&others.length===1){
+    var otherU=others[0];
+    var isActive=otherU&&_onlineUsers&&_onlineUsers.has(otherU.id);
+    var actLbl=otherU?activeLabel(otherU.id):'';
+    if(membersEl)membersEl.textContent=isActive?'Active now':actLbl;
+    if(membersEl)membersEl.style.color=isActive?'#22C55E':'var(--sub)';
+    if(cwDot)cwDot.style.display=isActive?'block':'none';
+  } else {
+    if(membersEl){membersEl.textContent=c.members.length+' members';membersEl.style.color='';}
+    if(cwDot)cwDot.style.display='none';
+  }
   if(avStack){avStack.innerHTML='';avStack.appendChild(buildCircleAvStack(c,38));}
   // Pin bar
   var pinBar=document.getElementById('circle-pin-bar');
@@ -14079,43 +14097,66 @@ function appendCircleBubble(m){
   tsEl.textContent=m.ts?new Date(m.ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
   msgs.appendChild(tsEl);
   msgs.scrollTop=msgs.scrollHeight;
+  if(m&&m.id)_circleMsgMap[m.id]=m;
 }
 
 function showCircleMsgCtx(bEl,m,bs,isMine){
   var ex=document.getElementById('circle-ctx-ov');if(ex)ex.remove();
   var ov=document.createElement('div');ov.id='circle-ctx-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.08)';
-  // Emoji row
   var ctx=document.createElement('div');
   ctx.style.cssText='position:fixed;background:var(--card);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:220px;overflow:hidden;z-index:999';
+  // Emoji row — same emojis as DM
   var emojiRow=document.createElement('div');emojiRow.style.cssText='display:flex;align-items:center;gap:2px;padding:10px 12px 8px';
-  ['<3️','😂','😮','😢','😡','👍'].forEach(function(e){
+  ['❤️','😂','😮','😢','😡','👍'].forEach(function(e){
     var s=document.createElement('span');
     s.style.cssText='font-size:26px;cursor:pointer;padding:4px 5px;border-radius:50%;line-height:1';
     s.textContent=e;
+    if(m.reaction===e)s.style.background='var(--inp-bg)';
     s.onclick=function(){
-      m.reaction=m.reaction===e?null:e;
+      var removing=m.reaction===e;
+      m.reaction=removing?null:e;
       var old=bs.querySelector('.rxn-badge');if(old)old.remove();
-      if(m.reaction){var rxn=document.createElement('div');rxn.className='rxn-badge '+(isMine?'me':'them');rxn.textContent=m.reaction;bs.appendChild(rxn);SFX('react');}
+      if(m.reaction){bs.appendChild(makeBadge(m,isMine,bs));SFX('react');}
       if(m.id&&!String(m.id).startsWith('tmp'))_sb.from('circle_messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});
       ov.remove();
     };
     emojiRow.appendChild(s);
   });
   ctx.appendChild(emojiRow);
+  var isCreator=!!(activeCircle&&activeCircle.creator_id===profile.id);
+  var isPinned=!!(activeCircle&&activeCircle.pinMsgId&&activeCircle.pinMsgId===m.id);
   var actions=[
     {label:'Reply',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',fn:function(){
       _circleReplyMsg=m;
       var sName=m.isMine?'You':(USERS.find(function(u){return u.id===m.sid;})||{}).display_name||'Someone';
       document.getElementById('circle-reply-name').textContent=sName;
-      document.getElementById('circle-reply-preview').textContent=(m.text||(m.gif?'GIF':m.isPhoto?'Photo':'')).slice(0,50)||'...';
+      document.getElementById('circle-reply-preview').textContent=((m.text&&!m.text.startsWith('['))?m.text:(m.gif?'GIF':m.isPhoto?'Photo':'Media')).slice(0,50)||'...';
       document.getElementById('circle-reply-bar').classList.add('on');
-      document.getElementById('circle-chatinp').focus();
+      setTimeout(function(){document.getElementById('circle-chatinp').focus();},50);
     }},
-    {label:'Copy',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',fn:function(){if(m.text&&navigator.clipboard)navigator.clipboard.writeText(m.text).catch(function(){});T('Copied');},show:!!(m.text)},
-    {label:'Pin Message',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',fn:function(){pinCircleMsg(m);},show:!!(activeCircle&&activeCircle.creator_id===profile.id)},
+    {label:'Copy',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',fn:function(){if(m.text&&navigator.clipboard)navigator.clipboard.writeText(m.text).catch(function(){});T('Copied');},show:!!(m.text&&!m.text.startsWith('['))},
+    {label:isPinned?'Unpin Message':'Pin Message',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',fn:function(){
+      if(isPinned){
+        // Unpin
+        _sb.from('circle_pins').delete().eq('circle_id',activeCircle.id).then(function(){
+          activeCircle.pinText=null;activeCircle.pinMsgId=null;
+          var c=circles.find(function(x){return x.id===activeCircle.id;});if(c){c.pinText=null;c.pinMsgId=null;}
+          var pinBar=document.getElementById('circle-pin-bar');if(pinBar)pinBar.style.display='none';
+          T('Unpinned');
+        });
+      } else {
+        pinCircleMsg(m);
+      }
+    },show:isCreator},
     {label:'Unsend',icon:'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 15l6-6M15 15L9 9"/></svg>',color:'#E8352A',fn:function(){
-      var w=bs.parentElement;if(w&&w.classList.contains('cbwrap')){var next=w.nextSibling;if(next&&next.classList&&next.classList.contains('c-seen-bar'))next.remove();var rt=next&&next.nextSibling;if(rt&&rt.style&&rt.style.marginLeft==='34px')rt.remove();w.remove();}
+      // Remove the bwrap and adjacent timestamp/seen elements
+      var w=bs.closest('.bwrap')||bs.parentElement;
+      if(w){
+        var nxt=w.nextSibling;
+        while(nxt&&nxt.nodeType===1&&(nxt.classList.contains('c-seen-bar')||nxt.classList.contains('seen-ind'))){var tmp=nxt.nextSibling;nxt.remove();nxt=tmp;}
+        w.remove();
+      }
       T('Unsent');
       if(m.id&&!String(m.id).startsWith('tmp'))_sb.from('circle_messages').delete().eq('id',m.id).then(function(){});
     },show:isMine}
@@ -14821,6 +14862,95 @@ function setupOfflineBar(){
 }
 
 // -- SWIPE-BACK (disabled -- native OS swipe handled via history API) ----------
+// Swipe-to-reply for DM (#msgs) and circle (#circle-msgs)
+function setupSwipeToReply(){
+  function initSwipeReply(msgsId,isCircle){
+    var msgsEl=document.getElementById(msgsId);
+    if(!msgsEl)return;
+    var startX=0,startY=0,activeWrap=null,moved=false,cancelled=false;
+    msgsEl.addEventListener('touchstart',function(e){
+      var t=e.touches[0];
+      startX=t.clientX;startY=t.clientY;
+      activeWrap=null;moved=false;cancelled=false;
+      var el=e.target;
+      while(el&&el!==msgsEl){if(el.classList&&el.classList.contains('bwrap')){activeWrap=el;break;}el=el.parentElement;}
+      if(!activeWrap)return;
+      // Don't interfere with long-press
+      activeWrap._swipeHintEl=activeWrap.querySelector('.swipe-hint');
+      if(!activeWrap._swipeHintEl){
+        var h=document.createElement('div');h.className='swipe-hint';h.textContent='↩';
+        activeWrap.appendChild(h);activeWrap._swipeHintEl=h;
+      }
+    },{passive:true});
+    msgsEl.addEventListener('touchmove',function(e){
+      if(!activeWrap)return;
+      var t=e.touches[0];
+      var dx=t.clientX-startX, dy=t.clientY-startY;
+      if(!moved){
+        if(Math.abs(dy)>Math.abs(dx)+4){cancelled=true;activeWrap=null;return;}
+        if(Math.abs(dx)<8)return;
+        moved=true;
+      }
+      if(cancelled)return;
+      var isMine=activeWrap.classList.contains('me');
+      // Only swipe right-to-left for mine, left-to-right for them
+      var pull=isMine?Math.max(0,-dx):Math.max(0,dx);
+      if(pull>70)pull=70;
+      var ratio=pull/70;
+      activeWrap.style.transition='none';
+      activeWrap.style.transform='translateX('+(isMine?-pull:pull)+'px)';
+      if(activeWrap._swipeHintEl)activeWrap._swipeHintEl.style.opacity=String(Math.min(1,ratio*2));
+      if(pull>=65&&!activeWrap._triggered){
+        activeWrap._triggered=true;
+        haptic('light');
+      }
+    },{passive:true});
+    msgsEl.addEventListener('touchend',function(){
+      if(!activeWrap)return;
+      var pull=parseFloat((activeWrap.style.transform||'translateX(0)').replace(/[^0-9.-]/g,''))||0;
+      pull=Math.abs(pull);
+      activeWrap.style.transition='';
+      activeWrap.style.transform='';
+      if(activeWrap._swipeHintEl)activeWrap._swipeHintEl.style.opacity='0';
+      if(activeWrap._triggered){
+        // Trigger reply
+        var msgId=activeWrap.dataset.msgid;
+        if(isCircle){
+          // Find the message data from circle-msgs
+          var _m=_circleMsgMap&&_circleMsgMap[msgId];
+          if(_m){
+            _circleReplyMsg=_m;
+            var sName=_m.isMine?'You':(USERS.find(function(u){return u.id===_m.sid;})||{}).display_name||'Someone';
+            document.getElementById('circle-reply-name').textContent=sName;
+            document.getElementById('circle-reply-preview').textContent=(_m.text||((_m.gif||_m.isPhoto)?'Media':'')).slice(0,50)||'...';
+            document.getElementById('circle-reply-bar').classList.add('on');
+            setTimeout(function(){var inp=document.getElementById('circle-chatinp');if(inp)inp.focus();},50);
+          }
+        } else {
+          // DM reply
+          var dm=_dmMsgMap&&_dmMsgMap[msgId];
+          if(dm){
+            _replyMsg=dm;
+            var sName2=dm.isMine?'You':(chatUser&&chatUser.display_name||'Them');
+            _replyMsg._sName=sName2;
+            document.getElementById('reply-name').textContent=sName2;
+            document.getElementById('reply-preview').textContent=((dm.text&&dm.text.startsWith('[voice:'))?'🎤 Voice':(dm.text||(dm.isPhoto?'📷 Photo':''))).slice(0,50)||'...';
+            document.getElementById('reply-bar').classList.add('on');
+            setTimeout(function(){var inp=document.getElementById('chatinp');if(inp)inp.focus();},50);
+          }
+        }
+      }
+      activeWrap._triggered=false;
+      activeWrap=null;
+    },{passive:true});
+  }
+  initSwipeReply('msgs',false);
+  initSwipeReply('circle-msgs',true);
+}
+
+// Message maps for swipe-to-reply lookup
+var _dmMsgMap={}, _circleMsgMap={};
+
 function setupSwipeBack(){
   // In-app swipe gestures removed. Native phone swipe-back works via
   // history.pushState (added in parallax IIFE) + popstate listener.
@@ -14921,6 +15051,7 @@ var _activeVoice=null; // tracks currently playing voice bubble -- only one at a
 var _voiceCancelled=false, _voiceActive=false;
 var _holdStartX=0;
 var _waveAnim=null, _analyser=null, _waveData=null;
+var _voiceCircleMode=false; // true when voice triggered from circle chat
 
 function _cwUpdateSendBtn(){
   var ta=document.getElementById('chatinp');
@@ -14949,6 +15080,15 @@ function _circleUpdateSendBtn(){
     btn.addEventListener('touchmove',_voiceTouchMove,{passive:false});
     btn.addEventListener('touchend',_voiceTouchEnd,{passive:false});
     btn.addEventListener('touchcancel',_voiceTouchEnd,{passive:false});
+    // Wire circle send button to same voice system
+    var cbtn=document.getElementById('circle-send-btn');
+    if(cbtn){
+      cbtn.addEventListener('click',function(){if(cbtn.classList.contains('has-text'))sendCircleMsg();});
+      cbtn.addEventListener('touchstart',function(e){_voiceCircleMode=true;_voiceTouchStart(e);},{passive:false});
+      cbtn.addEventListener('touchmove',_voiceTouchMove,{passive:false});
+      cbtn.addEventListener('touchend',_voiceTouchEnd,{passive:false});
+      cbtn.addEventListener('touchcancel',_voiceTouchEnd,{passive:false});
+    }
 
     // Cancel / Send buttons inside the overlay bar
     var cancelBtn=document.getElementById('voice-cancel-btn');
@@ -14967,15 +15107,15 @@ function _circleUpdateSendBtn(){
 })();
 
 function _voiceTouchStart(e){
-  var btn=document.getElementById('cw-send-btn');
+  var btnId=_voiceCircleMode?'circle-send-btn':'cw-send-btn';
+  var btn=document.getElementById(btnId);
   if(btn&&btn.classList.contains('has-text'))return;
-  if(_voiceActive)return; // already recording
+  if(_voiceActive)return;
   e.preventDefault();
-  // Dismiss keyboard so rec bar is never hidden behind it
-  var inp=document.getElementById('chatinp');
+  var inpId=_voiceCircleMode?'circle-chatinp':'chatinp';
+  var inp=document.getElementById(inpId);
   if(inp&&document.activeElement===inp){
     inp.blur();
-    // Give keyboard 220ms to retract before showing overlay
     _holdStartX=e.touches[0].clientX;
     setTimeout(_startVoiceRecord,220);
   }else{
@@ -15094,10 +15234,11 @@ function _abortVoiceRecord(){
 
 function _hideVoiceOverlay(){
   var ov=document.getElementById('voice-overlay');
-  var btn=document.getElementById('cw-send-btn');
+  var btn=document.getElementById(_voiceCircleMode?'circle-send-btn':'cw-send-btn');
   var recBar=document.getElementById('voice-rec-bar');
   if(ov)ov.classList.remove('active');
   if(btn)btn.classList.remove('recording');
+  _voiceCircleMode=false;
   if(recBar){
     recBar.classList.remove('show');
     if(recBar._vpCleanup){recBar._vpCleanup();recBar._vpCleanup=null;}
@@ -15175,7 +15316,8 @@ function _startVoiceRecord(){
   _voiceActive=true;
   _voiceCancelled=false;
   var ov=document.getElementById('voice-overlay');
-  var btn=document.getElementById('cw-send-btn');
+  var btnId=_voiceCircleMode?'circle-send-btn':'cw-send-btn';
+  var btn=document.getElementById(btnId);
   var recBar=document.getElementById('voice-rec-bar');
   if(ov)ov.classList.add('active');
   if(btn)btn.classList.add('recording');
@@ -15237,7 +15379,6 @@ function _startVoiceRecord(){
 }
 
 function _sendVoiceNote(blob){
-  if(!chatUser||!profile){T('Not in a chat');return;}
   if(blob.size<1000){T('Recording too short');return;}
   var ext=blob.type.includes('webm')?'webm':'mp4';
   var path='voices/'+profile.id+'-'+Date.now()+'.'+ext;
@@ -15245,26 +15386,42 @@ function _sendVoiceNote(blob){
   T('Sending...');
   _sb.storage.from('chat-media').upload(path,blob,{contentType:blob.type,upsert:false})
     .then(function(res){
-      if(res.error){T('Upload failed: '+res.error.message);console.error('voice upload:',res.error);return;}
+      if(res.error){T('Upload failed: '+res.error.message);return;}
       var pub=_sb.storage.from('chat-media').getPublicUrl(path);
       var voiceUrl=pub.data.publicUrl;
-      var expires=new Date(Date.now()+86400000).toISOString();
       var tempId='tmp-'+Date.now();
-      // Pass voiceUrl so optimistic bubble can play immediately
-      var m={id:tempId,sid:'demo',text:'[voice:'+dur+'s]',voiceUrl:voiceUrl,ts:Date.now()};
-      appendBubble(m);
-      SFX('send');haptic('send');
-      var msgs=document.getElementById('msgs');
-      if(msgs)msgs.scrollTop=msgs.scrollHeight;
-      _sb.from('messages').insert({
-        sender_id:profile.id,receiver_id:chatUser.id,
-        content:'[voice:'+dur+'s]',img_url:voiceUrl,is_read:false,expires_at:expires
-      }).select('id').single().then(function(ins){
-        if(ins.error){console.error('Voice DM insert:',ins.error.code,ins.error.message);T('Send failed ('+ins.error.code+')');return;}
-        // Fix temp id on the DOM node so unsend works
-        var tmpEl=document.querySelector('[data-msgid="'+tempId+'"]');
-        if(tmpEl)tmpEl.dataset.msgid=ins.data.id;
-      });
+      if(_voiceCircleMode||(!chatUser&&activeCircle)){
+        // Send to circle
+        if(!activeCircle){T('No active circle');return;}
+        var expires=activeCircle.keep_messages?null:new Date(Date.now()+86400000).toISOString();
+        var m={id:tempId,sid:profile.id,isMine:true,text:'[voice:'+dur+'s]',voiceUrl:voiceUrl,ts:Date.now()};
+        appendCircleBubble(m);SFX('send');haptic('send');
+        var cmsgs=document.getElementById('circle-msgs');if(cmsgs)cmsgs.scrollTop=cmsgs.scrollHeight;
+        _sb.from('circle_messages').insert({
+          circle_id:activeCircle.id,sender_id:profile.id,
+          content:'[voice:'+dur+'s]',img_url:voiceUrl,expires_at:expires
+        }).select('id').single().then(function(ins){
+          if(ins.error){T('Send failed');return;}
+          var el=document.querySelector('#circle-msgs [data-msgid="'+tempId+'"]');
+          if(el)el.dataset.msgid=ins.data.id;
+          _updateCircleLastMsg(activeCircle.id,'🎤 Voice',profile.id,Date.now());
+        });
+      } else {
+        // Send to DM
+        if(!chatUser||!profile){T('Not in a chat');return;}
+        var dmExpires=new Date(Date.now()+86400000).toISOString();
+        var dm={id:tempId,sid:'demo',text:'[voice:'+dur+'s]',voiceUrl:voiceUrl,ts:Date.now()};
+        appendBubble(dm);SFX('send');haptic('send');
+        var msgs=document.getElementById('msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
+        _sb.from('messages').insert({
+          sender_id:profile.id,receiver_id:chatUser.id,
+          content:'[voice:'+dur+'s]',img_url:voiceUrl,is_read:false,expires_at:dmExpires
+        }).select('id').single().then(function(ins){
+          if(ins.error){T('Send failed ('+ins.error.code+')');return;}
+          var tmpEl=document.querySelector('[data-msgid="'+tempId+'"]');
+          if(tmpEl)tmpEl.dataset.msgid=ins.data.id;
+        });
+      }
     });
 }
 
