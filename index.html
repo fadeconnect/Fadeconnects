@@ -497,6 +497,32 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* Talk list story share unread pill */
 .talk-story-share-badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:#3897F0}
+/* Talk list row redesign */
+.talk-row{display:flex;align-items:center;gap:13px;padding:11px 16px;cursor:pointer;background:var(--card);-webkit-tap-highlight-color:transparent;position:relative}
+.talk-row:active{background:var(--inp-bg)}
+.talk-av{position:relative;width:54px;height:54px;min-width:54px;flex-shrink:0}
+.talk-av-inner{width:54px;height:54px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+.talk-av-ring{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.talk-av-ring.has-story{background:var(--text)}
+.talk-av-ring.story-seen{background:var(--border)}
+.talk-av-ring .talk-av-inner{width:48px;height:48px;border:2px solid var(--card)}
+.talk-online-dot{position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:#22C55E;border:2.5px solid var(--card);z-index:2}
+.talk-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.talk-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.talk-name{font-size:15px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);flex:1;min-width:0}
+.talk-name.bold{font-weight:700}
+.talk-ts{font-size:12px;color:var(--sub);flex-shrink:0;white-space:nowrap}
+.talk-sub-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.talk-sub{font-size:13.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.talk-sub.unread{color:var(--text);font-weight:600}
+.talk-sub.active{color:#22C55E}
+.talk-badge{width:18px;height:18px;border-radius:50%;background:#3897F0;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+/* Talk search bar */
+.talk-search{padding:8px 14px 4px;background:var(--card)}
+.talk-search-wrap{position:relative;display:flex;align-items:center}
+.talk-search-ico{position:absolute;left:12px;color:var(--sub);pointer-events:none;display:flex}
+.talk-search-inp{width:100%;background:var(--inp-bg);border:none;border-radius:22px;padding:9px 14px 9px 36px;font-size:14px;font-family:'Inter',sans-serif;color:var(--inp-text);outline:none;-webkit-user-select:text;user-select:text}
+.talk-search-inp::placeholder{color:var(--inp-ph)}
 
 /* SEARCH */
 .sbar{padding:12px 14px;background:var(--card)}
@@ -1559,6 +1585,7 @@ body {
   </div>
   <div id="s-talk" class="screen">
     <div class="topbar"><span style="font-family:'Playfair Display',serif;font-size:24px;font-style:italic;margin-left:2px">Talk</span><div class="tb-r" style="margin-left:auto"><button class="ibtn" onclick="openTalkMenu()"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div></div>
+    <div class="talk-search"><div class="talk-search-wrap"><div class="talk-search-ico"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><input class="talk-search-inp" id="talk-search-inp" placeholder="Search" oninput="filterTalkList(this.value)"/></div></div>
     <div style="position:relative;flex:1;overflow:hidden;display:flex;flex-direction:column">
       <div id="talk-ptr" style="display:none;position:absolute;top:0;left:0;right:0;justify-content:center;padding:13px 0;z-index:10;pointer-events:none;opacity:0;transition:opacity .22s"><div class="ptr-ring"></div></div>
       <div class="scroller" id="talk-list"></div>
@@ -2123,7 +2150,7 @@ function setupRealtime(){
     })
     .on('presence',{event:'leave'},function(payload){
       _onlineUsers.delete(payload.key);
-      userActivity[payload.key]=Date.now(); // stamp when they left
+      userActivity[payload.key]=Date.now();
       if(chatUser&&payload.key===chatUser.id){
         var statusEl=document.getElementById('cw-status');
         if(statusEl){statusEl.textContent='Active recently';statusEl.style.color='var(--sub)';}
@@ -2607,8 +2634,7 @@ function getBadgeSVG(uid, badgeType, isVerified){
 function E(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function ago(d){var diff=Date.now()-(typeof d==='number'?d:new Date(d).getTime());if(diff<60000)return'now';if(diff<3600000)return Math.floor(diff/60000)+'m';if(diff<86400000)return Math.floor(diff/3600000)+'h';return'1d';}
 function agoS(d){var diff=Date.now()-new Date(d).getTime();if(diff<3600000)return Math.floor(diff/60000)+'m ago';return Math.floor(diff/3600000)+'h ago';}
-function stripStoryPrefix(c){
-  if(!c)return'';
+function stripStoryPrefix(c){  if(!c)return'';
   if(c.startsWith('[storyreply:')){
     var nl=c.indexOf('\n');
     var replyText=nl>=0?c.slice(nl+1).trim():'';
@@ -2638,6 +2664,16 @@ function stripStoryPrefix(c){
     }catch(e){return '📸 Shared a Moment';}
   }
   return c;
+}
+// Returns a clean human-readable label for the reply bar preview
+function replyPreviewText(m){
+  if(!m)return'...';
+  if(m.storyShare)return'📸 '+(m.storyShare.authorName||'Someone')+'\'s Moment';
+  if(m.postShare)return m.postShare.img?'📸 Shared a drop':'📌 Shared a drop';
+  if(m.isPhoto||(!m.text&&m.img))return'📷 Photo';
+  if(m.gif)return'GIF';
+  if(m.text&&m.text.startsWith('[voice:'))return'🎤 Voice message';
+  return stripStoryPrefix(m.text||'').slice(0,50)||'...';
 }
 function fadeIn(ts){var rem=Math.max(0,86400000-(Date.now()-new Date(ts).getTime()));var h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000);return rem<=0?'soon':h>0?h+'h':m+'m';}
 function bgClose(e,id){if(e.target.id===id||e.target.classList.contains('compose-dim'))closeSheet(id);}
@@ -8549,6 +8585,16 @@ function loadConversations(cb){
     });
 }
 
+function filterTalkList(q){
+  var rows=document.querySelectorAll('#talk-list .talk-row, #talk-list [data-circle-row]');
+  var s=(q||'').toLowerCase().trim();
+  rows.forEach(function(row){
+    var name=(row.querySelector('[data-name]')||row.querySelector('[data-circle-name]'));
+    var sub=row.querySelector('[data-sub]');
+    var text=((name?name.textContent:'')+' '+(sub?sub.textContent:'')).toLowerCase();
+    row.style.display=(!s||text.indexOf(s)>=0)?'':'none';
+  });
+}
 function updateTalkDot(){
   var dot=document.getElementById('talk-dot');
   if(!dot)return;
@@ -8617,44 +8663,49 @@ function _renderTalkFromCache(){
     var _active=isActiveNow(uid)&&canSeeActivity(uid);
     var _lastAct=canSeeActivity(uid)?activeLabel(uid):'';
 
-    // Subtitle text + style
-    var subText,subColor,subWeight;
+    // Subtitle text
+    var subText;
     var cleanMsg=stripStoryPrefix(c.lastMsg||'');
+    var youPrefix=(c.lastSid==='demo'||c.lastSid===profile.id)?'You: ':'';
     if(isUnread){
-      subText=cleanMsg+(c.ts?' . '+ago(c.ts):'');
-      subColor='var(--text)';subWeight='600';
+      subText=youPrefix+cleanMsg;
     } else if(_active){
-      subText='Active now';subColor='#22C55E';subWeight='400';
+      subText='Active now';
     } else if(_lastAct){
-      subText=_lastAct;subColor='var(--sub)';subWeight='400';
+      subText=_lastAct;
     } else {
-      subText=cleanMsg+(c.ts?' . '+ago(c.ts):'');
-      subColor='var(--sub)';subWeight=bold?'500':'400';
+      subText=youPrefix+cleanMsg;
     }
 
     if(existingRows[uid]){
       // -- Patch existing row in-place (no blink) --
       var row=existingRows[uid];
 
-      // Subtitle
+      // Timestamp
+      var tsEl=row.querySelector('[data-ts-el]');
+      if(tsEl)tsEl.textContent=c.ts?ago(c.ts):'';
+
+      // Subtitle text + classes
       var sub=row.querySelector('[data-sub]');
       if(sub){
-        if(sub.textContent!==subText)sub.textContent=subText;
-        sub.style.color=subColor;
-        sub.style.fontWeight=subWeight;
+        var youPrefix=(c.lastSid==='demo'||c.lastSid===profile.id)?'You: ':'';
+        var newSubText=_active&&!isUnread?'Active now':(youPrefix+subText);
+        if(sub.textContent!==newSubText)sub.textContent=newSubText;
+        sub.className='talk-sub'+(isUnread?' unread':(_active&&!isUnread?' active':''));
       }
 
       // Name bold
       var nameEl=row.querySelector('[data-name]');
-      if(nameEl)nameEl.style.fontWeight=bold?'700':'400';
+      if(nameEl){nameEl.className='talk-name'+(bold?' bold':'');}
 
-      // Unread dot
+      // Unread badge
       var dot=row.querySelector('[data-unread-dot]');
       if(isUnread&&!dot){
         var nd=document.createElement('div');
         nd.setAttribute('data-unread-dot','1');
-        nd.style.cssText='width:11px;height:11px;border-radius:50%;background:#3897F0;flex-shrink:0;align-self:center;margin-left:4px';
-        row.appendChild(nd);
+        nd.className='talk-badge';
+        var subRowEl=row.querySelector('.talk-sub-row');
+        if(subRowEl)subRowEl.appendChild(nd);else row.appendChild(nd);
       } else if(!isUnread&&dot){
         dot.remove();
       }
@@ -8664,22 +8715,25 @@ function _renderTalkFromCache(){
       if(_active&&!gdot){
         var ng=document.createElement('div');
         ng.setAttribute('data-green-dot','1');
-        ng.style.cssText='position:absolute;bottom:1px;right:1px;width:14px;height:14px;border-radius:50%;background:#22C55E;border:2.5px solid var(--card);z-index:2';
-        row.querySelector('[data-av-wrap]').appendChild(ng);
+        ng.className='talk-online-dot';
+        var avWrapEl=row.querySelector('[data-av-wrap]');
+        if(avWrapEl)avWrapEl.appendChild(ng);
       } else if(!_active&&gdot){
         gdot.remove();
       }
 
-      // Story ring: patch seen/unseen state without rebuilding the row
+      // Story ring state
       var _pgi=storyGIForUser(uid);
       var _phasStory=_pgi>=0;
       var _pstorySeen=_phasStory&&svGroups[_pgi]&&svGroups[_pgi].seen;
       var _pringEl=row.querySelector('[data-story-ring]');
       if(_pringEl){
-        var _pwantBg=_phasStory?(_pstorySeen?'var(--border)':'var(--text)'):'';
-        if(_pringEl.getAttribute('data-ring-state')!==_pwantBg){
-          _pringEl.style.background=_pwantBg;
-          _pringEl.setAttribute('data-ring-state',_pwantBg);
+        var _pwantState=_phasStory?(_pstorySeen?'seen':'unseen'):'';
+        if(_pringEl.getAttribute('data-ring-state')!==_pwantState){
+          _pringEl.className='talk-av-ring'+((_phasStory&&!_pstorySeen)?' has-story':(_phasStory?' story-seen':''));
+          _pringEl.setAttribute('data-ring-state',_pwantState);
+          var _pavPad=_pringEl.querySelector('.talk-av-inner');
+          if(_pavPad)_pavPad.style.width=_pavPad.style.height=_phasStory?'48px':'54px';
         }
       }
 
@@ -8691,57 +8745,55 @@ function _renderTalkFromCache(){
       // -- Build new row --
       var row=document.createElement('div');
       row.setAttribute('data-uid',uid);
-      row.style.cssText='display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;background:var(--card);-webkit-tap-highlight-color:transparent';
-      row.classList.add('anim-fade-up');
+      row.className='talk-row anim-fade-up';
 
-      // Avatar with story ring
+      // Avatar
       var gi=storyGIForUser(uid);
       var hasStory=gi>=0;
       var storySeen=hasStory&&svGroups[gi]&&svGroups[gi].seen;
-
-      var avWrap=document.createElement('div');
-      avWrap.setAttribute('data-av-wrap','1');
-      avWrap.style.cssText='position:relative;width:58px;height:58px;min-width:58px;flex-shrink:0';
-
-      var storyRing=document.createElement('div');
-      storyRing.setAttribute('data-story-ring','1');
-      var _initRingBg=hasStory?(storySeen?'var(--border)':'var(--text)'):'';storyRing.setAttribute('data-ring-state',_initRingBg);
-      storyRing.style.cssText='width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;'+(hasStory?(storySeen?'background:var(--border)':'background:var(--text)'):'');
-
+      var avOuter=document.createElement('div');avOuter.className='talk-av';
+      var avRing=document.createElement('div');
+      avRing.setAttribute('data-story-ring','1');
+      var _rState=hasStory?(storySeen?'seen':'unseen'):'';
+      avRing.setAttribute('data-ring-state',_rState);
+      avRing.className='talk-av-ring'+(hasStory?(storySeen?' story-seen':' has-story'):'');
       var avPad=document.createElement('div');
-      avPad.style.cssText='width:'+(hasStory?'52px':'58px')+';height:'+(hasStory?'52px':'58px')+';border-radius:50%;overflow:hidden;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;'+(hasStory?'border:2.5px solid var(--card)':'');
+      avPad.className='talk-av-inner';
+      avPad.style.background=nc(u.display_name||u.username);
       avPad.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-
-      storyRing.appendChild(avPad);
-      avWrap.appendChild(storyRing);
-
+      avRing.appendChild(avPad);avOuter.appendChild(avRing);
+      avOuter.setAttribute('data-av-wrap','1');
       if(_active){
-        var gd=document.createElement('div');
-        gd.setAttribute('data-green-dot','1');
-        gd.style.cssText='position:absolute;bottom:1px;right:1px;width:14px;height:14px;border-radius:50%;background:#22C55E;border:2.5px solid var(--card);z-index:2';
-        avWrap.appendChild(gd);
+        var gd=document.createElement('div');gd.className='talk-online-dot';gd.setAttribute('data-green-dot','1');avOuter.appendChild(gd);
       }
-      row.appendChild(avWrap);
+      row.appendChild(avOuter);
 
-      var textWrap=document.createElement('div');
-      textWrap.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;gap:3px';
-      var nameEl=document.createElement('div');
-      nameEl.setAttribute('data-name','1');
-      nameEl.style.cssText='font-size:15px;font-weight:'+(bold?'700':'400')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)';
+      // Text block
+      var textWrap=document.createElement('div');textWrap.className='talk-text';
+      // Name + timestamp row
+      var nameRow=document.createElement('div');nameRow.className='talk-name-row';
+      var nameEl=document.createElement('div');nameEl.setAttribute('data-name','1');
+      nameEl.className='talk-name'+(bold?' bold':'');
       nameEl.innerHTML=E(u.display_name||u.username)+' '+badgeFor(u.id);
-      var subtitleEl=document.createElement('div');
-      subtitleEl.setAttribute('data-sub','1');
-      subtitleEl.style.cssText='font-size:13.5px;font-weight:'+subWeight+';color:'+subColor+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-      subtitleEl.textContent=subText;
-      textWrap.appendChild(nameEl);textWrap.appendChild(subtitleEl);
-      row.appendChild(textWrap);
-
+      var tsEl=document.createElement('div');tsEl.setAttribute('data-ts-el','1');
+      tsEl.className='talk-ts';
+      tsEl.textContent=c.ts?ago(c.ts):'';
+      nameRow.appendChild(nameEl);nameRow.appendChild(tsEl);
+      // Subtitle + unread row
+      var subRow=document.createElement('div');subRow.className='talk-sub-row';
+      var subtitleEl=document.createElement('div');subtitleEl.setAttribute('data-sub','1');
+      var subClass='talk-sub';
+      if(isUnread)subClass+=' unread';
+      else if(_active)subClass+=' active';
+      subtitleEl.className=subClass;
+      subtitleEl.textContent=_active&&!isUnread?'Active now':(youPrefix+subText);
+      subRow.appendChild(subtitleEl);
       if(isUnread){
-        var ud=document.createElement('div');
-        ud.setAttribute('data-unread-dot','1');
-        ud.style.cssText='width:11px;height:11px;border-radius:50%;background:#3897F0;flex-shrink:0;align-self:center;margin-left:4px';
-        row.appendChild(ud);
+        var ud=document.createElement('div');ud.className='talk-badge';ud.setAttribute('data-unread-dot','1');
+        subRow.appendChild(ud);
       }
+      textWrap.appendChild(nameRow);textWrap.appendChild(subRow);
+      row.appendChild(textWrap);
 
       if(!_active&&!_lastAct)loadLastActive(uid,null);
 
@@ -8751,7 +8803,6 @@ function _renderTalkFromCache(){
       row.addEventListener('touchmove',function(){clearTimeout(_holdT);},{passive:true});
       row.addEventListener('contextmenu',function(e){e.preventDefault();showConvoMenu(u,row);});
 
-      // Avatar taps open story (if user has one); row taps open chat
       (function(userId,storyRingEl){
         storyRingEl.addEventListener('click',function(e){
           e.stopPropagation();
@@ -8759,13 +8810,12 @@ function _renderTalkFromCache(){
           var sgi=storyGIForUser(userId);
           if(sgi>=0){openSVFromTalk(userId);}
           else{
-            // no story -- open chat normally
             _sb.from('messages').update({is_read:true})
               .eq('sender_id',userId).eq('receiver_id',profile.id).eq('is_read',false).then(function(){});
             unreadConvos.delete(userId);updateTalkDot();openChat(u);
           }
         });
-      })(uid,storyRing);
+      })(uid,avRing);
 
       row.onclick=function(){
         if(_holdFired)return;
@@ -8776,7 +8826,6 @@ function _renderTalkFromCache(){
         openChat(u);
       };
 
-      // Insert at correct position
       var insertBefore=l.children[circles.length+(circles.length&&convos.length?1:0)+i];
       if(insertBefore)l.insertBefore(row,insertBefore);
       else l.appendChild(row);
@@ -9548,7 +9597,7 @@ function appendBubble(m){
         var sName=msg.sid==='demo'?'You':(chatUser&&chatUser.display_name||'Them');
         _replyMsg._sName=sName;
         document.getElementById('reply-name').textContent=sName;
-        document.getElementById('reply-preview').textContent=((msg.text&&msg.text.startsWith('[voice:'))?'🎤 Voice message':(msg.text||(msg.isPhoto?'Photo':''))).slice(0,50)||'...';
+        document.getElementById('reply-preview').textContent=replyPreviewText(msg);
         document.getElementById('reply-bar').classList.add('on');
         document.getElementById('chatinp').focus();
       }
@@ -10073,7 +10122,7 @@ function attachHold(el,m,w,bs,isMine){
 function showCtx(bEl,m,w,bs,isMine){_ctxMsg=m;_ctxBsEl=bs;_ctxIsMine=isMine;document.getElementById('ctx-unsend-btn').style.display=isMine?'flex':'none';document.getElementById('ctx-copy-btn').style.display=m.isPhoto&&m.img?'none':'flex';var ctx=document.getElementById('msg-ctx');ctx.style.cssText='display:block;visibility:hidden;position:fixed;top:-9999px;left:0;min-width:220px';document.getElementById('ctx-overlay').style.display='block';setTimeout(function(){var rect=bEl.getBoundingClientRect();var ctxW=ctx.offsetWidth||230,ctxH=ctx.offsetHeight||160,gap=6,margin=8,vw=window.innerWidth,vh=window.innerHeight;var top=rect.bottom+gap;if(top+ctxH>vh-margin)top=rect.top-ctxH-gap;if(top<margin)top=margin;var left=isMine?rect.right-ctxW:rect.left;if(left+ctxW>vw-margin)left=vw-ctxW-margin;if(left<margin)left=margin;ctx.style.top=top+'px';ctx.style.left=left+'px';ctx.style.visibility='visible';ctx.style.animation='ctxPop .18s ease forwards';},10);}
 function closeCtx(){document.getElementById('msg-ctx').style.display='none';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
 function ctxReact(emoji){if(!_ctxMsg||!_ctxBsEl)return closeCtx();var m=_ctxMsg,bs=_ctxBsEl,isMine=_ctxIsMine;var removing=m.reaction===emoji;m.reaction=removing?null:emoji;if(!removing)SFX('react');var old=bs.querySelector('.rxn-badge');if(old)old.remove();if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));closeCtx();if(!removing)T(emoji+' added');_sb.from('messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});}
-function ctxReply(){if(!_ctxMsg)return closeCtx();_replyMsg=_ctxMsg;var sName=_ctxMsg.sid==='demo'?'You':(chatUser&&chatUser.display_name||'Them');_replyMsg._sName=sName;document.getElementById('reply-name').textContent=sName;document.getElementById('reply-preview').textContent=((_ctxMsg.text&&_ctxMsg.text.startsWith('[voice:'))?'🎤 Voice message':(_ctxMsg.text||(_ctxMsg.isPhoto?'📷 Photo':''))).slice(0,50)||'...';document.getElementById('reply-bar').classList.add('on');document.getElementById('chatinp').focus();closeCtx();}
+function ctxReply(){if(!_ctxMsg)return closeCtx();_replyMsg=_ctxMsg;var sName=_ctxMsg.sid==='demo'?'You':(chatUser&&chatUser.display_name||'Them');_replyMsg._sName=sName;document.getElementById('reply-name').textContent=sName;document.getElementById('reply-preview').textContent=replyPreviewText(_ctxMsg);document.getElementById('reply-bar').classList.add('on');document.getElementById('chatinp').focus();closeCtx();}
 function cancelReplyBar(){_replyMsg=null;document.getElementById('reply-bar').classList.remove('on');}
 function ctxCopy(){if(!_ctxMsg)return closeCtx();if(navigator.clipboard)navigator.clipboard.writeText(_ctxMsg.text||'').catch(function(){});T('Copied');closeCtx();}
 function ctxUnsend(){
@@ -13763,34 +13812,38 @@ function buildCircleRow(c,i){
   if(!c)return null;
   var row=document.createElement('div');
   row.setAttribute('data-circle-id',c.id);
-  row.style.cssText='display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;background:var(--card);-webkit-tap-highlight-color:transparent';
-  row.classList.add('anim-fade-up');
+  row.setAttribute('data-circle-row','1');
+  row.className='talk-row anim-fade-up';
   row.style.animationDelay=(Math.min(i,6)*30)+'ms';
   // Stacked avatars
   var avStack=buildCircleAvStack(c,54);
   row.appendChild(avStack);
   // Text
   var textWrap=document.createElement('div');
-  textWrap.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;gap:3px';
+  textWrap.className='talk-text';
   var isUnread=unreadCircles.has(c.id);
-  var isPulse=c.lastTs&&(Date.now()-c.lastTs<3600000)&&c.lastSenderId&&c.lastSenderId!==profile.id;
+  // Name row
+  var nameRow=document.createElement('div');nameRow.className='talk-name-row';
   var nameEl=document.createElement('div');
-  nameEl.style.cssText='font-size:15px;font-weight:'+(isUnread?'700':'500')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)';
-  // Show circle name + member count badge
+  nameEl.setAttribute('data-circle-name','1');
+  nameEl.className='talk-name'+(isUnread?' bold':'');
   var onlineInCircle=c.members.filter(function(u){return u.id!==profile.id&&_onlineUsers&&_onlineUsers.has(u.id);}).length;
   nameEl.innerHTML=E(c.name||'Circle')+(onlineInCircle>0?'<span style="font-size:11px;color:#22C55E;font-weight:500;margin-left:6px">'+onlineInCircle+' online</span>':'');
-  var subEl=document.createElement('div');
+  var tsEl=document.createElement('div');tsEl.className='talk-ts';
+  tsEl.textContent=c.lastTs?ago(c.lastTs):'';
+  nameRow.appendChild(nameEl);nameRow.appendChild(tsEl);
+  // Sub row
+  var subRow=document.createElement('div');subRow.className='talk-sub-row';
   var lastSender=c.lastSenderId?USERS.find(function(u){return u.id===c.lastSenderId;}):null;
   var senderName=c.lastSenderId===profile.id?'You':(lastSender?lastSender.display_name:'');
-  subEl.style.cssText='font-size:13.5px;font-weight:'+(isUnread?'600':'400')+';color:'+(isUnread?'var(--text)':'var(--sub)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-  subEl.textContent=c.lastMsg?(senderName?senderName+': ':'')+stripStoryPrefix(c.lastMsg)+(c.lastTs?' . '+ago(c.lastTs):''):'No messages yet';
-  textWrap.appendChild(nameEl);textWrap.appendChild(subEl);
+  var subEl=document.createElement('div');
+  subEl.setAttribute('data-sub','1');
+  subEl.className='talk-sub'+(isUnread?' unread':'');
+  subEl.textContent=c.lastMsg?(senderName?senderName+': ':'')+stripStoryPrefix(c.lastMsg):'No messages yet';
+  subRow.appendChild(subEl);
+  if(isUnread){var ud=document.createElement('div');ud.className='talk-badge';subRow.appendChild(ud);}
+  textWrap.appendChild(nameRow);textWrap.appendChild(subRow);
   row.appendChild(textWrap);
-  if(isUnread){
-    var udot=document.createElement('div');
-    udot.style.cssText='width:11px;height:11px;border-radius:50%;background:#3897F0;flex-shrink:0;align-self:center;margin-left:4px';
-    row.appendChild(udot);
-  }
   var _hT=null,_hF=false;
   row.addEventListener('touchstart',function(){_hF=false;_hT=setTimeout(function(){_hF=true;showCircleMenu(c,row);},500);},{passive:true});
   row.addEventListener('touchend',function(){clearTimeout(_hT);},{passive:true});
@@ -13884,8 +13937,7 @@ function openCircleCW(c){
     if(membersEl)membersEl.style.color=isActive?'#22C55E':'var(--sub)';
     if(cwDot)cwDot.style.display=isActive?'block':'none';
   } else {
-    var onlineCount=c.members.filter(function(u){return u.id!==profile.id&&_onlineUsers&&_onlineUsers.has(u.id);}).length;
-    if(membersEl){membersEl.textContent=onlineCount>0?onlineCount+' online':'';membersEl.style.color=onlineCount>0?'#22C55E':'var(--sub)';}
+    if(membersEl){var onlineCnt=c.members.filter(function(u){return u.id!==profile.id&&_onlineUsers&&_onlineUsers.has(u.id);}).length;membersEl.textContent=onlineCnt>0?onlineCnt+' online':'';membersEl.style.color='#22C55E';}
     if(cwDot)cwDot.style.display='none';
   }
   if(avStack){avStack.innerHTML='';avStack.appendChild(buildCircleAvStack(c,38));}
@@ -14000,7 +14052,7 @@ function appendCircleBubble(m){
     snEl.className='c-sender-name';
     snEl.textContent=sName;
     snEl.style.cursor='pointer';
-    snEl.onclick=function(e){e.stopPropagation();var u=USERS.find(function(x){return x.id===m.sid;});if(u)openProf(u.id);};
+    snEl.onclick=function(e){e.stopPropagation();var u=USERS.find(function(x){return x.id===m.sid;});if(u)openProf(u);};
     bs.appendChild(snEl);
   }
   // Reply quote
@@ -14082,7 +14134,7 @@ function appendCircleBubble(m){
     tav.style.background=nc(sUser?(sUser.display_name||sUser.username):'?');
     tav.style.cursor='pointer';
     tav.innerHTML=avH(sUser?sUser.avatar_url:null,sUser?(sUser.display_name||sUser.username):'?');
-    (function(uid){tav.onclick=function(e){e.stopPropagation();if(uid)openProf(uid);};})(m.sid);
+    (function(uObj){tav.onclick=function(e){e.stopPropagation();if(uObj)openProf(uObj);};})(sUser);
     wrap.appendChild(tav);
   }
   wrap.appendChild(bs);
@@ -14138,7 +14190,7 @@ function showCircleMsgCtx(bEl,m,bs,isMine){
       _circleReplyMsg=m;
       var sName=m.isMine?'You':(USERS.find(function(u){return u.id===m.sid;})||{}).display_name||'Someone';
       document.getElementById('circle-reply-name').textContent=sName;
-      document.getElementById('circle-reply-preview').textContent=((m.text&&!m.text.startsWith('['))?m.text:(m.gif?'GIF':m.isPhoto?'Photo':'Media')).slice(0,50)||'...';
+      document.getElementById('circle-reply-preview').textContent=replyPreviewText(m);
       document.getElementById('circle-reply-bar').classList.add('on');
       setTimeout(function(){document.getElementById('circle-chatinp').focus();},50);
     }},
@@ -14309,16 +14361,9 @@ function _loadSeenCount(msgId,el){
     var seenCount=(res.data||[]).filter(function(r){return r.user_id!==profile.id;}).length;
     if(!el)return;
     var totalOthers=activeCircle?activeCircle.members.filter(function(u){return u.id!==profile.id;}).length:0;
-    if(seenCount===0){
-      el.textContent='Delivered';
-      el.style.color='';
-    } else if(totalOthers>0&&seenCount>=totalOthers){
-      el.textContent='Seen ✓✓';
-      el.style.color='#3897F0';
-    } else {
-      el.textContent='Seen by '+seenCount+' of '+totalOthers;
-      el.style.color='';
-    }
+    if(seenCount===0){el.textContent='Delivered';el.style.color='';}
+    else if(totalOthers>0&&seenCount>=totalOthers){el.textContent='Seen ✓✓';el.style.color='#3897F0';}
+    else{el.textContent='Seen by '+seenCount+' of '+totalOthers;el.style.color='';}
   });
 }
 
@@ -14333,7 +14378,7 @@ function openSeenBy(msgId){
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){
     var sheet=document.getElementById('seen-by-sheet');
-    if(sheet){sheet.style.transform='translateY(0)';}
+    if(sheet)sheet.style.transform='translateY(0)';
   });});
   _sb.from('circle_reads').select('user_id,read_at').eq('message_id',msgId).then(function(res){
     list.innerHTML='';
@@ -14343,7 +14388,7 @@ function openSeenBy(msgId){
     var allOthers=activeCircle?activeCircle.members.filter(function(u){return u.id!==profile.id;}):[];
     var unseenMembers=allOthers.filter(function(u){return seenIds.indexOf(u.id)<0;});
     if(title)title.textContent='Seen by '+seenRows.length+' / '+allOthers.length;
-    function makeRow(u,seenAt){
+    function makeSeenRow(u,seenAt){
       var row=document.createElement('div');
       row.style.cssText='display:flex;align-items:center;gap:13px;padding:12px 18px';
       var av=document.createElement('div');
@@ -14356,22 +14401,20 @@ function openSeenBy(msgId){
       } else {
         info.innerHTML='<div style="font-weight:500;font-size:14.5px;color:var(--sub)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub);margin-top:2px">Not seen yet</div>';
       }
-      row.appendChild(av);row.appendChild(info);
-      return row;
+      row.appendChild(av);row.appendChild(info);return row;
     }
     if(seenIds.length>0){
       _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',seenIds).then(function(pr){
-        (pr.data||[]).forEach(function(u){list.appendChild(makeRow(u,readAtMap[u.id]));});
+        (pr.data||[]).forEach(function(u){list.appendChild(makeSeenRow(u,readAtMap[u.id]));});
         if(unseenMembers.length>0){
-          var sep=document.createElement('div');
-          sep.style.cssText='height:1px;background:var(--border);margin:4px 16px';
+          var sep=document.createElement('div');sep.style.cssText='height:1px;background:var(--border);margin:4px 16px';
           list.appendChild(sep);
-          unseenMembers.forEach(function(u){list.appendChild(makeRow(u,null));});
+          unseenMembers.forEach(function(u){list.appendChild(makeSeenRow(u,null));});
         }
       });
     } else {
       if(!unseenMembers.length){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--sub);font-size:14px">No members</div>';return;}
-      unseenMembers.forEach(function(u){list.appendChild(makeRow(u,null));});
+      unseenMembers.forEach(function(u){list.appendChild(makeSeenRow(u,null));});
     }
   });
 }
@@ -14907,7 +14950,7 @@ function setupSwipeToReply(){
       var t=e.touches[0];
       startX=t.clientX;startY=t.clientY;
       activeWrap=null;moved=false;cancelled=false;
-      // Left-edge 22px = native OS back swipe zone — ignore entirely
+      // Left 22px = OS native back swipe — never intercept
       if(startX<=22){cancelled=true;return;}
       var el=e.target;
       while(el&&el!==msgsEl){if(el.classList&&el.classList.contains('bwrap')){activeWrap=el;break;}el=el.parentElement;}
@@ -14920,7 +14963,7 @@ function setupSwipeToReply(){
       }
     },{passive:true});
     msgsEl.addEventListener('touchmove',function(e){
-      if(!activeWrap)return;
+      if(!activeWrap||cancelled)return;
       var t=e.touches[0];
       var dx=t.clientX-startX, dy=t.clientY-startY;
       if(!moved){
@@ -14928,8 +14971,7 @@ function setupSwipeToReply(){
         if(Math.abs(dx)<8)return;
         moved=true;
       }
-      if(cancelled)return;
-      // Confirmed horizontal swipe — prevent scroll
+      // Confirmed horizontal — prevent scroll
       e.preventDefault();
       var isMine=activeWrap.classList.contains('me');
       // Only swipe right-to-left for mine, left-to-right for them
@@ -14961,7 +15003,7 @@ function setupSwipeToReply(){
             _circleReplyMsg=_m;
             var sName=_m.isMine?'You':(USERS.find(function(u){return u.id===_m.sid;})||{}).display_name||'Someone';
             document.getElementById('circle-reply-name').textContent=sName;
-            document.getElementById('circle-reply-preview').textContent=(_m.text||((_m.gif||_m.isPhoto)?'Media':'')).slice(0,50)||'...';
+            document.getElementById('circle-reply-preview').textContent=replyPreviewText(_m);
             document.getElementById('circle-reply-bar').classList.add('on');
             setTimeout(function(){var inp=document.getElementById('circle-chatinp');if(inp)inp.focus();},50);
           }
@@ -14973,7 +15015,7 @@ function setupSwipeToReply(){
             var sName2=dm.isMine?'You':(chatUser&&chatUser.display_name||'Them');
             _replyMsg._sName=sName2;
             document.getElementById('reply-name').textContent=sName2;
-            document.getElementById('reply-preview').textContent=((dm.text&&dm.text.startsWith('[voice:'))?'🎤 Voice':(dm.text||(dm.isPhoto?'📷 Photo':''))).slice(0,50)||'...';
+            document.getElementById('reply-preview').textContent=replyPreviewText(dm);
             document.getElementById('reply-bar').classList.add('on');
             setTimeout(function(){var inp=document.getElementById('chatinp');if(inp)inp.focus();},50);
           }
