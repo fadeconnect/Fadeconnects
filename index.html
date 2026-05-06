@@ -2119,6 +2119,7 @@ function setupRealtime(){
         document.getElementById('cw-status').style.color='#22C55E';
         var d=document.getElementById('cw-dot');if(d)d.style.display='block';
       }
+      if(curTab==='talk')_renderTalkFromCache();
     })
     .on('presence',{event:'leave'},function(payload){
       _onlineUsers.delete(payload.key);
@@ -2128,6 +2129,7 @@ function setupRealtime(){
         if(statusEl){statusEl.textContent='Active recently';statusEl.style.color='var(--sub)';}
         var d=document.getElementById('cw-dot');if(d)d.style.display='none';
       }
+      if(curTab==='talk')_renderTalkFromCache();
     })
     .subscribe(function(status){
       if(status==='SUBSCRIBED'){
@@ -8591,7 +8593,7 @@ function _renderTalkFromCache(){
     if(convos.length){
       var sep=document.createElement('div');
       sep.setAttribute('data-circles-sep','1');
-      sep.style.cssText='height:1px;background:var(--border);margin:4px 0';
+      sep.style.cssText='height:0;margin:0';
       frag.appendChild(sep);
     }
     l.insertBefore(frag,l.firstChild);
@@ -10060,11 +10062,11 @@ function attachHold(el,m,w,bs,isMine){
   }
   function cancel(){clearTimeout(t);}
   el.addEventListener('mousedown',start);
-  el.addEventListener('touchstart',function(e){e.preventDefault();start(e);},{passive:false});
+  el.addEventListener('touchstart',start,{passive:true});
   el.addEventListener('mouseup',cancel);
   el.addEventListener('mouseleave',cancel);
   el.addEventListener('touchmove',cancel,{passive:true});
-  el.addEventListener('touchend',function(e){cancel();if(fired)return;e.stopPropagation();});
+  el.addEventListener('touchend',function(){cancel();});
   el.addEventListener('touchcancel',cancel);
   el.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();showCtx(el,m,w,bs,isMine);});
 }
@@ -14065,9 +14067,9 @@ function appendCircleBubble(m){
   // Long-press context
   (function(bubble,msg,bsEl,mine){
     var lt=null,lf=false;
-    function startHold(e){lf=false;lt=setTimeout(function(){lf=true;showCircleMsgCtx(bubble,msg,bsEl,mine);},480);}
+    function startHold(){lf=false;lt=setTimeout(function(){lf=true;showCircleMsgCtx(bubble,msg,bsEl,mine);},480);}
     function endHold(){clearTimeout(lt);}
-    bubble.addEventListener('touchstart',function(e){e.preventDefault();startHold(e);},{passive:false});
+    bubble.addEventListener('touchstart',startHold,{passive:true});
     bubble.addEventListener('touchend',endHold,{passive:true});
     bubble.addEventListener('touchmove',endHold,{passive:true});
     bubble.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();showCircleMsgCtx(bubble,msg,bsEl,mine);});
@@ -14309,11 +14311,13 @@ function _loadSeenCount(msgId,el){
     var totalOthers=activeCircle?activeCircle.members.filter(function(u){return u.id!==profile.id;}).length:0;
     if(seenCount===0){
       el.textContent='Delivered';
+      el.style.color='';
     } else if(totalOthers>0&&seenCount>=totalOthers){
       el.textContent='Seen ✓✓';
       el.style.color='#3897F0';
     } else {
       el.textContent='Seen by '+seenCount+' of '+totalOthers;
+      el.style.color='';
     }
   });
 }
@@ -14339,58 +14343,35 @@ function openSeenBy(msgId){
     var allOthers=activeCircle?activeCircle.members.filter(function(u){return u.id!==profile.id;}):[];
     var unseenMembers=allOthers.filter(function(u){return seenIds.indexOf(u.id)<0;});
     if(title)title.textContent='Seen by '+seenRows.length+' / '+allOthers.length;
-    // Build seen section
-    if(seenRows.length>0){
+    function makeRow(u,seenAt){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:13px;padding:12px 18px';
+      var av=document.createElement('div');
+      av.style.cssText='width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700';
+      av.innerHTML=avH(u.avatar_url,u.display_name||u.username);
+      var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+      if(seenAt){
+        var ra=new Date(seenAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+        info.innerHTML='<div style="font-weight:600;font-size:14.5px">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:#3897F0;margin-top:2px">Seen · '+ra+'</div>';
+      } else {
+        info.innerHTML='<div style="font-weight:500;font-size:14.5px;color:var(--sub)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub);margin-top:2px">Not seen yet</div>';
+      }
+      row.appendChild(av);row.appendChild(info);
+      return row;
+    }
+    if(seenIds.length>0){
       _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',seenIds).then(function(pr){
-        (pr.data||[]).forEach(function(u){
-          var row=document.createElement('div');
-          row.style.cssText='display:flex;align-items:center;gap:13px;padding:12px 18px';
-          var av=document.createElement('div');
-          av.style.cssText='width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700';
-          av.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-          var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
-          var ra=readAtMap[u.id]?new Date(readAtMap[u.id]).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
-          info.innerHTML='<div style="font-weight:600;font-size:14.5px">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:#3897F0;margin-top:2px">Seen'+( ra?' . '+ra:'')+'</div>';
-          row.appendChild(av);row.appendChild(info);
-          list.appendChild(row);
-        });
-        // Unseen section
+        (pr.data||[]).forEach(function(u){list.appendChild(makeRow(u,readAtMap[u.id]));});
         if(unseenMembers.length>0){
           var sep=document.createElement('div');
-          sep.style.cssText='padding:8px 18px 4px;font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px';
-          sep.textContent='Not seen yet';
+          sep.style.cssText='height:1px;background:var(--border);margin:4px 16px';
           list.appendChild(sep);
-          unseenMembers.forEach(function(u){
-            var row=document.createElement('div');
-            row.style.cssText='display:flex;align-items:center;gap:13px;padding:10px 18px';
-            var av=document.createElement('div');
-            av.style.cssText='width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700';
-            av.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-            var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
-            info.innerHTML='<div style="font-weight:500;font-size:14.5px;color:var(--sub)">'+E(u.display_name||u.username)+'</div>';
-            row.appendChild(av);row.appendChild(info);
-            list.appendChild(row);
-          });
+          unseenMembers.forEach(function(u){list.appendChild(makeRow(u,null));});
         }
       });
     } else {
-      // Nobody seen yet — show all as unseen
-      if(unseenMembers.length===0){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--sub);font-size:14px">Not seen yet</div>';return;}
-      var sep2=document.createElement('div');
-      sep2.style.cssText='padding:8px 18px 4px;font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px';
-      sep2.textContent='Not seen yet';
-      list.appendChild(sep2);
-      unseenMembers.forEach(function(u){
-        var row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:13px;padding:10px 18px';
-        var av=document.createElement('div');
-        av.style.cssText='width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700';
-        av.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-        var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
-        info.innerHTML='<div style="font-weight:500;font-size:14.5px;color:var(--sub)">'+E(u.display_name||u.username)+'</div>';
-        row.appendChild(av);row.appendChild(info);
-        list.appendChild(row);
-      });
+      if(!unseenMembers.length){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--sub);font-size:14px">No members</div>';return;}
+      unseenMembers.forEach(function(u){list.appendChild(makeRow(u,null));});
     }
   });
 }
@@ -14926,8 +14907,8 @@ function setupSwipeToReply(){
       var t=e.touches[0];
       startX=t.clientX;startY=t.clientY;
       activeWrap=null;moved=false;cancelled=false;
-      // Ignore touches starting within 22px of left edge — that's native back swipe territory
-      if(startX<=22){return;}
+      // Left-edge 22px = native OS back swipe zone — ignore entirely
+      if(startX<=22){cancelled=true;return;}
       var el=e.target;
       while(el&&el!==msgsEl){if(el.classList&&el.classList.contains('bwrap')){activeWrap=el;break;}el=el.parentElement;}
       if(!activeWrap)return;
@@ -14948,6 +14929,8 @@ function setupSwipeToReply(){
         moved=true;
       }
       if(cancelled)return;
+      // Confirmed horizontal swipe — prevent scroll
+      e.preventDefault();
       var isMine=activeWrap.classList.contains('me');
       // Only swipe right-to-left for mine, left-to-right for them
       var pull=isMine?Math.max(0,-dx):Math.max(0,dx);
@@ -14960,7 +14943,7 @@ function setupSwipeToReply(){
         activeWrap._triggered=true;
         haptic('light');
       }
-    },{passive:true});
+    },{passive:false});
     msgsEl.addEventListener('touchend',function(){
       if(!activeWrap)return;
       var pull=parseFloat((activeWrap.style.transform||'translateX(0)').replace(/[^0-9.-]/g,''))||0;
