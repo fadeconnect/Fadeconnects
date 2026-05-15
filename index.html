@@ -342,18 +342,22 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .sv-menu-item.red svg{opacity:1}
 .sv-menu-sep{height:1px;background:var(--border);margin:0 22px}
 
-/* DELETE CONFIRM */
-#sv-del-bg{display:none;position:fixed;inset:0;z-index:650;align-items:flex-end}
-#sv-del-bg.on{display:flex}
-#sv-del-dim{position:absolute;inset:0;background:rgba(0,0,0,.55);animation:dimIn .2s ease}
-#sv-del-sheet{position:relative;background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:22px 18px max(24px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94)}
-#sv-del-bg.on #sv-del-sheet{transform:translateY(0)}
-.sv-del-title{font-size:16px;font-weight:700;margin-bottom:5px;color:var(--text)}
-.sv-del-sub{font-size:14px;color:var(--sub);margin-bottom:22px;line-height:1.5}
-.sv-del-btn-del{padding:13px 0;border-radius:12px;border:none;background:#E8352A;color:#fff;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .12s}
-.sv-del-btn-del:active{opacity:.7}
-.sv-del-btn-cancel{padding:13px 0;border-radius:12px;border:none;background:var(--inp-bg);color:var(--sub);font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .12s}
-.sv-del-btn-cancel:active{opacity:.6}
+/* fadeConfirm — unified confirm bottom sheet */
+#fc-ov{display:none;position:fixed;inset:0;z-index:950;align-items:flex-end}
+#fc-dim{position:absolute;inset:0;background:rgba(0,0,0,.10)}
+#fc-sheet{position:relative;width:100%;background:var(--card);border-radius:20px 20px 0 0;padding-bottom:max(36px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);will-change:transform}
+#fc-pill-wrap{padding:10px 0 0;display:flex;justify-content:center}
+#fc-pill{width:30px;height:3px;border-radius:2px;background:var(--border)}
+#fc-inner{padding:20px 20px 0}
+#fc-title{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.6px;line-height:1.15;margin-bottom:6px}
+#fc-desc{font-size:14px;color:var(--sub);line-height:1.5;letter-spacing:-.15px}
+#fc-btns{display:flex;align-items:center;justify-content:space-between;padding:20px 0 0}
+#fc-cancel{background:none;border:none;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--sub);letter-spacing:-.3px;padding:0;cursor:pointer;transition:opacity .12s;-webkit-tap-highlight-color:transparent}
+#fc-cancel:active{opacity:.2}
+#fc-action{background:none;border:none;font-family:'Inter',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.3px;padding:0;cursor:pointer;transition:opacity .12s;-webkit-tap-highlight-color:transparent}
+#fc-action:active{opacity:.2}
+#fc-action.fc-danger{color:#E8352A}
+#fc-action.fc-neutral{color:var(--text)}
 
 /* EDIT STORY SHEET */
 #sv-edit-bg{display:none;position:fixed;inset:0;z-index:640;background:#000;flex-direction:column;opacity:0;transition:opacity .22s ease}
@@ -503,20 +507,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cw-media-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .cw-media-empty{padding:48px 22px;text-align:center;color:var(--sub);font-size:14px}
 /* Confirm sheet — truly fixed, above all cw layers */
-#cw-confirm-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.36);z-index:420;align-items:flex-end;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-#cw-confirm-sheet-ov.on{display:flex}
-#cw-confirm-sheet{width:100%;background:var(--card);border-radius:26px 26px 0 0;transform:translateY(100%);transition:transform .42s cubic-bezier(.25,.46,.45,.94);padding-bottom:max(34px,env(safe-area-inset-bottom))}
-#cw-confirm-sheet-ov.on #cw-confirm-sheet{transform:translateY(0)}
-.cw-confirm-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:16px auto 0}
-.cw-confirm-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:20px auto 0;background:var(--inp-bg)}
-.cw-confirm-icon.danger{background:rgba(232,53,42,.1)}
-.cw-confirm-title{font-size:20px;font-weight:700;padding:16px 24px 5px;letter-spacing:-.4px}
-.cw-confirm-body{font-size:14.5px;color:var(--sub);padding:0 24px 26px;line-height:1.65}
-.cw-confirm-btns{padding:0 16px;display:flex;flex-direction:column;gap:10px}
-.btn-confirm-action{display:flex;align-items:center;justify-content:center;padding:16px;border-radius:16px;font-family:'Inter',sans-serif;font-size:16px;font-weight:600;cursor:pointer;border:none;width:100%;transition:opacity .15s,transform .1s;background:var(--inp-bg);color:var(--text);-webkit-tap-highlight-color:transparent}
-.btn-confirm-action:active{opacity:.45;transform:scale(.975)}
-.btn-confirm-danger{background:rgba(232,53,42,.1);color:#E8352A}
-.btn-confirm-cancel{background:none;color:var(--sub);font-size:15px;font-weight:500;padding:14px}
+
 .talk-av-wrap{position:relative;flex-shrink:0;width:54px;height:54px}
 .talk-active-dot{position:absolute;bottom:0px;right:0px;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--card);background:#22C55E;z-index:2}
 .msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;overscroll-behavior:contain;touch-action:pan-y}
@@ -700,7 +691,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 @keyframes modalPop{from{opacity:0;transform:scale(.88) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-title{font-weight:600;font-size:15.5px}
 .modal-body{font-size:13.5px;color:var(--sub);line-height:1.65}
-#del-modal{z-index:900}
 
 /* NOTIF */
 #notif-panel{display:flex;position:fixed;inset:0;background:var(--card);z-index:220;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
@@ -814,8 +804,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .rplybar.on{display:flex}
 .cs-inp-row{display:flex;gap:10px;align-items:flex-end;padding:10px 14px max(16px,env(safe-area-inset-bottom));flex-shrink:0;background:var(--card);margin-top:auto}
 
-/* Comment hold-to-delete modal */
-#cmt-del-modal{z-index:910}
+
 .csinp{flex:1;background:var(--inp-bg);border:none;border-radius:22px;padding:10px 16px;font-size:14px;font-family:'Inter',sans-serif;color:var(--inp-text);outline:none;resize:none;max-height:80px;line-height:1.4;-webkit-user-select:text;user-select:text}
 .csinp::placeholder{color:var(--inp-ph)}
 .cssend{width:36px;height:36px;border-radius:50%;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
@@ -1794,19 +1783,6 @@ body {
 </div>
 
 <!-- STORY CREATOR DISCARD DIALOG -->
-<div id="sc-discard-bg" style="display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;padding:20px">
-  <div id="sc-discard-dim" style="position:absolute;inset:0;background:rgba(0,0,0,.5)" onclick="scKeepEditing()"></div>
-  <div id="sc-discard-sheet" onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:300px;background:var(--card);border-radius:18px;padding:20px 16px;transform:translateY(20px) scale(.97);opacity:0;transition:transform .22s cubic-bezier(.34,1.3,.64,1),opacity .18s ease">
-    <div style="text-align:center;padding:0 0 16px">
-      <div style="font-size:15.5px;font-weight:700;color:var(--text);margin-bottom:4px">Discard moment?</div>
-      <div style="font-size:13px;color:var(--sub);line-height:1.5">Your edits won't be saved.</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="scKeepEditing()" style="flex:1;padding:13px 0;background:var(--inp-bg);border:none;border-radius:12px;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .12s">Keep editing</button>
-      <button onclick="scConfirmDiscard()" style="flex:1;padding:13px 0;background:#E8352A;border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .12s">Discard</button>
-    </div>
-  </div>
-</div>
 <div id="aud-bg" onclick="closeAudSheet()" style="display:none;position:fixed;inset:0;z-index:500;align-items:flex-end">
   <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);animation:dimIn .25s ease"></div>
   <div id="aud-sheet" onclick="event.stopPropagation()" style="position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;padding-bottom:max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)">
@@ -1834,17 +1810,6 @@ body {
 </div>
 
 <!-- STORY DELETE CONFIRM -->
-<div id="sv-del-bg" onclick="svCloseDelete()">
-  <div id="sv-del-dim"></div>
-  <div id="sv-del-sheet" onclick="event.stopPropagation()">
-    <div class="sv-del-title">Delete this moment?</div>
-    <div class="sv-del-sub">This cannot be undone.</div>
-    <div style="display:flex;gap:8px">
-      <button class="sv-del-btn-cancel" onclick="svCloseDelete()" style="flex:1;border-radius:12px;padding:13px 0;margin-bottom:0;width:auto">Cancel</button>
-      <button class="sv-del-btn-del" onclick="svConfirmDelete()" style="flex:1;border-radius:12px;padding:13px 0;margin-bottom:0;width:auto">Delete</button>
-    </div>
-  </div>
-</div>
 
 <!-- EDIT STORY -->
 <div id="sv-edit-bg">
@@ -1966,15 +1931,6 @@ body {
 </div>
 
 <!-- CHAT CONFIRM SHEET (block/delete) — fixed, outside #cw -->
-<div id="cw-confirm-sheet-ov" onclick="if(event.target===this)cwCloseConfirm()">
-  <div id="cw-confirm-sheet" onclick="event.stopPropagation()">
-    <div class="cw-confirm-handle"></div>
-    <div class="cw-confirm-icon" id="cw-confirm-icon"></div>
-    <div class="cw-confirm-title" id="cw-confirm-title"></div>
-    <div class="cw-confirm-body" id="cw-confirm-body"></div>
-    <div class="cw-confirm-btns" id="cw-confirm-btns"></div>
-  </div>
-</div>
 
 <!-- VOICE OVERLAY -->
 <div id="voice-overlay">
@@ -2125,29 +2081,19 @@ body {
   </div>
 </div>
 
-<!-- DELETE MODAL -->
-<div id="del-modal" class="mbg" style="z-index:900">
-  <div class="modal" style="gap:0;padding:20px 16px;overflow:hidden;max-width:300px">
-    <div style="text-align:center;padding:0 0 16px">
-      <div style="font-weight:700;font-size:15.5px;color:var(--text);margin-bottom:4px">Delete drop?</div>
-      <div style="font-size:13px;color:var(--sub);line-height:1.5">This cannot be undone.</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="closeDelSheet()" style="flex:1;padding:13px 0;background:var(--inp-bg);border:none;border-radius:12px;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;font-family:Inter,sans-serif;transition:opacity .12s">Cancel</button>
-      <button id="del-btn" style="flex:1;padding:13px 0;background:#E8352A;border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;transition:opacity .12s">Delete</button>
-    </div>
-  </div>
-</div>
 
-<div id="cmt-del-modal" class="mbg" style="z-index:910">
-  <div class="modal" style="gap:0;padding:20px 16px;overflow:hidden;max-width:300px">
-    <div style="text-align:center;padding:0 0 16px">
-      <div style="font-weight:700;font-size:15.5px;color:var(--text);margin-bottom:4px">Delete comment?</div>
-      <div style="font-size:13px;color:var(--sub);line-height:1.5">This cannot be undone.</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="closeCmtDelBar()" style="flex:1;padding:13px 0;background:var(--inp-bg);border:none;border-radius:12px;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;font-family:Inter,sans-serif;transition:opacity .12s">Cancel</button>
-      <button onclick="execCmtDelete()" style="flex:1;padding:13px 0;background:#E8352A;border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;transition:opacity .12s">Delete</button>
+<!-- FADE CONFIRM — unified confirm bottom sheet -->
+<div id="fc-ov" onclick="if(event.target===this||event.target.id==='fc-dim')_fcDismiss()">
+  <div id="fc-dim"></div>
+  <div id="fc-sheet" onclick="event.stopPropagation()">
+    <div id="fc-pill-wrap"><div id="fc-pill"></div></div>
+    <div id="fc-inner">
+      <div id="fc-title"></div>
+      <div id="fc-desc"></div>
+      <div id="fc-btns">
+        <button id="fc-cancel" onclick="_fcDismiss()"></button>
+        <button id="fc-action" onclick="_fcExec()"></button>
+      </div>
     </div>
   </div>
 </div>
@@ -2785,6 +2731,72 @@ function grow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeigh
 function closeM(id){document.getElementById(id).classList.remove('on');}
 var _tt=null;
 function T(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('on');},2400);}
+
+// -- FADE CONFIRM — unified confirm bottom sheet --------------------------------
+var _fcCallback=null;
+(function(){
+  var sheet=null,ov=null,inited=false;
+  function init(){
+    if(inited)return;inited=true;
+    ov=document.getElementById('fc-ov');
+    sheet=document.getElementById('fc-sheet');
+    // swipe-to-dismiss
+    var sy=0,cy=0,dragging=false;
+    sheet.addEventListener('touchstart',function(e){
+      sy=e.touches[0].clientY;cy=0;dragging=true;
+      sheet.style.transition='none';
+    },{passive:true});
+    sheet.addEventListener('touchmove',function(e){
+      if(!dragging)return;
+      cy=Math.max(0,e.touches[0].clientY-sy);
+      sheet.style.transform='translateY('+cy+'px)';
+      document.getElementById('fc-dim').style.opacity=String(1-Math.min(cy/160,1));
+      e.preventDefault();
+    },{passive:false});
+    sheet.addEventListener('touchend',function(){
+      if(!dragging)return;dragging=false;
+      sheet.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
+      if(cy>80){sheet.style.transform='translateY(100%)';_fcDismiss();}
+      else{sheet.style.transform='translateY(0)';document.getElementById('fc-dim').style.opacity='1';}
+    });
+    // history back
+    window.addEventListener('popstate',function(e){
+      if(e.state&&e.state._fade==='confirm'){_fcDismiss(true);}
+    });
+  }
+  window.fadeConfirm=function(opts){
+    init();
+    _fcCallback=opts.onConfirm||null;
+    document.getElementById('fc-title').textContent=opts.title||'';
+    document.getElementById('fc-desc').textContent=opts.desc||'';
+    document.getElementById('fc-cancel').textContent=opts.cancel||'Cancel';
+    var act=document.getElementById('fc-action');
+    act.textContent=opts.action||'Confirm';
+    act.className=opts.danger?'fc-danger':'fc-neutral';
+    sheet.style.transition='none';
+    sheet.style.transform='translateY(100%)';
+    document.getElementById('fc-dim').style.opacity='1';
+    ov.style.display='flex';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      sheet.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
+      sheet.style.transform='translateY(0)';
+      history.pushState({_fade:'confirm'},'');
+    });});
+  };
+  window._fcDismiss=function(fromPop){
+    if(!ov)return;
+    ov.classList.remove('on');
+    if(sheet){sheet.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';sheet.style.transform='translateY(100%)';}
+    setTimeout(function(){if(ov)ov.style.display='none';},320);
+    _fcCallback=null;
+    if(!fromPop&&history.state&&history.state._fade==='confirm')history.back();
+  };
+  window._fcExec=function(){
+    var cb=_fcCallback;
+    _fcDismiss();
+    setTimeout(function(){if(cb)cb();},60);
+  };
+})();
 function padN(n){return String(n).padStart(2,'0');}
 function fmtDT(ts){return new Date(ts).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function svKey(){return svGI+'-'+svII;}
@@ -4869,19 +4881,10 @@ function likePost(id,btn){
   }
 }
 function confirmDel(id){
-  var modal=document.getElementById('del-modal');
-  var btn=document.getElementById('del-btn');
-  var fresh=btn.cloneNode(true);
-  btn.parentNode.replaceChild(fresh,btn);
-  fresh.addEventListener('click',function(){
-    closeDelSheet();
-    doDelPost(id);
-  });
-  modal.classList.add('on');
+  fadeConfirm({title:'Delete drop?',desc:"This cannot be undone.",cancel:'Cancel',action:'Delete',danger:true,onConfirm:function(){doDelPost(id);}});
 }
-function closeDelSheet(){
-  document.getElementById('del-modal').classList.remove('on');
-}
+function closeDelSheet(){_fcDismiss();}
+
 // -- EDIT CAPTION -------------------------------------------------------------
 function openEditCaption(postId){
   var p=posts.find(function(x){return x.id===postId;});if(!p)return;
@@ -5989,32 +5992,12 @@ function _scTryClose(){
   }
 }
 function _scShowDiscardDialog(){
-  var bg=document.getElementById('sc-discard-bg');
-  if(!bg)return;
-  bg.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){
-    var sheet=document.getElementById('sc-discard-sheet');
-    if(sheet){sheet.style.transform='translateY(0) scale(1)';sheet.style.opacity='1';}
-    history.pushState({_fade:'sc-discard'},'');
-  });});
+  fadeConfirm({title:'Discard moment?',desc:"Your edits won't be saved.",cancel:'Keep editing',action:'Discard',danger:true,onConfirm:function(){setTimeout(_scDoClose,80);}});
 }
-function _scHideDiscardDialog(){
-  var sheet=document.getElementById('sc-discard-sheet');
-  if(sheet){sheet.style.transform='translateY(10px) scale(.97)';sheet.style.opacity='0';}
-  setTimeout(function(){
-    var bg=document.getElementById('sc-discard-bg');
-    if(bg) bg.style.display='none';
-  },220);
-}
-function scKeepEditing(){
-  _scHideDiscardDialog();
-  // Restore the history entry so swipe-back works again
-  history.pushState({_fade:'story-creator'},'');
-}
-function scConfirmDiscard(){
-  _scHideDiscardDialog();
-  setTimeout(_scDoClose, 80);
-}
+function _scHideDiscardDialog(){_fcDismiss();}
+function scKeepEditing(){_fcDismiss();}
+function scConfirmDiscard(){_fcDismiss();setTimeout(_scDoClose,80);}
+
 function _scDoClose(){
   _scCommitText&&_scCommitText();
   var cr=document.getElementById('story-creator');cr.style.opacity='0';
@@ -8055,18 +8038,14 @@ function _svReportStory(item,reportedUid){
 // -- STORY DELETE -------------------------------------------------------------
 function svOpenDelete(){
   svPaused=true;clearTimeout(svTmr);
-  var bg=document.getElementById('sv-del-bg');bg.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
+  fadeConfirm({title:'Delete this moment?',desc:'This cannot be undone.',cancel:'Cancel',action:'Delete',danger:true,onConfirm:svConfirmDelete});
 }
-function svCloseDelete(){
-  var bg=document.getElementById('sv-del-bg');bg.classList.remove('on');
-  setTimeout(function(){bg.style.display='none';svPaused=false;startSVTmr();},260);
-}
+function svCloseDelete(){_fcDismiss();svPaused=false;startSVTmr();}
+
 function svConfirmDelete(){
   var g=svGroups[svGI];var item=g&&g.items&&g.items[svII];
-  if(!item){svCloseDelete();closeSV();return;}
+  if(!item){closeSV();return;}
   var storyId=item.id;
-  svCloseDelete();
   // Remove from local
   g.items.splice(svII,1);
   if(g.items.length===0){
@@ -10861,52 +10840,18 @@ function cwDDDelete(){
 }
 
 function cwShowConfirm(title,body,actions){
-  document.getElementById('cw-confirm-title').textContent=title;
-  document.getElementById('cw-confirm-body').textContent=body;
-  // Set icon based on danger type
-  var iconEl=document.getElementById('cw-confirm-icon');
-  var isDanger=actions&&actions[0]&&actions[0].danger;
-  if(iconEl){
-    iconEl.className='cw-confirm-icon'+(isDanger?' danger':'');
-    // Block icon vs delete icon
-    var isBlock=title.toLowerCase().indexOf('block')>-1&&title.toLowerCase().indexOf('delete')<0;
-    iconEl.innerHTML=isBlock
-      ?'<svg width="24" height="24" fill="none" stroke="#E8352A" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>'
-      :isDanger
-        ?'<svg width="24" height="24" fill="none" stroke="#E8352A" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
-        :'<svg width="24" height="24" fill="none" stroke="var(--sub)" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>';
-  }
-  var btns=document.getElementById('cw-confirm-btns');
-  btns.innerHTML='';
-  actions.forEach(function(a){
-    var b=document.createElement('button');
-    b.className='btn-confirm-action'+(a.danger?' btn-confirm-danger':'');
-    b.textContent=a.label;
-    b.onclick=function(){cwCloseConfirm();setTimeout(function(){a.action();},50);};
-    btns.appendChild(b);
-  });
-  var cancelB=document.createElement('button');
-  cancelB.className='btn-confirm-action btn-confirm-cancel';
-  cancelB.textContent='Cancel';
-  cancelB.onclick=cwCloseConfirm;
-  btns.appendChild(cancelB);
-  var ov=document.getElementById('cw-confirm-sheet-ov');
-  ov.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){ov.classList.add('on');});});
+  var a=actions&&actions[0];
+  fadeConfirm({title:title,desc:body,cancel:'Cancel',action:a?a.label:'OK',danger:!!(a&&a.danger),onConfirm:a?a.action:null});
 }
-function cwCloseConfirm(){
-  var ov=document.getElementById('cw-confirm-sheet-ov');
-  ov.classList.remove('on');
-  setTimeout(function(){ov.style.display='none';},400);
-}
+function cwCloseConfirm(){_fcDismiss();}
+
 
 // Close all cw overlays when chat closes (patch into closeCW)
 function _cwCloseAllOverlays(){
   cwCloseSearch();cwCloseDD();
   var mOv=document.getElementById('cw-media-sheet-ov');
   if(mOv){mOv.classList.remove('on');mOv.style.display='none';}
-  var cOv=document.getElementById('cw-confirm-sheet-ov');
-  if(cOv){cOv.classList.remove('on');cOv.style.display='none';}
+  _fcDismiss();
   var i=document.getElementById('cw-search-inp');if(i)i.value='';
 }
 
@@ -11064,11 +11009,11 @@ var _cmtDelTarget=null; // {row, commentId, isReply, parentIdx, replyIdx, commen
 function openCmtDelBar(target){
   _cmtDelTarget=target;
   haptic('destructive');
-  document.getElementById('cmt-del-modal').classList.add('on');
+  fadeConfirm({title:'Delete comment?',desc:"This cannot be undone.",cancel:'Cancel',action:'Delete',danger:true,onConfirm:execCmtDelete});
 }
 function closeCmtDelBar(){
   _cmtDelTarget=null;
-  var m=document.getElementById('cmt-del-modal');if(m)m.classList.remove('on');
+  _fcDismiss();
 }
 function execCmtDelete(){
   if(!_cmtDelTarget)return;
