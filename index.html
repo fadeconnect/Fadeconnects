@@ -9144,17 +9144,15 @@ function openChat(u,scrollToMsgId){
           var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
           if(target){
             target.scrollIntoView({block:'center'});
-            // Scale pulse
-            var bubble=target.querySelector('.me-bs,.them-bs');
-            if(bubble){
-              bubble.style.transition='transform .15s cubic-bezier(.25,.46,.45,.94)';
-              bubble.style.transform='scale(1.045)';
-              setTimeout(function(){
-                bubble.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
-                bubble.style.transform='scale(1)';
-                setTimeout(function(){bubble.style.transform='';bubble.style.transition='';},300);
-              },150);
-            }
+            // Amber row highlight — fades out like WhatsApp/Google Messages
+            target.style.transition='none';
+            target.style.borderRadius='8px';
+            target.style.background='rgba(255,200,0,.28)';
+            setTimeout(function(){
+              target.style.transition='background 1.8s ease';
+              target.style.background='rgba(255,200,0,0)';
+              setTimeout(function(){target.style.background='';target.style.borderRadius='';target.style.transition='';},1900);
+            },800);
           } else {
             msgs.scrollTop=msgs.scrollHeight;
           }
