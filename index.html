@@ -9144,18 +9144,28 @@ function openChat(u,scrollToMsgId){
           var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
           if(target){
             target.scrollIntoView({block:'center'});
-            // Faint purple glow on the bubble itself — matches bubble shape
+            // Opacity pulse — dims then comes back, draws eye without any color/shape clash
             var bubble=target.querySelector('.me-bs,.them-bs');
             if(bubble){
-              var isMine=bubble.classList.contains('me-bs');
-              var glowColor=isMine?'rgba(124,58,237,.22)':'rgba(124,58,237,.12)';
               bubble.style.transition='none';
-              bubble.style.boxShadow='0 0 0 6px '+glowColor;
+              bubble.style.opacity='1';
               setTimeout(function(){
-                bubble.style.transition='box-shadow 1.6s ease';
-                bubble.style.boxShadow='0 0 0 6px rgba(124,58,237,0)';
-                setTimeout(function(){bubble.style.boxShadow='';bubble.style.transition='';},1700);
-              },700);
+                bubble.style.transition='opacity .18s ease';
+                bubble.style.opacity='0.35';
+                setTimeout(function(){
+                  bubble.style.transition='opacity .18s ease';
+                  bubble.style.opacity='1';
+                  setTimeout(function(){
+                    bubble.style.transition='opacity .18s ease';
+                    bubble.style.opacity='0.35';
+                    setTimeout(function(){
+                      bubble.style.transition='opacity .3s ease';
+                      bubble.style.opacity='1';
+                      setTimeout(function(){bubble.style.opacity='';bubble.style.transition='';},300);
+                    },180);
+                  },180);
+                },180);
+              },50);
             }
           } else {
             msgs.scrollTop=msgs.scrollHeight;
