@@ -9076,7 +9076,7 @@ function openChat(u,scrollToMsgId){
     .select('id,sender_id,receiver_id,content,img_url,gif_url,is_photo,reaction,reply_to_id,is_read,created_at,expires_at')
     .or('and(sender_id.eq.'+profile.id+',receiver_id.eq.'+partnerId+'),and(sender_id.eq.'+partnerId+',receiver_id.eq.'+profile.id+')')
     .order('created_at',{ascending:true})
-    .limit(100)
+    .limit(scrollToMsgId?500:100)
     .then(function(res){
       msgs.innerHTML='';
       addSysMsg('Chats are gone after 24 hours.');
@@ -9139,37 +9139,33 @@ function openChat(u,scrollToMsgId){
         appendBubble(m);
       });
       if(scrollToMsgId){
-        // Use rAF + small delay to ensure DOM is fully laid out before scrolling
-        requestAnimationFrame(function(){
-          setTimeout(function(){
-            var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
-            if(target){
-              target.scrollIntoView({block:'center',behavior:'smooth'});
-              // Scale pulse after scroll settles
+        // Wait for all bubbles to render then scroll
+        setTimeout(function(){
+          var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
+          if(target){
+            target.scrollIntoView({block:'center'});
+            // Scale pulse
+            var bubble=target.querySelector('.me-bs,.them-bs');
+            if(bubble){
+              bubble.style.transition='transform .15s cubic-bezier(.25,.46,.45,.94)';
+              bubble.style.transform='scale(1.045)';
               setTimeout(function(){
-                var bubble=target.querySelector('.me-bs,.them-bs');
-                if(bubble){
-                  bubble.style.transition='transform .15s cubic-bezier(.25,.46,.45,.94)';
-                  bubble.style.transform='scale(1.045)';
-                  setTimeout(function(){
-                    bubble.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
-                    bubble.style.transform='scale(1)';
-                    setTimeout(function(){bubble.style.transform='';bubble.style.transition='';},300);
-                  },150);
-                }
-              },350);
-            } else {
-              msgs.scrollTop=msgs.scrollHeight;
+                bubble.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
+                bubble.style.transform='scale(1)';
+                setTimeout(function(){bubble.style.transform='';bubble.style.transition='';},300);
+              },150);
             }
-          },80);
-        });
+          } else {
+            msgs.scrollTop=msgs.scrollHeight;
+          }
+        },220);
       } else {
         msgs.scrollTop=msgs.scrollHeight;
       }
     });
   // Subscribe to new messages in real time for this chat
   subscribeToChat(full.id);
-  setTimeout(function(){var ci=document.getElementById('chatinp');if(ci)ci.focus();},350);
+  if(!scrollToMsgId){setTimeout(function(){var ci=document.getElementById('chatinp');if(ci)ci.focus();},350);}
 }
 
 // Realtime subscription for the open chat
