@@ -475,7 +475,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .bubble.them{background:var(--bubble-them);color:var(--bubble-them-text);border-radius:22px 22px 22px 6px}
 .bubble.sys{background:none;color:var(--sub);font-size:12px;display:block;text-align:center;max-width:90%;border-radius:0;padding:4px 0;cursor:default;animation:none}
 .dsep{align-self:center;font-size:12px;color:var(--sub);padding:12px 0 4px;text-align:center;width:100%}
-.seen-ind{font-size:12px;color:var(--sub);text-align:right;padding:2px 8px 6px}
+.seen-ind{font-size:13.5px;color:var(--sub);text-align:right;padding:2px 10px 6px;font-weight:500}
 .rxn-badge{position:absolute;bottom:-13px;font-size:14px;cursor:pointer;z-index:3;line-height:1;background:var(--inp-bg);border:2px solid var(--bg);border-radius:20px;padding:2px 5px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .rxn-badge.me{right:6px}
 .rxn-badge.them{left:6px}
@@ -9334,28 +9334,29 @@ function subscribeToChat(partnerId){
       var el=document.querySelector('[data-msgid="'+old.id+'"]');
       if(el)el.remove();
     })
-    // -- Listen for updates on messages WE SENT (partner reacting to our bubbles) --
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages',filter:'sender_id=eq.'+profile.id},function(payload){
+    // -- Listen for all message UPDATEs (no filter: Supabase silently drops filtered events on shared channels) --
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages'},function(payload){
       var r=payload.new;
       if(!r||!r.id)return;
       var bubble=document.querySelector('[data-msgid="'+r.id+'"]');
-      if(!bubble)return;
-      var bwrap=bubble.classList.contains('bwrap')?bubble:bubble.closest('.bwrap');
-      if(!bwrap)return;
-      // Handle reaction update
-      var bs=bwrap.querySelector('.me-bs')||bwrap.querySelector('.them-bs');
-      if(bs){
-        var oldBadge=bs.querySelector('.rxn-badge');
-        if(oldBadge)oldBadge.remove();
-        if(r.reaction){var fakeMsg={id:r.id,reaction:r.reaction};bs.appendChild(makeBadge(fakeMsg,true,bs));}
+      var bwrap=bubble?(bubble.classList.contains('bwrap')?bubble:bubble.closest('.bwrap')):null;
+      // Reaction badge update (for any message visible in this chat)
+      if(bwrap){
+        var isMine=(r.sender_id===profile.id);
+        var bs=bwrap.querySelector(isMine?'.me-bs':'.them-bs')||bwrap.querySelector('.me-bs')||bwrap.querySelector('.them-bs');
+        if(bs){
+          var oldBadge=bs.querySelector('.rxn-badge');
+          if(oldBadge)oldBadge.remove();
+          if(r.reaction){var fakeMsg={id:r.id,reaction:r.reaction};bs.appendChild(makeBadge(fakeMsg,isMine,bs));}
+        }
       }
-      // Handle live Sent → Seen update
-      if(r.is_read){
+      // Live Sent → Seen update (only for messages WE sent that the other person just read)
+      if(r.is_read&&r.sender_id===profile.id){
         var msgs=document.getElementById('msgs');
         if(msgs){
           msgs.querySelectorAll('.seen-ind').forEach(function(s){s.textContent='';});
           var targetSI=msgs.querySelector('.seen-ind[data-seen-for="'+r.id+'"]');
-          if(!targetSI){
+          if(!targetSI&&bwrap){
             var sib=bwrap.nextSibling;
             while(sib){
               if(sib.nodeType===1&&sib.classList&&sib.classList.contains('seen-ind')){targetSI=sib;break;}
@@ -9363,53 +9364,7 @@ function subscribeToChat(partnerId){
             }
           }
           if(!targetSI){var allSI=msgs.querySelectorAll('.seen-ind');if(allSI.length)targetSI=allSI[allSI.length-1];}
-          if(targetSI){targetSI.textContent='Seen · '+fmtMsgTime(Date.now());}
-        }
-      }
-    })
-    // -- Listen for read receipt updates + reactions on messages we RECEIVED -
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages',filter:'receiver_id=eq.'+profile.id},function(payload){
-      var r=payload.new;
-      if(!r||!r.id)return;
-      var bubble=document.querySelector('[data-msgid="'+r.id+'"]');
-      if(bubble){
-        var bwrap=bubble.classList.contains('bwrap')?bubble:bubble.closest('.bwrap');
-        if(bwrap){
-          var isMine=(r.sender_id===profile.id);
-          var bs=bwrap.querySelector(isMine?'.me-bs':'.them-bs')||bwrap.querySelector('.me-bs')||bwrap.querySelector('.them-bs');
-          if(bs){
-            var oldBadge=bs.querySelector('.rxn-badge');
-            if(oldBadge)oldBadge.remove();
-            if(r.reaction){var fakeMsg={id:r.id,reaction:r.reaction};bs.appendChild(makeBadge(fakeMsg,isMine,bs));}
-          }
-        }
-        if(r.is_read&&r.sender_id===profile.id){
-          var msgs=document.getElementById('msgs');
-          if(msgs){
-            // Clear all seen indicators first
-            msgs.querySelectorAll('.seen-ind').forEach(function(s){s.textContent='';});
-            // Find the seen-ind for this specific message by data attribute, or find last one
-            var targetSI=msgs.querySelector('.seen-ind[data-seen-for="'+r.id+'"]');
-            if(!targetSI){
-              // Fallback: find seen-ind right after this message's bwrap
-              var wrap=bubble.classList.contains('bwrap')?bubble:bubble.closest('.bwrap');
-              if(wrap){
-                var sib=wrap.nextSibling;
-                while(sib){
-                  if(sib.nodeType===1&&sib.classList&&sib.classList.contains('seen-ind')){targetSI=sib;break;}
-                  sib=sib.nextSibling;
-                }
-              }
-            }
-            if(!targetSI){
-              // Last resort: last seen-ind in msgs
-              var allSI=msgs.querySelectorAll('.seen-ind');
-              if(allSI.length)targetSI=allSI[allSI.length-1];
-            }
-            if(targetSI){
-              targetSI.textContent='Seen · '+fmtMsgTime(r.created_at?new Date(r.created_at).getTime():Date.now());
-            }
-          }
+          if(targetSI){targetSI.textContent='Seen \u00b7 '+fmtMsgTime(Date.now());}
         }
       }
     })
