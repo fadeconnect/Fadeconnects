@@ -9144,22 +9144,24 @@ function openChat(u,scrollToMsgId){
           var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
           if(target){
             target.scrollIntoView({block:'center'});
-            // Highlight the .bubble element — has the exact bubble border-radius already
-            var bubble=target.querySelector('.bubble.me, .bubble.them');
-            if(bubble){
-              var isMine=bubble.classList.contains('me');
-              var origBg=isMine?'#7C3AED':'#F0F0F0';
-              var lightBg=isMine?'#B07EF8':'#CACACA';
-              bubble.style.transition='none';
-              bubble.style.background=lightBg;
+            // Highlight the bubble — find it reliably
+            var isMeWrap=target.classList.contains('me');
+            var bubbleEl=target.querySelector('.bubble');
+            if(!bubbleEl){
+              // fallback: first child of me-bs or them-bs
+              var bs=target.querySelector('.me-bs,.them-bs');
+              if(bs)bubbleEl=bs.firstElementChild;
+            }
+            if(bubbleEl){
+              var origBg=isMeWrap?'#7C3AED':'#F0F0F0';
+              var lightBg=isMeWrap?'#B07EF8':'#C8C8C8';
+              bubbleEl.style.transition='none';
+              bubbleEl.style.background=lightBg;
               setTimeout(function(){
-                bubble.style.transition='background 1.2s ease';
-                bubble.style.background=origBg;
-                setTimeout(function(){
-                  bubble.style.background='';
-                  bubble.style.transition='';
-                },1250);
-              },600);
+                bubbleEl.style.transition='background 1s ease';
+                bubbleEl.style.background=origBg;
+                setTimeout(function(){bubbleEl.style.background='';bubbleEl.style.transition='';},1050);
+              },550);
             }
           } else {
             msgs.scrollTop=msgs.scrollHeight;
