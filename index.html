@@ -9144,15 +9144,19 @@ function openChat(u,scrollToMsgId){
           var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
           if(target){
             target.scrollIntoView({block:'center'});
-            // Amber row highlight — fades out like WhatsApp/Google Messages
-            target.style.transition='none';
-            target.style.borderRadius='8px';
-            target.style.background='rgba(255,200,0,.28)';
-            setTimeout(function(){
-              target.style.transition='background 1.8s ease';
-              target.style.background='rgba(255,200,0,0)';
-              setTimeout(function(){target.style.background='';target.style.borderRadius='';target.style.transition='';},1900);
-            },800);
+            // Faint purple glow on the bubble itself — matches bubble shape
+            var bubble=target.querySelector('.me-bs,.them-bs');
+            if(bubble){
+              var isMine=bubble.classList.contains('me-bs');
+              var glowColor=isMine?'rgba(124,58,237,.22)':'rgba(124,58,237,.12)';
+              bubble.style.transition='none';
+              bubble.style.boxShadow='0 0 0 6px '+glowColor;
+              setTimeout(function(){
+                bubble.style.transition='box-shadow 1.6s ease';
+                bubble.style.boxShadow='0 0 0 6px rgba(124,58,237,0)';
+                setTimeout(function(){bubble.style.boxShadow='';bubble.style.transition='';},1700);
+              },700);
+            }
           } else {
             msgs.scrollTop=msgs.scrollHeight;
           }
