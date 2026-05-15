@@ -449,7 +449,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .view-name{font-weight:600;font-size:14.5px;flex:1}
 
 /* CHAT */
-#cw{display:flex;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none;overflow:hidden;touch-action:pan-y}
+#cw{display:flex;position:fixed;inset:0;background:var(--card);z-index:200;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none;overflow:hidden;touch-action:pan-y}
 #cw.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 .cwbar{display:flex;align-items:center;gap:11px;padding:0 14px;background:var(--card);height:52px;flex-shrink:0}
 .cwinfo{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0}
@@ -470,12 +470,13 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cw-search-wrap input::placeholder{color:var(--inp-ph)}
 .cw-search-cancel{color:var(--sub);font-size:13.5px;font-weight:500;cursor:pointer;flex-shrink:0;padding:4px 0 4px 4px;letter-spacing:-.01em}
 /* msg search highlight */
-.msg-srch-hl{background:rgba(124,58,237,.18);border-radius:3px;padding:0 1px}
+.msg-srch-hl{background:rgba(255,255,100,.55);border-radius:3px;padding:0 1px;color:var(--text)}
+.bubble.me .msg-srch-hl{background:rgba(255,255,100,.38);color:#fff}
 /* CW dropdown */
 #cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
 #cw-dd-overlay.on{display:block}
-#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-width:215px;box-shadow:0 10px 36px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.06);animation:cwDDPop .16s cubic-bezier(.34,1.3,.64,1);transform-origin:top right}
-@keyframes cwDDPop{from{opacity:0;transform:scale(.9) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-width:215px;box-shadow:0 10px 36px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.06);animation:cwDDPop .22s cubic-bezier(.34,1.3,.64,1);transform-origin:top right}
+@keyframes cwDDPop{from{opacity:0;transform:scale(.93) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .cw-dd-item{display:flex;align-items:center;gap:13px;padding:13px 16px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
 .cw-dd-item:last-child{border-bottom:none}
 .cw-dd-item:active{background:var(--inp-bg)}
@@ -483,9 +484,9 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
 .cw-dd-item.danger .cw-dd-ico{opacity:1}
 /* Media sheet */
-#cw-media-sheet-ov{display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:310;align-items:flex-end;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#cw-media-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:310;align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #cw-media-sheet-ov.on{display:flex}
-#cw-media-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;max-height:78dvh;display:flex;flex-direction:column;animation:sheetSlideUp .28s cubic-bezier(.34,1.1,.64,1)}
+#cw-media-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;max-height:78dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .38s cubic-bezier(.25,.46,.45,.94)}
 .cw-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0}
 .cw-sheet-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0}
 .cw-sheet-title{font-size:17px;font-weight:700}
@@ -501,12 +502,19 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cw-media-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .cw-media-empty{padding:48px 22px;text-align:center;color:var(--sub);font-size:14px}
 /* Confirm sheet (block/delete) */
-#cw-confirm-sheet-ov{display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:320;align-items:flex-end;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#cw-confirm-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:400;align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #cw-confirm-sheet-ov.on{display:flex}
-#cw-confirm-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;animation:sheetSlideUp .28s cubic-bezier(.34,1.1,.64,1);padding-bottom:max(24px,env(safe-area-inset-bottom))}
-.cw-confirm-title{font-size:17px;font-weight:700;padding:20px 18px 4px}
-.cw-confirm-body{font-size:14px;color:var(--sub);padding:0 18px 20px;line-height:1.5}
+#cw-confirm-sheet{width:100%;background:var(--card);border-radius:24px 24px 0 0;overflow:hidden;transform:translateY(100%);transition:transform .38s cubic-bezier(.25,.46,.45,.94);padding-bottom:max(28px,env(safe-area-inset-bottom))}
+#cw-confirm-sheet-ov.on #cw-confirm-sheet{transform:translateY(0)}
+.cw-confirm-handle{width:34px;height:3px;background:var(--border);border-radius:2px;margin:14px auto 0;flex-shrink:0}
+.cw-confirm-title{font-size:18px;font-weight:700;padding:20px 22px 6px;letter-spacing:-.2px}
+.cw-confirm-body{font-size:14px;color:var(--sub);padding:0 22px 24px;line-height:1.6}
 .cw-confirm-btns{display:flex;flex-direction:column;gap:10px;padding:0 18px}
+/* Fade-style confirm buttons */
+.cw-confirm-btns .btn-confirm-action{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;cursor:pointer;border:none;width:100%;transition:opacity .15s,transform .12s;background:var(--inp-bg);color:var(--text)}
+.cw-confirm-btns .btn-confirm-action:active{opacity:.5;transform:scale(.97)}
+.cw-confirm-btns .btn-confirm-danger{background:rgba(232,53,42,.08);color:#E8352A}
+.cw-confirm-btns .btn-confirm-cancel{background:none;color:var(--sub);font-size:14px;font-weight:500;padding:12px;margin-top:2px}
 .talk-av-wrap{position:relative;flex-shrink:0;width:54px;height:54px}
 .talk-active-dot{position:absolute;bottom:0px;right:0px;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--card);background:#22C55E;z-index:2}
 .msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;overscroll-behavior:contain;touch-action:pan-y}
@@ -1923,7 +1931,7 @@ body {
       <div class="cw-dd-item danger" onclick="cwDDDelete()"><div class="cw-dd-ico"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>Delete chat</div>
     </div>
   </div>
-  <div id="cw-media-sheet-ov" onclick="cwCloseMedia()">
+  <div id="cw-media-sheet-ov" onclick="if(event.target===this)cwCloseMedia()">
     <div id="cw-media-sheet" onclick="event.stopPropagation()">
       <div class="cw-sheet-handle"></div>
       <div class="cw-sheet-hdr"><span class="cw-sheet-title">Shared Media</span><span class="cw-sheet-count" id="cw-media-count"></span></div>
@@ -1934,9 +1942,9 @@ body {
       <div class="cw-media-grid" id="cw-media-grid"></div>
     </div>
   </div>
-  <div id="cw-confirm-sheet-ov" onclick="cwCloseConfirm()">
+  <div id="cw-confirm-sheet-ov" onclick="if(event.target===this)cwCloseConfirm()">
     <div id="cw-confirm-sheet" onclick="event.stopPropagation()">
-      <div class="cw-sheet-handle"></div>
+      <div class="cw-confirm-handle"></div>
       <div class="cw-confirm-title" id="cw-confirm-title"></div>
       <div class="cw-confirm-body" id="cw-confirm-body"></div>
       <div class="cw-confirm-btns" id="cw-confirm-btns"></div>
@@ -10647,7 +10655,7 @@ function cwSearchMessages(q){
   });
   if(!q||q.length<1)return;
   var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
-  msgs.querySelectorAll('.bubble').forEach(function(b){
+  msgs.querySelectorAll('.bubble:not(.sys)').forEach(function(b){
     // Only highlight text nodes inside bubbles, not inside img/svg
     walkTextNodes(b,re);
   });
@@ -10690,6 +10698,7 @@ function cwToggleDD(e){
       var isMutedConvo=_mutedConvos.has(u.id);
       document.getElementById('cw-dd-mute-lbl').textContent=isMutedConvo?'Unmute':'Mute';
     }
+    _cwUpdateMuteIcon();
     ov.classList.add('on');
   }
 }
@@ -10705,9 +10714,21 @@ function cwDDMedia(){
   tabs.forEach(function(t){t.classList.remove('on');});
   if(tabs[0])tabs[0].classList.add('on');
   cwRenderMedia('photos');
-  document.getElementById('cw-media-sheet-ov').classList.add('on');
+  var ov=document.getElementById('cw-media-sheet-ov');
+  ov.style.display='flex';
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    ov.classList.add('on');
+    var sh=document.getElementById('cw-media-sheet');
+    if(sh)sh.style.transform='translateY(0)';
+  });});
 }
-function cwCloseMedia(){document.getElementById('cw-media-sheet-ov').classList.remove('on');}
+function cwCloseMedia(){
+  var ov=document.getElementById('cw-media-sheet-ov');
+  var sh=document.getElementById('cw-media-sheet');
+  if(sh)sh.style.transform='translateY(100%)';
+  ov.classList.remove('on');
+  setTimeout(function(){ov.style.display='none';if(sh)sh.style.transform='';},420);
+}
 function cwMediaTab(el,mode){
   _cwMediaMode=mode;
   document.querySelectorAll('.cw-media-tab').forEach(function(t){t.classList.remove('on');});
@@ -10789,6 +10810,18 @@ function cwDDMute(){
   if(isMuted){_mutedConvos.delete(uid);}else{_mutedConvos.add(uid);}
   T(isMuted?'Unmuted':'Muted');
 }
+function _cwUpdateMuteIcon(){
+  if(!chatUser)return;
+  var isMuted=_mutedConvos.has(chatUser.id);
+  var lbl=document.getElementById('cw-dd-mute-lbl');
+  var svg=document.getElementById('cw-mute-icon-svg');
+  if(lbl)lbl.textContent=isMuted?'Unmute':'Mute';
+  if(svg){
+    svg.innerHTML=isMuted
+      ?'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23" stroke-width="1.8"/>'
+      :'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
+  }
+}
 
 function cwDDBlock(){
   cwCloseDD();
@@ -10834,22 +10867,33 @@ function cwShowConfirm(title,body,actions){
   btns.innerHTML='';
   actions.forEach(function(a){
     var b=document.createElement('button');
-    b.className='btn '+(a.danger?'btn-red':'btn-ghost');
+    b.className='btn-confirm-action'+(a.danger?' btn-confirm-danger':'');
     b.textContent=a.label;
     b.onclick=function(){cwCloseConfirm();a.action();};
     btns.appendChild(b);
   });
   var cancelB=document.createElement('button');
-  cancelB.className='btn btn-ghost';cancelB.textContent='Cancel';
+  cancelB.className='btn-confirm-action btn-confirm-cancel';cancelB.textContent='Cancel';
   cancelB.onclick=cwCloseConfirm;
   btns.appendChild(cancelB);
-  document.getElementById('cw-confirm-sheet-ov').classList.add('on');
+  var ov=document.getElementById('cw-confirm-sheet-ov');
+  ov.style.display='flex';
+  requestAnimationFrame(function(){requestAnimationFrame(function(){ov.classList.add('on');});});
 }
-function cwCloseConfirm(){document.getElementById('cw-confirm-sheet-ov').classList.remove('on');}
+function cwCloseConfirm(){
+  var ov=document.getElementById('cw-confirm-sheet-ov');
+  ov.classList.remove('on');
+  setTimeout(function(){ov.style.display='none';},400);
+}
 
 // Close all cw overlays when chat closes (patch into closeCW)
 function _cwCloseAllOverlays(){
-  cwCloseSearch();cwCloseDD();cwCloseMedia();cwCloseConfirm();
+  cwCloseSearch();cwCloseDD();
+  // Instant close for media and confirm without animation when chat itself is closing
+  var mOv=document.getElementById('cw-media-sheet-ov');
+  if(mOv){mOv.classList.remove('on');mOv.style.display='none';var sh=document.getElementById('cw-media-sheet');if(sh)sh.style.transform='';}
+  var cOv=document.getElementById('cw-confirm-sheet-ov');
+  if(cOv){cOv.classList.remove('on');cOv.style.display='none';}
   var i=document.getElementById('cw-search-inp');if(i)i.value='';
 }
 
