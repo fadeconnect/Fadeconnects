@@ -9142,10 +9142,17 @@ function openChat(u,scrollToMsgId){
         var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
         if(target){
           target.scrollIntoView({block:'center'});
-          target.style.transition='background .25s ease';
-          target.style.borderRadius='12px';
-          target.style.background='rgba(124,58,237,.12)';
-          setTimeout(function(){target.style.background='';},1400);
+          // Highlight just the bubble inside the wrap, not the full-width row
+          var bubble=target.querySelector('.me-bs,.them-bs');
+          if(bubble){
+            bubble.style.transition='outline .1s ease';
+            bubble.style.outline='2.5px solid rgba(124,58,237,.35)';
+            setTimeout(function(){
+              bubble.style.transition='outline .5s ease';
+              bubble.style.outline='2.5px solid rgba(124,58,237,0)';
+              setTimeout(function(){bubble.style.outline='';bubble.style.transition='';},500);
+            },1000);
+          }
         } else {
           msgs.scrollTop=msgs.scrollHeight;
         }
