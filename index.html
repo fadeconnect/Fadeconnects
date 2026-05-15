@@ -9143,15 +9143,19 @@ function openChat(u,scrollToMsgId){
         if(target){
           target.scrollIntoView({block:'center'});
           // Highlight just the bubble inside the wrap, not the full-width row
+          // Flash the bubble background briefly like iMessage/Telegram
           var bubble=target.querySelector('.me-bs,.them-bs');
           if(bubble){
-            bubble.style.transition='outline .1s ease';
-            bubble.style.outline='2.5px solid rgba(124,58,237,.35)';
+            var isMeBubble=bubble.classList.contains('me-bs');
+            var origBg=isMeBubble?'#7C3AED':'var(--bubble-them)';
+            var flashBg=isMeBubble?'#9D6FEF':'#D8D8D8';
+            bubble.style.transition='none';
+            bubble.style.background=flashBg;
             setTimeout(function(){
-              bubble.style.transition='outline .5s ease';
-              bubble.style.outline='2.5px solid rgba(124,58,237,0)';
-              setTimeout(function(){bubble.style.outline='';bubble.style.transition='';},500);
-            },1000);
+              bubble.style.transition='background .6s ease';
+              bubble.style.background=origBg;
+              setTimeout(function(){bubble.style.background='';bubble.style.transition='';},650);
+            },180);
           }
         } else {
           msgs.scrollTop=msgs.scrollHeight;
