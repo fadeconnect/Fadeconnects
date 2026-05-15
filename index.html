@@ -458,6 +458,54 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .cw-status-dot{position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;border:2px solid var(--card);background:#22C55E;display:none;z-index:2}
 .cw-status-dot.on{display:block}
 .cwname{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* CW header action buttons */
+.cw-hdr-actions{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
+/* CW Search bar */
+#cw-search-bar{display:none;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0;animation:cwSlideDown .18s ease}
+#cw-search-bar.on{display:flex}
+@keyframes cwSlideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.cw-search-wrap{flex:1;background:var(--inp-bg);border-radius:12px;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid var(--inp-border)}
+.cw-search-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:'Inter',sans-serif}
+.cw-search-wrap input::placeholder{color:var(--inp-ph)}
+.cw-search-cancel{color:var(--sub);font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0;padding:4px 2px}
+/* msg search highlight */
+.msg-srch-hl{background:rgba(124,58,237,.28);border-radius:3px;padding:0 1px}
+/* CW dropdown */
+#cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
+#cw-dd-overlay.on{display:block}
+#cw-dd{position:absolute;top:56px;right:10px;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;min-width:210px;box-shadow:0 8px 32px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08);animation:cwDDPop .18s cubic-bezier(.34,1.4,.64,1);transform-origin:top right}
+@keyframes cwDDPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.cw-dd-item{display:flex;align-items:center;gap:12px;padding:13px 16px;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;-webkit-tap-highlight-color:transparent}
+.cw-dd-item:last-child{border-bottom:none}
+.cw-dd-item:active{background:var(--inp-bg)}
+.cw-dd-item.danger{color:#E8352A}
+.cw-dd-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cw-dd-chev{margin-left:auto;opacity:.35}
+/* Media sheet */
+#cw-media-sheet-ov{display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:310;align-items:flex-end;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#cw-media-sheet-ov.on{display:flex}
+#cw-media-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;max-height:78dvh;display:flex;flex-direction:column;animation:sheetSlideUp .28s cubic-bezier(.34,1.1,.64,1)}
+.cw-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0}
+.cw-sheet-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0}
+.cw-sheet-title{font-size:17px;font-weight:700}
+.cw-sheet-count{font-size:13px;color:var(--sub)}
+.cw-media-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px;flex-shrink:0}
+.cw-media-tab{padding:8px 14px 10px;font-size:14px;font-weight:500;color:var(--sub);cursor:pointer;position:relative;transition:color .15s}
+.cw-media-tab.on{color:var(--text)}
+.cw-media-tab.on::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--text);border-radius:1px}
+.cw-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;overflow-y:auto;padding:2px;scrollbar-width:none;flex:1}
+.cw-media-grid::-webkit-scrollbar{display:none}
+.cw-media-cell{aspect-ratio:1;background:var(--inp-bg);overflow:hidden;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
+.cw-media-cell:active{opacity:.7}
+.cw-media-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.cw-media-empty{padding:48px 22px;text-align:center;color:var(--sub);font-size:14px}
+/* Confirm sheet (block/delete) */
+#cw-confirm-sheet-ov{display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:320;align-items:flex-end;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#cw-confirm-sheet-ov.on{display:flex}
+#cw-confirm-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;animation:sheetSlideUp .28s cubic-bezier(.34,1.1,.64,1);padding-bottom:max(24px,env(safe-area-inset-bottom))}
+.cw-confirm-title{font-size:17px;font-weight:700;padding:20px 18px 4px}
+.cw-confirm-body{font-size:14px;color:var(--sub);padding:0 18px 20px;line-height:1.5}
+.cw-confirm-btns{display:flex;flex-direction:column;gap:10px;padding:0 18px}
 .talk-av-wrap{position:relative;flex-shrink:0;width:54px;height:54px}
 .talk-active-dot{position:absolute;bottom:0px;right:0px;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--card);background:#22C55E;z-index:2}
 .msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;overscroll-behavior:contain;touch-action:pan-y}
@@ -1852,6 +1900,45 @@ body {
         <div id="cw-dot" style="display:none;position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:#22C55E;border:2px solid var(--card);z-index:2"></div>
       </div>
       <div style="display:flex;flex-direction:column;margin-left:10px"><span class="cwname" id="cwname"></span><span id="cw-status" style="font-size:11.5px;margin-top:1px"></span></div>
+    </div>
+    <div class="cw-hdr-actions">
+      <button class="ibtn" id="cw-search-btn" onclick="cwToggleSearch()" aria-label="Search messages"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
+      <button class="ibtn" id="cw-more-btn" onclick="cwToggleDD(event)" aria-label="More options"><svg width="18" height="4" viewBox="0 0 18 4" fill="currentColor"><circle cx="2" cy="2" r="2"/><circle cx="9" cy="2" r="2"/><circle cx="16" cy="2" r="2"/></svg></button>
+    </div>
+  </div>
+  <div id="cw-search-bar">
+    <div class="cw-search-wrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="cw-search-inp" type="search" placeholder="Search messages..." oninput="cwSearchMessages(this.value)">
+    </div>
+    <span class="cw-search-cancel" onclick="cwCloseSearch()">Cancel</span>
+  </div>
+  <div id="cw-dd-overlay" onclick="cwCloseDD()">
+    <div id="cw-dd" onclick="event.stopPropagation()">
+      <div class="cw-dd-item" onclick="cwDDProfile()"><div class="cw-dd-ico" style="background:rgba(124,58,237,.12)"><svg width="16" height="16" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>View profile<svg class="cw-dd-chev" width="7" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 7 12"><path d="M1 1l5 5-5 5"/></svg></div>
+      <div class="cw-dd-item" onclick="cwDDMedia()"><div class="cw-dd-ico" style="background:rgba(59,130,246,.12)"><svg width="16" height="16" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>Media<svg class="cw-dd-chev" width="7" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 7 12"><path d="M1 1l5 5-5 5"/></svg></div>
+      <div class="cw-dd-item" id="cw-dd-mute" onclick="cwDDMute()"><div class="cw-dd-ico" id="cw-dd-mute-ico" style="background:rgba(100,100,110,.12)"><svg id="cw-mute-icon-svg" width="16" height="16" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><span id="cw-dd-mute-lbl">Mute notifications</span><svg class="cw-dd-chev" width="7" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 7 12"><path d="M1 1l5 5-5 5"/></svg></div>
+      <div class="cw-dd-item danger" onclick="cwDDBlock()"><div class="cw-dd-ico" style="background:rgba(232,53,42,.1)"><svg width="16" height="16" fill="none" stroke="#E8352A" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div><span id="cw-dd-block-lbl">Block user</span><svg class="cw-dd-chev" width="7" height="12" fill="none" stroke="#E8352A" stroke-width="2" stroke-linecap="round" viewBox="0 0 7 12"><path d="M1 1l5 5-5 5"/></svg></div>
+      <div class="cw-dd-item danger" onclick="cwDDDelete()"><div class="cw-dd-ico" style="background:rgba(232,53,42,.1)"><svg width="16" height="16" fill="none" stroke="#E8352A" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>Delete conversation<svg class="cw-dd-chev" width="7" height="12" fill="none" stroke="#E8352A" stroke-width="2" stroke-linecap="round" viewBox="0 0 7 12"><path d="M1 1l5 5-5 5"/></svg></div>
+    </div>
+  </div>
+  <div id="cw-media-sheet-ov" onclick="cwCloseMedia()">
+    <div id="cw-media-sheet" onclick="event.stopPropagation()">
+      <div class="cw-sheet-handle"></div>
+      <div class="cw-sheet-hdr"><span class="cw-sheet-title">Shared Media</span><span class="cw-sheet-count" id="cw-media-count"></span></div>
+      <div class="cw-media-tabs">
+        <div class="cw-media-tab on" onclick="cwMediaTab(this,'photos')">Photos</div>
+        <div class="cw-media-tab" onclick="cwMediaTab(this,'links')">Links</div>
+      </div>
+      <div class="cw-media-grid" id="cw-media-grid"></div>
+    </div>
+  </div>
+  <div id="cw-confirm-sheet-ov" onclick="cwCloseConfirm()">
+    <div id="cw-confirm-sheet" onclick="event.stopPropagation()">
+      <div class="cw-sheet-handle"></div>
+      <div class="cw-confirm-title" id="cw-confirm-title"></div>
+      <div class="cw-confirm-body" id="cw-confirm-body"></div>
+      <div class="cw-confirm-btns" id="cw-confirm-btns"></div>
     </div>
   </div>
   <div class="msgs" id="msgs"></div>
@@ -10531,7 +10618,242 @@ function sendMsg(){
 
 
 
+/* ── CW HEADER: Search, Dropdown, Media, Confirm ── */
+var _mutedConvos=new Set();
+var _cwSearchOpen=false;
+var _cwMediaMode='photos';
+
+function cwToggleSearch(){
+  _cwSearchOpen=!_cwSearchOpen;
+  var bar=document.getElementById('cw-search-bar');
+  bar.classList.toggle('on',_cwSearchOpen);
+  if(_cwSearchOpen){setTimeout(function(){var i=document.getElementById('cw-search-inp');if(i)i.focus();},80);}
+  else{cwSearchMessages('');var i=document.getElementById('cw-search-inp');if(i)i.value='';}
+}
+function cwCloseSearch(){
+  _cwSearchOpen=false;
+  var bar=document.getElementById('cw-search-bar');
+  bar.classList.remove('on');
+  cwSearchMessages('');
+  var i=document.getElementById('cw-search-inp');if(i)i.value='';
+}
+function cwSearchMessages(q){
+  var msgs=document.getElementById('msgs');
+  if(!msgs)return;
+  // Remove previous highlights
+  msgs.querySelectorAll('.msg-srch-hl').forEach(function(s){
+    var p=s.parentNode;p.replaceChild(document.createTextNode(s.textContent),s);p.normalize();
+  });
+  if(!q||q.length<1)return;
+  var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  msgs.querySelectorAll('.bubble').forEach(function(b){
+    // Only highlight text nodes inside bubbles, not inside img/svg
+    walkTextNodes(b,re);
+  });
+  // Scroll to first match
+  var first=msgs.querySelector('.msg-srch-hl');
+  if(first)first.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function walkTextNodes(node,re){
+  if(node.nodeType===3){
+    var val=node.nodeValue;
+    if(!re.test(val)){re.lastIndex=0;return;}
+    re.lastIndex=0;
+    var frag=document.createDocumentFragment();
+    var last=0,m;
+    re.lastIndex=0;
+    while((m=re.exec(val))!==null){
+      if(m.index>last)frag.appendChild(document.createTextNode(val.slice(last,m.index)));
+      var span=document.createElement('span');span.className='msg-srch-hl';span.textContent=m[0];frag.appendChild(span);
+      last=m.index+m[0].length;
+    }
+    if(last<val.length)frag.appendChild(document.createTextNode(val.slice(last)));
+    if(node.parentNode)node.parentNode.replaceChild(frag,node);
+    return;
+  }
+  if(node.nodeType===1&&(node.tagName==='IMG'||node.tagName==='SVG'||node.tagName==='VIDEO'))return;
+  Array.from(node.childNodes).forEach(function(c){walkTextNodes(c,re);});
+}
+
+function cwToggleDD(e){
+  e.stopPropagation();
+  var ov=document.getElementById('cw-dd-overlay');
+  var isOn=ov.classList.contains('on');
+  cwCloseDD();
+  if(!isOn){
+    // Update block label based on current state
+    var u=chatUser;
+    if(u){
+      var isBlocked=blocked.has(u.id);
+      document.getElementById('cw-dd-block-lbl').textContent=isBlocked?'Unblock user':'Block user';
+      var isMutedConvo=_mutedConvos.has(u.id);
+      document.getElementById('cw-dd-mute-lbl').textContent=isMutedConvo?'Unmute notifications':'Mute notifications';
+    }
+    ov.classList.add('on');
+  }
+}
+function cwCloseDD(){document.getElementById('cw-dd-overlay').classList.remove('on');}
+
+function cwDDProfile(){cwCloseDD();if(chatUser){_profFromChat=true;openProf(chatUser);}}
+
+function cwDDMedia(){
+  cwCloseDD();
+  _cwMediaMode='photos';
+  // Reset tabs
+  var tabs=document.querySelectorAll('.cw-media-tab');
+  tabs.forEach(function(t){t.classList.remove('on');});
+  if(tabs[0])tabs[0].classList.add('on');
+  cwRenderMedia('photos');
+  document.getElementById('cw-media-sheet-ov').classList.add('on');
+}
+function cwCloseMedia(){document.getElementById('cw-media-sheet-ov').classList.remove('on');}
+function cwMediaTab(el,mode){
+  _cwMediaMode=mode;
+  document.querySelectorAll('.cw-media-tab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  cwRenderMedia(mode);
+}
+function cwRenderMedia(mode){
+  var grid=document.getElementById('cw-media-grid');
+  var countEl=document.getElementById('cw-media-count');
+  if(!grid||!chatUser){return;}
+  grid.innerHTML='<div class="cw-media-empty">Loading...</div>';
+  if(mode==='photos'){
+    _sb.from('messages')
+      .select('img_url')
+      .or('and(sender_id.eq.'+profile.id+',receiver_id.eq.'+chatUser.id+'),and(sender_id.eq.'+chatUser.id+',receiver_id.eq.'+profile.id+')')
+      .eq('is_photo',true)
+      .not('img_url','is',null)
+      .order('created_at',{ascending:false})
+      .limit(60)
+      .then(function(res){
+        var photos=(res.data||[]).filter(function(r){return r.img_url;});
+        if(countEl)countEl.textContent=photos.length+' photo'+(photos.length===1?'':'s');
+        if(!photos.length){grid.innerHTML='<div class="cw-media-empty">No photos yet</div>';return;}
+        grid.innerHTML='';
+        photos.forEach(function(r){
+          var cell=document.createElement('div');cell.className='cw-media-cell';
+          var img=document.createElement('img');img.src=r.img_url;img.loading='lazy';
+          img.onclick=function(){openPhotoPreview(r.img_url);};
+          cell.appendChild(img);grid.appendChild(cell);
+        });
+      }).catch(function(){
+        // Fallback: search in locally loaded messages
+        var msgs=document.getElementById('msgs');
+        var photos=[];
+        if(msgs){msgs.querySelectorAll('img[data-msg-photo]').forEach(function(img){if(img.src&&!img.src.startsWith('blob:'))photos.push(img.src);});}
+        if(countEl)countEl.textContent=photos.length+' photo'+(photos.length===1?'':'s');
+        if(!photos.length){grid.innerHTML='<div class="cw-media-empty">No photos yet</div>';return;}
+        grid.innerHTML='';
+        photos.forEach(function(src){
+          var cell=document.createElement('div');cell.className='cw-media-cell';
+          var img=document.createElement('img');img.src=src;img.loading='lazy';
+          img.onclick=function(){openPhotoPreview(src);};
+          cell.appendChild(img);grid.appendChild(cell);
+        });
+      });
+  } else {
+    // Links: scan loaded messages for URLs
+    var msgs=document.getElementById('msgs');
+    var links=[];
+    if(msgs){
+      var urlRe=/https?:\/\/[^\s"<>]+/gi;
+      msgs.querySelectorAll('.bubble').forEach(function(b){
+        var text=b.innerText||b.textContent;
+        var found=text.match(urlRe);
+        if(found)found.forEach(function(l){links.push(l);});
+      });
+    }
+    if(countEl)countEl.textContent=links.length+' link'+(links.length===1?'':'s');
+    if(!links.length){grid.innerHTML='<div class="cw-media-empty">No links shared</div>';return;}
+    grid.innerHTML='';
+    grid.style.display='block';
+    links.forEach(function(url){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);cursor:pointer';
+      row.innerHTML='<svg width="16" height="16" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+        +'<span style="font-size:13px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+url+'</span>';
+      row.onclick=function(){window.open(url,'_blank');};
+      grid.appendChild(row);
+    });
+    grid.style.display='';
+  }
+}
+
+function cwDDMute(){
+  cwCloseDD();
+  if(!chatUser)return;
+  var uid=chatUser.id;
+  var isMuted=_mutedConvos.has(uid);
+  if(isMuted){_mutedConvos.delete(uid);}else{_mutedConvos.add(uid);}
+  T(isMuted?'Notifications on':'Notifications muted');
+}
+
+function cwDDBlock(){
+  cwCloseDD();
+  if(!chatUser)return;
+  var u=chatUser;
+  var isBlocked=blocked.has(u.id);
+  cwShowConfirm(
+    isBlocked?'Unblock '+u.display_name:'Block '+u.display_name,
+    isBlocked?'They will be able to message you again and see your profile.'
+             :'They won\'t be able to message you or see your profile.',
+    [{label:isBlocked?'Unblock':'Block',danger:!isBlocked,action:function(){
+      if(isBlocked){_unblockUser(u.id);T('Unblocked');}
+      else{_blockUser(u.id);T('Blocked');setTimeout(function(){closeCW();},350);}
+    }}]
+  );
+}
+
+function cwDDDelete(){
+  cwCloseDD();
+  if(!chatUser)return;
+  var u=chatUser;
+  cwShowConfirm(
+    'Delete conversation?',
+    'This will permanently delete your chat with '+u.display_name+'. This cannot be undone.',
+    [{label:'Delete',danger:true,action:function(){
+      _sb.from('messages')
+        .delete()
+        .or('and(sender_id.eq.'+profile.id+',receiver_id.eq.'+u.id+'),and(sender_id.eq.'+u.id+',receiver_id.eq.'+profile.id+')')
+        .then(function(){
+          convos=convos.filter(function(c){return c.user.id!==u.id;});
+          renderTalkList();
+          T('Conversation deleted');
+          closeCW();
+        });
+    }}]
+  );
+}
+
+function cwShowConfirm(title,body,actions){
+  document.getElementById('cw-confirm-title').textContent=title;
+  document.getElementById('cw-confirm-body').textContent=body;
+  var btns=document.getElementById('cw-confirm-btns');
+  btns.innerHTML='';
+  actions.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='btn '+(a.danger?'btn-red':'btn-ghost');
+    b.textContent=a.label;
+    b.onclick=function(){cwCloseConfirm();a.action();};
+    btns.appendChild(b);
+  });
+  var cancelB=document.createElement('button');
+  cancelB.className='btn btn-ghost';cancelB.textContent='Cancel';
+  cancelB.onclick=cwCloseConfirm;
+  btns.appendChild(cancelB);
+  document.getElementById('cw-confirm-sheet-ov').classList.add('on');
+}
+function cwCloseConfirm(){document.getElementById('cw-confirm-sheet-ov').classList.remove('on');}
+
+// Close all cw overlays when chat closes (patch into closeCW)
+function _cwCloseAllOverlays(){
+  cwCloseSearch();cwCloseDD();cwCloseMedia();cwCloseConfirm();
+  var i=document.getElementById('cw-search-inp');if(i)i.value='';
+}
+
 function closeCW(){
+  _cwCloseAllOverlays();
   if(_chatChannel){_sb.removeChannel(_chatChannel);_chatChannel=null;}
   hideTypingBubble();
   clearTimeout(_typingBroadcastT);
