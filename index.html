@@ -9139,24 +9139,30 @@ function openChat(u,scrollToMsgId){
         appendBubble(m);
       });
       if(scrollToMsgId){
-        var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
-        if(target){
-          target.scrollIntoView({block:'center'});
-          // Highlight just the bubble inside the wrap, not the full-width row
-          // Scale pulse — shape-agnostic, works with any bubble border-radius
-          var bubble=target.querySelector('.me-bs,.them-bs');
-          if(bubble){
-            bubble.style.transition='transform .15s cubic-bezier(.25,.46,.45,.94)';
-            bubble.style.transform='scale(1.045)';
-            setTimeout(function(){
-              bubble.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
-              bubble.style.transform='scale(1)';
-              setTimeout(function(){bubble.style.transform='';bubble.style.transition='';},300);
-            },150);
-          }
-        } else {
-          msgs.scrollTop=msgs.scrollHeight;
-        }
+        // Use rAF + small delay to ensure DOM is fully laid out before scrolling
+        requestAnimationFrame(function(){
+          setTimeout(function(){
+            var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
+            if(target){
+              target.scrollIntoView({block:'center',behavior:'smooth'});
+              // Scale pulse after scroll settles
+              setTimeout(function(){
+                var bubble=target.querySelector('.me-bs,.them-bs');
+                if(bubble){
+                  bubble.style.transition='transform .15s cubic-bezier(.25,.46,.45,.94)';
+                  bubble.style.transform='scale(1.045)';
+                  setTimeout(function(){
+                    bubble.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';
+                    bubble.style.transform='scale(1)';
+                    setTimeout(function(){bubble.style.transform='';bubble.style.transition='';},300);
+                  },150);
+                }
+              },350);
+            } else {
+              msgs.scrollTop=msgs.scrollHeight;
+            }
+          },80);
+        });
       } else {
         msgs.scrollTop=msgs.scrollHeight;
       }
