@@ -9144,28 +9144,20 @@ function openChat(u,scrollToMsgId){
           var target=msgs.querySelector('[data-msgid="'+scrollToMsgId+'"]');
           if(target){
             target.scrollIntoView({block:'center'});
-            // Opacity pulse — dims then comes back, draws eye without any color/shape clash
-            var bubble=target.querySelector('.me-bs,.them-bs');
+            // Target the actual .bubble element — it already has the correct bubble border-radius
+            var bubble=target.querySelector('.bubble');
             if(bubble){
+              var isMine=bubble.classList.contains('me');
+              var origBg=isMine?'#7C3AED':'#F0F0F0';
+              var lightBg=isMine?'#A855F7':'#D8D8D8';
+              // Flash to lighter then back — follows bubble shape perfectly
               bubble.style.transition='none';
-              bubble.style.opacity='1';
+              bubble.style.background=lightBg;
               setTimeout(function(){
-                bubble.style.transition='opacity .18s ease';
-                bubble.style.opacity='0.35';
-                setTimeout(function(){
-                  bubble.style.transition='opacity .18s ease';
-                  bubble.style.opacity='1';
-                  setTimeout(function(){
-                    bubble.style.transition='opacity .18s ease';
-                    bubble.style.opacity='0.35';
-                    setTimeout(function(){
-                      bubble.style.transition='opacity .3s ease';
-                      bubble.style.opacity='1';
-                      setTimeout(function(){bubble.style.opacity='';bubble.style.transition='';},300);
-                    },180);
-                  },180);
-                },180);
-              },50);
+                bubble.style.transition='background .9s ease';
+                bubble.style.background=origBg;
+                setTimeout(function(){bubble.style.background='';bubble.style.transition='';},950);
+              },400);
             }
           } else {
             msgs.scrollTop=msgs.scrollHeight;
