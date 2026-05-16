@@ -8094,7 +8094,9 @@ function _svSwipeEnd(e){
 
 // -- STORY 3-DOT MENU ---------------------------------------------------------
 var _svSettingsState={allowReplies:true,showViewCount:true,allowSharing:true,saveToDevice:false,audience:'followers',duration:5};
+var _svMenuCloseTmr=null;
 function svOpenMenu(){
+  clearTimeout(_svMenuCloseTmr);_svMenuCloseTmr=null;
   svPaused=true;clearTimeout(svTmr);
   var g=svGroups[svGI];var item=g&&g.items[svII];
   var isOwn=g&&(g.user.id==='demo'||(profile&&g.user.id===profile.id));
@@ -8142,7 +8144,7 @@ function svOpenMenu(){
 }
 function svCloseMenu(){
   var bg=document.getElementById('sv-menu-bg');bg.classList.remove('on');
-  setTimeout(function(){bg.style.display='none';svPaused=false;startSVTmr();},280);
+  _svMenuCloseTmr=setTimeout(function(){_svMenuCloseTmr=null;bg.style.display='none';svPaused=false;startSVTmr();},280);
 }
 function _svReportStory(item,reportedUid){
   // Show report category sheet
