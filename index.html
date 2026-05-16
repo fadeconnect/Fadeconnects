@@ -489,12 +489,13 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* CW dropdown */
 #cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
 #cw-dd-overlay.on{display:block}
-#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid rgba(0,0,0,.07);border-radius:16px;overflow:hidden;min-width:220px;box-shadow:0 4px 6px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.04);animation:cwDDPop .22s cubic-bezier(.34,1.4,.64,1);transform-origin:top right}
-@keyframes cwDDPop{from{opacity:0;transform:scale(.85) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.cw-dd-item{display:flex;align-items:center;gap:13px;padding:14px 16px;font-size:14.5px;font-weight:400;color:var(--text);cursor:pointer;transition:background .1s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em;line-height:1}
+#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-width:215px;box-shadow:0 10px 36px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.06);animation:cwDDPop .22s cubic-bezier(.34,1.3,.64,1);transform-origin:top right}
+@keyframes cwDDPop{from{opacity:0;transform:scale(.93) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.cw-dd-item{display:flex;align-items:center;gap:13px;padding:13px 16px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
+.cw-dd-item:last-child{border-bottom:none}
 .cw-dd-item:active{background:var(--inp-bg)}
 .cw-dd-item.danger{color:#E8352A}
-.cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7}
+.cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
 .cw-dd-item.danger .cw-dd-ico{opacity:1}
 /* Media sheet */
 #cw-media-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:410;align-items:flex-end;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
@@ -1632,7 +1633,7 @@ body {
     </div>
   </div>
   <div id="s-search" class="screen">
-    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="closeSearch()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
+    <div class="topbar"><div class="tb-l"><button class="ibtn" onclick="closeSearch()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button></div><span class="tb-logo">Search</span><div class="tb-r" style="width:38px"></div></div>
     <div class="sbar"><div class="swrap"><span class="sico"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span><input class="sinp" id="sinp" placeholder="Search people & posts..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" autocomplete="off" style="padding-right:38px"/><button id="sinp-clear" onclick="clearSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--sub);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;align-items:center;justify-content:center;padding:0;flex-shrink:0"><svg width="9" height="9" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg></button></div></div>
     <div class="scroller" id="sresults" style="padding-top:6px"></div>
   </div>
@@ -1878,7 +1879,7 @@ body {
 <!-- CHAT -->
 <div id="cw">
   <div class="cwbar">
-    <button class="ibtn" onclick="closeCW()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <button class="ibtn" onclick="closeCW()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
     <div class="cwinfo" id="cwinfo">
       <div id="cwav-wrap" style="position:relative;flex-shrink:0;width:38px;height:38px">
         <div class="cwav" id="cwav"></div>
@@ -1888,7 +1889,7 @@ body {
     </div>
     <div class="cw-hdr-actions">
       <button class="ibtn" id="cw-search-btn" onclick="cwToggleSearch()" aria-label="Search messages" style="width:40px;height:40px"><svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M20.5 20.5l-4.5-4.5"/></svg></button>
-      <button class="ibtn" id="cw-more-btn" onclick="cwToggleDD(event)" aria-label="More options" style="width:40px;height:40px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg></button>
+      <button class="ibtn" id="cw-more-btn" onclick="cwToggleDD(event)" aria-label="More options" style="width:40px;height:40px"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button>
     </div>
   </div>
   <div id="cw-search-bar">
@@ -2004,7 +2005,7 @@ body {
 <!-- NOTIFICATIONS -->
 <div id="notif-panel">
   <div class="topbar">
-    <div class="tb-l"><button class="ibtn" onclick="closeNotif()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button></div>
+    <div class="tb-l"><button class="ibtn" onclick="closeNotif()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button></div>
     <span class="tb-logo">Notifications</span>
     <div class="tb-r"><button id="mark-all-btn" class="ibtn" style="font-size:12px;font-weight:600;color:var(--sub);padding:6px 8px;border-radius:8px" onclick="markAllRead()">Mark all read</button></div>
   </div>
@@ -2013,7 +2014,7 @@ body {
 
 <!-- PROFILE SCREEN — z-index 650, above everything -->
 <div id="prof-screen">
-  <div class="topbar"><button class="ibtn" id="prof-back-btn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button><span id="prof-bar-username" style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.2px;margin-left:4px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button class="ibtn" onclick="openDD(event)" style="flex-direction:column;gap:3.5px"><i style="display:block;width:3px;height:3px;border-radius:50%;background:var(--text);opacity:0.7"></i><i style="display:block;width:3px;height:3px;border-radius:50%;background:var(--text);opacity:0.7"></i><i style="display:block;width:3px;height:3px;border-radius:50%;background:var(--text);opacity:0.7"></i></button></div>
+  <div class="topbar"><button class="ibtn" id="prof-back-btn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button><span id="prof-bar-username" style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.2px;margin-left:4px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button class="ibtn" onclick="openDD(event)"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>
   <div class="scroller" id="prof-body"></div>
 </div>
 
@@ -2027,19 +2028,19 @@ body {
 
 <!-- SCROLL VIEW -->
 <div id="scroll-view">
-  <div class="scroll-topbar"><button class="scroll-back" onclick="closeScrollView()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg><span style="font-size:15px;font-weight:600;margin-left:4px">Drops</span></button></div>
+  <div class="scroll-topbar"><button class="scroll-back" onclick="closeScrollView()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span style="font-size:15px;font-weight:600;margin-left:4px">Drops</span></button></div>
   <div id="sv-feed"></div>
 </div>
 
 <!-- SETTINGS -->
 <div id="so">
-  <div class="so-bar"><button class="so-back" onclick="soBack()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="so-title" id="so-title">Settings</span></div>
+  <div class="so-bar"><button class="so-back" onclick="soBack()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button><span class="so-title" id="so-title">Settings</span></div>
   <div class="spages"><div id="sp0" class="spage active"></div><div id="sp1" class="spage"></div><div id="sp2" class="spage"></div><div id="sp3" class="spage"></div><div id="sp4" class="spage"></div></div>
 </div>
 
 <!-- SCHED FORM -->
 <div id="sched-form-panel">
-  <div class="sfp-bar"><button class="sfp-back" onclick="closeSchedForm()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="sfp-title" id="sfp-title">Schedule a Drop</span></div>
+  <div class="sfp-bar"><button class="sfp-back" onclick="closeSchedForm()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button><span class="sfp-title" id="sfp-title">Schedule a Drop</span></div>
   <div class="sfp-body" id="sfp-body"></div>
 </div>
 
@@ -4789,7 +4790,7 @@ function buildPost(p, showDelete){
   var avName=isOwn?(profile&&profile.display_name||'You'):a.display_name;
   var avUrl=isOwn?(profPhotoUrl||null):a.avatar_url;
   var avatarClick=isOwn?"goTab('me')":'openProf('+uJ+')';
-  var hdr='<div class="posthd"><div class="av" onclick=\''+avatarClick+'\'>'+avH(avUrl,avName)+'</div><div class="postmeta" onclick=\''+avatarClick+'\'>  <div class="postname" style="display:flex;align-items:center;gap:4px">'+E(a.display_name||'User')+badgeFor(p.uid)+'</div><div class="posttm" data-ts="'+p.ts+'">'+ago(p.ts)+' . fades in '+fadeIn(p.ts)+'</div></div><button class="post-menu-btn" onclick="openPostMenu(\''+p.id+'\',\''+p.uid+'\',event)" style="background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--sub);display:flex;flex-direction:column;gap:3.5px;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;transition:opacity .15s" onmousedown="event.stopPropagation()"><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i><i style="display:block;width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></i></button></div>';
+  var hdr='<div class="posthd"><div class="av" onclick=\''+avatarClick+'\'>'+avH(avUrl,avName)+'</div><div class="postmeta" onclick=\''+avatarClick+'\'>  <div class="postname" style="display:flex;align-items:center;gap:4px">'+E(a.display_name||'User')+badgeFor(p.uid)+'</div><div class="posttm" data-ts="'+p.ts+'">'+ago(p.ts)+' . fades in '+fadeIn(p.ts)+'</div></div><button class="post-menu-btn" onclick="openPostMenu(\''+p.id+'\',\''+p.uid+'\',event)" style="background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--sub);display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;transition:opacity .15s" onmousedown="event.stopPropagation()"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>';
   var mediaHTML='',textHTML='';
   if(p.img){
     var _imgs=null;
@@ -13415,7 +13416,7 @@ function openBadgeEditor(u,listWrap,onDone){
   // Back bar
   var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;height:52px;padding:0 8px;flex-shrink:0;border-bottom:1px solid var(--border)';
   var backBtn=document.createElement('button');backBtn.style.cssText='background:none;border:none;cursor:pointer;padding:10px;color:var(--text);display:flex;align-items:center;border-radius:10px';
-  backBtn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>';
+  backBtn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>';
   backBtn.onclick=function(){closePanel(null);};
   var titleEl=document.createElement('span');titleEl.style.cssText='font-weight:600;font-size:15px;margin-left:4px';titleEl.textContent='Manage Badge';
   bar.appendChild(backBtn);bar.appendChild(titleEl);panel.appendChild(bar);
@@ -14231,7 +14232,7 @@ function postClip(){
 <!-- CIRCLE CHAT WINDOW -->
 <div id="circle-cw">
   <div class="circle-cwbar">
-    <button class="ibtn" onclick="closeCircleCW()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <button class="ibtn" onclick="closeCircleCW()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
     <div class="circle-cwinfo" id="circle-cwinfo" onclick="openCircleInfo()">
       <div style="position:relative;flex-shrink:0">
         <div id="circle-cw-avstack"></div>
@@ -14274,7 +14275,7 @@ function postClip(){
 <!-- CIRCLE INFO SCREEN -->
 <div id="circle-info">
   <div class="ci-bar">
-    <button class="ibtn" onclick="closeCircleInfo()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <button class="ibtn" onclick="closeCircleInfo()" style="margin-left:-6px"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
     <span class="ci-title">Circle Info</span>
     <div style="width:36px"></div>
   </div>
