@@ -489,15 +489,16 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* CW dropdown */
 #cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
 #cw-dd-overlay.on{display:block}
-#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid rgba(0,0,0,.07);border-radius:16px;overflow:hidden;min-width:220px;box-shadow:0 4px 6px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.04);animation:cwDDPop .22s cubic-bezier(.34,1.4,.64,1);transform-origin:top right}
-@keyframes cwDDPop{from{opacity:0;transform:scale(.85) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.cw-dd-item{display:flex;align-items:center;gap:13px;padding:14px 16px;font-size:14.5px;font-weight:400;color:var(--text);cursor:pointer;transition:background .1s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em;line-height:1}
+#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-width:215px;box-shadow:0 10px 36px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.06);animation:cwDDPop .22s cubic-bezier(.34,1.3,.64,1);transform-origin:top right}
+@keyframes cwDDPop{from{opacity:0;transform:scale(.93) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.cw-dd-item{display:flex;align-items:center;gap:13px;padding:13px 16px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
+.cw-dd-item:last-child{border-bottom:none}
 .cw-dd-item:active{background:var(--inp-bg)}
 .cw-dd-item.danger{color:#E8352A}
-.cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7}
+.cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
 .cw-dd-item.danger .cw-dd-ico{opacity:1}
 /* Media sheet */
-#cw-media-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:410;align-items:flex-end}
+#cw-media-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:410;align-items:flex-end;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
 #cw-media-sheet-ov.on{display:flex}
 #cw-media-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;overflow:hidden;max-height:78dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.25,.46,.45,.94)}
 #cw-media-sheet-ov.on #cw-media-sheet{transform:translateY(0)}
@@ -3437,6 +3438,7 @@ function initApp(userProfile){
   setupOfflineBar();
   setupSwipeBack();
   setupSwipeToReply();
+  setupAllSheetSwipes();
   // Defer loadNotifs until the notif-dot element is guaranteed visible in DOM
   (function checkNotifDotReady(attempt){
     var dot=document.getElementById('notif-dot');
@@ -3481,6 +3483,131 @@ function initApp(userProfile){
   }
   checkUnreadOnBoot(0);
   _triggerA2HS();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIVERSAL SHEET SWIPE-TO-DISMISS
+// Call initSheetSwipe(sheetEl, dimEl, closeFn) on any bottom-sheet element.
+// Also adds tap-on-backdrop (dimEl) to close.
+// ─────────────────────────────────────────────────────────────────────────────
+function initSheetSwipe(sheet, dim, closeFn) {
+  if (!sheet || sheet._swipeInited) return;
+  sheet._swipeInited = true;
+  var sy = 0, cy = 0, dragging = false, locked = false;
+
+  sheet.addEventListener('touchstart', function(e) {
+    var scroller = sheet.querySelector('.scroller,.cs-list,.views-list,.fl-list-inner,.cw-media-grid,.msgs,.circle-msgs,.seen-by-list');
+    if (scroller && scroller.scrollTop > 2) { locked = true; return; }
+    locked = false;
+    sy = e.touches[0].clientY;
+    cy = 0;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, {passive: true});
+
+  sheet.addEventListener('touchmove', function(e) {
+    if (!dragging || locked) return;
+    cy = Math.max(0, e.touches[0].clientY - sy);
+    sheet.style.transform = 'translateY(' + cy + 'px)';
+    if (dim) dim.style.opacity = String(Math.max(0, 1 - cy / 200));
+    if (cy > 4) e.preventDefault();
+  }, {passive: false});
+
+  sheet.addEventListener('touchend', function() {
+    if (!dragging || locked) return;
+    dragging = false;
+    sheet.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
+    if (cy > 90) {
+      sheet.style.transform = 'translateY(100%)';
+      if (dim) dim.style.opacity = '0';
+      setTimeout(closeFn, 30);
+    } else {
+      sheet.style.transform = 'translateY(0)';
+      if (dim) dim.style.opacity = '1';
+    }
+    cy = 0;
+  }, {passive: true});
+
+  if (dim) {
+    dim.addEventListener('click', function(e) {
+      if (e.target === dim) closeFn();
+    });
+  }
+}
+
+function setupAllSheetSwipes() {
+  function whenReady(id, sheetSel, dimSel, closeFn) {
+    var bg = document.getElementById(id);
+    if (!bg) return;
+    var sheet = sheetSel ? bg.querySelector(sheetSel) : bg;
+    var dim = dimSel ? bg.querySelector(dimSel) : null;
+    if (sheet) initSheetSwipe(sheet, dim, closeFn);
+  }
+
+  // 1. COMPOSE (Drop)
+  whenReady('compose-bg', '.sheet', '.compose-dim', function(){ closeCompose(); });
+  // 2. EDIT PROFILE
+  whenReady('ep-bg', '.sheet', '.compose-dim', function(){ closeEP(); });
+  // 3. SHARE PROFILE SHEET
+  whenReady('share-bg', '.sheet', '.compose-dim', function(){ closeShareSheet(); });
+  // 4. COMMENT SHEET
+  whenReady('cs-bg', '#cs-sheet', '.cs-dim', function(){ closeCS(); });
+  // 5. 3-DOT SHEET
+  whenReady('dd-bg', '#dd-sheet', null, function(){ closeDD(); });
+  // 6. AUDIO/AUDIENCE SHEET
+  whenReady('aud-bg', '#aud-sheet', null, function(){ closeAudSheet(); });
+  // 7. VIEWS SHEET
+  whenReady('views-bg', '#views-sheet', '.views-dim', function(){ closeViewsSheet({}); });
+  // 8. FOLLOWERS/FOLLOWING SHEET
+  whenReady('fl-bg', '#fl-sheet', null, function(){ closeFollowSheet(); });
+  // 9. REACTION SHEET
+  whenReady('react-sheet-bg', '#react-sheet', '.react-dim', function(){ closeReactSheet(); });
+  // 10. CHAT MEDIA SHEET
+  whenReady('cw-media-sheet-ov', '#cw-media-sheet', null, function(){ cwCloseMedia(); });
+  // 11. STORY VIEWER MENU SHEET
+  whenReady('sv-menu-bg', '#sv-menu-sheet', null, function(){ svCloseMenu(); });
+  // 12. STORY VIEWER SETTINGS SHEET
+  whenReady('sv-settings-bg', '#sv-settings-sheet', null, function(){ svCloseSettings(); });
+  // 13. CIRCLE CREATE SHEET
+  whenReady('circle-create-bg', '#circle-create-sheet', '.circle-create-dim', function(){ closeCircleCreate(); });
+  // 14. SEEN BY SHEET
+  whenReady('seen-by-bg', '#seen-by-sheet', '.seen-by-dim', function(){ closeSeenBy(); });
+
+  // 15. ADD TO HOME SCREEN SHEET
+  (function(){
+    var bg = document.getElementById('a2hs-bg');
+    if (!bg) return;
+    var sheet = document.getElementById('a2hs-sheet');
+    var dim = document.getElementById('a2hs-dim');
+    if (sheet && !sheet._swipeInited) initSheetSwipe(sheet, dim, function(){
+      sheet.style.transform = 'translateY(100%)';
+      setTimeout(function(){ bg.style.display = 'none'; }, 380);
+    });
+    if (dim && !dim._tapInited) {
+      dim._tapInited = true;
+      dim.addEventListener('click', function(e){
+        if (e.target === dim) { sheet.style.transform = 'translateY(100%)'; setTimeout(function(){ bg.style.display='none'; }, 380); }
+      });
+    }
+  })();
+
+  // 16. FADE CONFIRM SHEET backdrop click
+  (function(){
+    var dim = document.getElementById('fc-dim');
+    if (dim && !dim._swipeTapInited) {
+      dim._swipeTapInited = true;
+      dim.addEventListener('click', function(e){ if(e.target===dim) _fcDismiss(); });
+    }
+  })();
+
+  // 17. NEW CHAT MODAL backdrop click
+  (function(){
+    var modal = document.getElementById('nc-modal');
+    if (modal && !modal._tapInited) {
+      modal._tapInited = true;
+      modal.addEventListener('click', function(e){ if(e.target===modal) closeNC(); });
+    }
+  })();
 }
 
 function setupPTR(){
@@ -4933,6 +5060,7 @@ function openEditCaption(postId){
   ddbg.onclick=function(ev){ev.stopPropagation();closeDD();};
   ddbg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){ddbg.style.background='rgba(0,0,0,.25)';ddsh.style.transform='translateY(0)';});});
+  (function(){ initSheetSwipe(ddsh,null,function(){closeDD();}); })();
   setTimeout(function(){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},420);
 }
 
@@ -5032,7 +5160,7 @@ function sharePost(postId){
 
   sheet.appendChild(handle);sheet.appendChild(hdr);sheet.appendChild(prev);sheet.appendChild(grid);sheet.appendChild(copyRow);
   ov.appendChild(sheet);
-  ov.onclick=function(e){if(e.target===ov){e.stopPropagation();ov.remove();}};
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
   document.body.appendChild(ov);
 }
 
@@ -7638,6 +7766,7 @@ function openAudSheet(){
   });
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+  initSheetSwipe(sheet, null, function(){closeAudSheet();});
 }
 function closeAudSheet(){
   var sheet=document.getElementById('aud-sheet');var bg=document.getElementById('aud-bg');
@@ -8599,9 +8728,12 @@ function openViewsSheet(){
   });
 }
 function closeViewsSheet(e){
-  if(e&&e.target!==document.getElementById('views-bg')&&!e.target.classList.contains('views-dim'))return;
-  var bg=document.getElementById('views-bg');bg.classList.remove('on');
-  setTimeout(function(){bg.style.display='none';svViewsOpen=false;svHoldEnd();},320);
+  if(e&&e.target&&e.target!==document.getElementById('views-bg')&&!e.target.classList.contains('views-dim'))return;
+  var bg=document.getElementById('views-bg');
+  var sh=document.getElementById('views-sheet');
+  if(sh){sh.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';sh.style.transform='translateY(100%)';}
+  bg.classList.remove('on');
+  setTimeout(function(){bg.style.display='none';if(sh)sh.style.transform='';svViewsOpen=false;svHoldEnd();},320);
 }
 
 // -- ACTIVITY STATE ------------------------------------------------------------
@@ -9074,7 +9206,7 @@ function showConvoMenu(u,rowEl){
   var ov=document.createElement('div');ov.id='convo-menu-overlay';
   ov.style.cssText='position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.18)';
   var sheet=document.createElement('div');
-  sheet.style.cssText='position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:20px 20px 0 0;padding:8px 0 max(20px,env(safe-area-inset-bottom));z-index:951;animation:slideUp .22s ease';sheet.onclick=function(e){e.stopPropagation();};
+  sheet.style.cssText='position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:20px 20px 0 0;padding:8px 0 max(20px,env(safe-area-inset-bottom));z-index:951;animation:slideUp .22s ease';
   var handle=document.createElement('div');handle.style.cssText='width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 16px';sheet.appendChild(handle);
   var uname=document.createElement('div');uname.style.cssText='text-align:center;font-size:13px;color:var(--sub);margin-bottom:8px;padding:0 20px';uname.textContent=u.display_name||u.username;sheet.appendChild(uname);
   var delBtn=document.createElement('button');
@@ -10224,7 +10356,10 @@ function _openFadePickerWithCircles(onSelectPerson,onSelectCircle,title,onCancel
   ov.appendChild(sheet);document.body.appendChild(ov);
   ov.onclick=function(e){if(e.target===ov)close(true);};
   document.getElementById('fade-picker-x').onclick=function(){close(true);};
-  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    sheet.style.transform='translateY(0)';
+    initSheetSwipe(sheet, null, function(){close(true);});
+  });});
 }
 function openPostSharePicker(postId){_openFadePickerWithCircles(function(u){sendPostShareMsg(u,postId);},function(c){sendPostShareToCircle(c,postId);},'Share Drop');}
 function openProfileSharePicker(){_openFadePicker(function(u){sendProfileShareMsg(u);},'Share Profile');}
@@ -10412,7 +10547,10 @@ function _openFadePicker(onSelect,title,onCancel){
   ov.appendChild(sheet);document.body.appendChild(ov);
   ov.onclick=function(e){if(e.target===ov)close(true);};
   document.getElementById('fade-picker-x').onclick=function(){close(true);};
-  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    sheet.style.transform='translateY(0)';
+    initSheetSwipe(sheet, null, function(){close(true);});
+  });});
 }
 
 
@@ -10501,6 +10639,7 @@ function openReactSheet(m,bs,isMine){
     requestAnimationFrame(function(){
       sheet.style.transition='';
       sheet.style.transform='translateY(0)';
+      initSheetSwipe(sheet, bg.querySelector('.react-dim'), function(){closeReactSheet();});
     });
   });
 }
@@ -10995,6 +11134,7 @@ function openCS(pid){
   var bg=document.getElementById('cs-bg');
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
+  (function(){ var s=document.getElementById('cs-sheet'),d=bg.querySelector('.cs-dim'); initSheetSwipe(s,d,function(){closeCS();}); })();
   setTimeout(function(){var inp=document.getElementById('cs-inp');if(inp)inp.focus({preventScroll:true});},400);
 
   // Fetch comments -- replace skeleton when ready
@@ -11953,6 +12093,7 @@ function openDD(e){
   var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.style.background='rgba(0,0,0,.25)';sh.style.transform='translateY(0)';});});
+  initSheetSwipe(sh, null, function(){closeDD();});
 }
 function closeDD(){var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');if(bg)bg.style.background='rgba(0,0,0,0)';if(sh)sh.style.transform='translateY(100%)';setTimeout(function(){if(bg)bg.style.display='none';},320);}
 function openPostMenu(postId,uid,e){
@@ -13785,6 +13926,7 @@ function openFollowSheet(uid, type){
   var bg = document.getElementById('fl-bg');
   bg.style.display = 'flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+  initSheetSwipe(sheet, null, function(){closeFollowSheet();});
   // Fetch from Supabase
   var query;
   if(type==='followers'){
@@ -14978,7 +15120,7 @@ function openSeenBy(msgId){
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){
     var sheet=document.getElementById('seen-by-sheet');
-    if(sheet)sheet.style.transform='translateY(0)';
+    if(sheet){sheet.style.transform='translateY(0)';initSheetSwipe(sheet, bg.querySelector('.seen-by-dim'), function(){closeSeenBy();});}
   });});
   _sb.from('circle_reads').select('user_id,read_at').eq('message_id',msgId).then(function(res){
     list.innerHTML='';
@@ -17072,31 +17214,6 @@ function _buildEpCats(){
   // popstate: fired by native OS swipe-back or Android back button
   window.addEventListener('popstate', function(e) {
     var state = e.state;
-
-    // ── Sheet guard: if any bottom sheet / dropdown is open, close it first ──
-    // convo-menu (talk list long-press sheet)
-    var _convoMenu = document.getElementById('convo-menu-overlay');
-    if (_convoMenu) { _convoMenu.remove(); history.pushState({_fade:'base'},''); return; }
-    // cw-media sheet
-    var _mediaOv = document.getElementById('cw-media-sheet-ov');
-    if (_mediaOv && _mediaOv.classList.contains('on')) {
-      if (typeof window.cwCloseMedia === 'function') window.cwCloseMedia();
-      else _mediaOv.classList.remove('on');
-      history.pushState({_fade:'base'},''); return;
-    }
-    // cw-dd dropdown (3-dot menu in chat)
-    var _cwDD = document.getElementById('cw-dd-overlay');
-    if (_cwDD && _cwDD.classList.contains('on')) {
-      if (typeof window.cwCloseDD === 'function') window.cwCloseDD();
-      else _cwDD.classList.remove('on');
-      history.pushState({_fade:'base'},''); return;
-    }
-    // Any other dynamically-created overlay (block confirm, etc.)
-    var _anyOv = document.querySelector('[id$="-overlay"]:not(#cw-dd-overlay)');
-    if (_anyOv && _anyOv.style.display !== 'none' && document.body.contains(_anyOv)) {
-      _anyOv.remove(); history.pushState({_fade:'base'},''); return;
-    }
-    // ── End sheet guard ───────────────────────────────────────────────────────
 
     // Story creator discard dialog: back from dialog -> hide it, keep editing
     if (state && state._fade === 'sc-discard') {
