@@ -2795,6 +2795,39 @@ var _fcCallback=null;
   };
 })();
 function padN(n){return String(n).padStart(2,'0');}
+
+// -- SHARED SWIPE-TO-DISMISS --------------------------------------------------
+// Call once per sheet element. closeFn is called when swipe threshold met.
+// ovEl (optional): overlay whose opacity tracks the drag.
+// handleOnly=true  → only swipe when touch starts in top 52px (handle zone)
+// handleOnly=false → full surface swipe (short sheets with no scroll content)
+function _addSheetSwipe(sheetEl,closeFn,ovEl,handleOnly){
+  if(!sheetEl||sheetEl._swipeInited)return;
+  sheetEl._swipeInited=true;
+  var sy=0,cy=0,dragging=false;
+  sheetEl.addEventListener('touchstart',function(e){
+    if(handleOnly){
+      var top=sheetEl.getBoundingClientRect().top;
+      if(e.touches[0].clientY-top>52)return; // outside handle zone — ignore
+    }
+    sy=e.touches[0].clientY;cy=0;dragging=true;
+    sheetEl.style.transition='none';
+  },{passive:true});
+  sheetEl.addEventListener('touchmove',function(e){
+    if(!dragging)return;
+    cy=Math.max(0,e.touches[0].clientY-sy);
+    sheetEl.style.transform='translateY('+cy+'px)';
+    if(ovEl)ovEl.style.opacity=String(Math.max(0,1-cy/220));
+    e.preventDefault();
+  },{passive:false});
+  sheetEl.addEventListener('touchend',function(){
+    if(!dragging)return;dragging=false;
+    sheetEl.style.transition='';
+    if(cy>80){closeFn();}
+    else{sheetEl.style.transform='translateY(0)';if(ovEl)ovEl.style.opacity='1';}
+  });
+}
+
 function fmtDT(ts){return new Date(ts).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function svKey(){return svGI+'-'+svII;}
 
@@ -10691,8 +10724,8 @@ function cwDDMedia(){
     _cwMediaSwipeInited=true;
     var sy=0,cy=0,dragging=false;
     ms.addEventListener('touchstart',function(e){
-      // only swipe from the handle area (top 48px) to avoid conflicting with grid scroll
-      if(e.touches[0].clientY-ms.getBoundingClientRect().top>48)return;
+      // only swipe from the handle area (top 52px) to avoid conflicting with grid scroll
+      if(e.touches[0].clientY-ms.getBoundingClientRect().top>52)return;
       sy=e.touches[0].clientY;cy=0;dragging=true;
       ms.style.transition='none';
     },{passive:true});
@@ -11917,6 +11950,7 @@ function openDD(e){
     return'<div class="dd-item" onclick="ddAct(\''+o.a+'\')">'+o.l+'</div>';
   }).join('');
   var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');
+  _addSheetSwipe(sh,closeDD,bg,false);
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.style.background='rgba(0,0,0,.25)';sh.style.transform='translateY(0)';});});
 }
@@ -11965,6 +11999,7 @@ function openPostMenu(postId,uid,e){
     items.appendChild(sif);items.appendChild(sh3);items.appendChild(r);items.appendChild(b);
   }
   var bg=document.getElementById('dd-bg'),sh=document.getElementById('dd-sheet');
+  _addSheetSwipe(sh,closeDD,bg,false);
   bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.style.background='rgba(0,0,0,.25)';sh.style.transform='translateY(0)';});});
 }
@@ -14248,7 +14283,7 @@ function postClip(){
 </div>
 
 <!-- CIRCLE CREATE SHEET -->
-<div id="circle-create-bg">
+<div id="circle-create-bg" onclick="if(event.target===this)closeCircleCreate()">
   <div class="circle-create-dim" onclick="closeCircleCreate()"></div>
   <div id="circle-create-sheet" onclick="event.stopPropagation()">
     <div style="width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>
@@ -17350,6 +17385,47 @@ function _buildEpCats(){
   document.addEventListener('contextmenu', function(e){
     if(e.target && e.target.tagName === 'IMG') e.preventDefault();
   }, true);
+
+  // -- SWIPE-TO-DISMISS for all static bottom sheets ----------------------
+  (function(){
+    // handleOnly=true  → tall/scrollable sheets — swipe only from handle zone (top 52px)
+    // handleOnly=false → short sheets — full surface swipe
+    function wire(sheetId, closeFn, ovId, handleOnly){
+      var s=document.getElementById(sheetId);
+      var o=ovId?document.getElementById(ovId):null;
+      if(s)_addSheetSwipe(s,closeFn,o,handleOnly);
+    }
+    // Comments sheet — tall, scrollable → handle-only
+    wire('cs-sheet', function(){closeCS();}, 'cs-bg', true);
+    // Story viewer menu — short → full surface
+    wire('sv-menu-sheet', function(){svCloseMenu();}, 'sv-menu-bg', false);
+    // Story viewer settings — tall, scrollable → handle-only
+    wire('sv-settings-sheet', function(){svCloseSettings();}, 'sv-settings-bg', true);
+    // Story views — scrollable → handle-only
+    wire('views-sheet', function(){
+      var bg=document.getElementById('views-bg');
+      if(bg){bg.classList.remove('on');setTimeout(function(){bg.style.display='none';if(typeof svViewsOpen!=='undefined')svViewsOpen=false;if(typeof svHoldEnd==='function')svHoldEnd();},320);}
+    }, 'views-bg', true);
+    // Emoji reactions — short → full surface
+    wire('react-sheet', function(){closeReactSheet();}, 'react-sheet-bg', false);
+    // Seen by — scrollable → handle-only
+    wire('seen-by-sheet', function(){closeSeenBy();}, 'seen-by-bg', true);
+    // Follow list — tall, scrollable → handle-only
+    wire('fl-sheet', function(){closeFollowSheet();}, 'fl-bg', true);
+    // Audio sheet — short → full surface
+    wire('aud-sheet', function(){closeAudSheet();}, 'aud-bg', false);
+    // Circle create — tall, scrollable → handle-only
+    wire('circle-create-sheet', function(){closeCircleCreate();}, 'circle-create-bg', true);
+    // Share sheet — short → full surface
+    var shareSh=document.querySelector('#share-bg .sheet');
+    if(shareSh)_addSheetSwipe(shareSh,function(){closeShareSheet();},document.getElementById('share-bg'),false);
+    // Compose — short → full surface
+    var composeSh=document.querySelector('#compose-bg .sheet');
+    if(composeSh)_addSheetSwipe(composeSh,function(){closeCompose();},document.getElementById('compose-bg'),false);
+    // Edit profile — short → full surface
+    var epSh=document.querySelector('#ep-bg .sheet');
+    if(epSh)_addSheetSwipe(epSh,function(){closeEP();},document.getElementById('ep-bg'),false);
+  })();
 
 })();
 </script>
