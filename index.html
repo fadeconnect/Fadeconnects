@@ -8403,7 +8403,7 @@ function svCloseEdit(){
   var bg=document.getElementById('sv-edit-bg');bg.classList.remove('on');
   bg.style.opacity='0';
   _svEditSwipeAttached=false;
-  setTimeout(function(){bg.style.display='none';bg.style.opacity='';svPaused=false;startSVTmr();},240);
+  setTimeout(function(){bg.style.display='none';bg.style.opacity='';svHoldEnd();},240);
 }
 function svSaveEdit(){
   var g=svGroups[svGI];var item=g&&g.items&&g.items[svII];if(!item)return;
@@ -8503,7 +8503,7 @@ function svOpenSettings(){
 }
 function svCloseSettings(){
   var bg=document.getElementById('sv-settings-bg');bg.classList.remove('on');
-  setTimeout(function(){bg.style.display='none';svPaused=false;startSVTmr();},280);
+  setTimeout(function(){bg.style.display='none';svHoldEnd();},280);
 }
 
 
