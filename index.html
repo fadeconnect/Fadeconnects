@@ -17073,6 +17073,31 @@ function _buildEpCats(){
   window.addEventListener('popstate', function(e) {
     var state = e.state;
 
+    // ── Sheet guard: if any bottom sheet / dropdown is open, close it first ──
+    // convo-menu (talk list long-press sheet)
+    var _convoMenu = document.getElementById('convo-menu-overlay');
+    if (_convoMenu) { _convoMenu.remove(); history.pushState({_fade:'base'},''); return; }
+    // cw-media sheet
+    var _mediaOv = document.getElementById('cw-media-sheet-ov');
+    if (_mediaOv && _mediaOv.classList.contains('on')) {
+      if (typeof window.cwCloseMedia === 'function') window.cwCloseMedia();
+      else _mediaOv.classList.remove('on');
+      history.pushState({_fade:'base'},''); return;
+    }
+    // cw-dd dropdown (3-dot menu in chat)
+    var _cwDD = document.getElementById('cw-dd-overlay');
+    if (_cwDD && _cwDD.classList.contains('on')) {
+      if (typeof window.cwCloseDD === 'function') window.cwCloseDD();
+      else _cwDD.classList.remove('on');
+      history.pushState({_fade:'base'},''); return;
+    }
+    // Any other dynamically-created overlay (block confirm, etc.)
+    var _anyOv = document.querySelector('[id$="-overlay"]:not(#cw-dd-overlay)');
+    if (_anyOv && _anyOv.style.display !== 'none' && document.body.contains(_anyOv)) {
+      _anyOv.remove(); history.pushState({_fade:'base'},''); return;
+    }
+    // ── End sheet guard ───────────────────────────────────────────────────────
+
     // Story creator discard dialog: back from dialog -> hide it, keep editing
     if (state && state._fade === 'sc-discard') {
       _scHideDiscardDialog();
