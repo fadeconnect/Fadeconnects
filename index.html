@@ -8117,18 +8117,18 @@ function svOpenMenu(){
   var muteIcon='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
   var reportIcon='<svg width="20" height="20" fill="none" stroke="#E8352A" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
   if(isOwn){
-    mkItem(editIcon,'Edit Moment','',function(){svCloseMenu();svOpenEdit();});
+    mkItem(editIcon,'Edit Moment','',function(){svCloseMenu(true);svOpenEdit();});
     var sep=document.createElement('div');sep.className='sv-menu-sep';items.appendChild(sep);
-    mkItem(settIcon,'Moment Settings','',function(){svCloseMenu();svOpenSettings();});
+    mkItem(settIcon,'Moment Settings','',function(){svCloseMenu(true);svOpenSettings();});
     var sep2=document.createElement('div');sep2.className='sv-menu-sep';items.appendChild(sep2);
-    mkItem(trashIcon,'Delete Moment','red',function(){svCloseMenu();svOpenDelete();});
+    mkItem(trashIcon,'Delete Moment','red',function(){svCloseMenu(true);svOpenDelete();});
   } else {
     var storyUser=g&&g.user;var storyUserId=storyUser&&storyUser.id;
     var isMuted=storyUserId&&muted.has(storyUserId);
     var muteLabel=isMuted?'Unmute':'Mute';
     var muteIconFinal=isMuted?'<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>':muteIcon;
     mkItem(muteIconFinal,muteLabel,'',function(){
-      svCloseMenu();
+      svCloseMenu(true);
       if(!storyUserId||!profile)return;
       if(muted.has(storyUserId)){
         muted.delete(storyUserId);
@@ -8143,17 +8143,20 @@ function svOpenMenu(){
     });
     var sep3=document.createElement('div');sep3.className='sv-menu-sep';items.appendChild(sep3);
     mkItem(reportIcon,'Report','red',function(){
-      svCloseMenu();
+      svCloseMenu(true);
       _svReportStory(item,storyUserId);
     });
   }
   var bg=document.getElementById('sv-menu-bg');
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
 }
-function svCloseMenu(){
+function svCloseMenu(noResume){
   var bg=document.getElementById('sv-menu-bg');bg.classList.remove('on');
   clearTimeout(_svMenuCloseTmr);
-  _svMenuCloseTmr=setTimeout(function(){_svMenuCloseTmr=null;svHoldEnd();},280);
+  _svMenuCloseTmr=setTimeout(function(){
+    _svMenuCloseTmr=null;
+    if(!noResume)svHoldEnd();
+  },280);
 }
 function _svReportStory(item,reportedUid){
   // Show report category sheet
@@ -8198,7 +8201,7 @@ function svOpenDelete(){
   svPaused=true;clearTimeout(svTmr);
   fadeConfirm({title:'Delete this moment?',desc:'This cannot be undone.',cancel:'Cancel',action:'Delete',danger:true,onConfirm:svConfirmDelete});
 }
-function svCloseDelete(){_fcDismiss();svPaused=false;startSVTmr();}
+function svCloseDelete(){_fcDismiss();svHoldEnd();}
 
 function svConfirmDelete(){
   var g=svGroups[svGI];var item=g&&g.items&&g.items[svII];
