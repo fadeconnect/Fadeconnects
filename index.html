@@ -4540,7 +4540,10 @@ function renderNotifs(){
           if(isOwn){
             if(dot3b)dot3b.style.display='flex';
             var vc=svViews[svGI+'-'+svII]||[];
-            acts.innerHTML='<button onclick="openViewsSheet()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:20px"><span style="color:rgba(255,255,255,.75);display:flex;align-items:center">'+IC.eye+'</span><span id="vc-count" style="color:rgba(255,255,255,.75);font-size:14px;font-weight:500">'+vc.length+'</span></button><div style="flex:1"></div><button class="svlbtn" onclick="svShare()" style="flex-shrink:0;margin-right:4px"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
+            var _curItem=g.items[svII];
+            _svSettingsState.showViewCount=(_curItem&&typeof _curItem.showViewCount!=='undefined')?_curItem.showViewCount:true;
+            _svSettingsState.allowSharing=(_curItem&&typeof _curItem.allowSharing!=='undefined')?_curItem.allowSharing:true;
+            acts.innerHTML='<button onclick="openViewsSheet()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:20px;visibility:'+(_svSettingsState.showViewCount?'visible':'hidden')+'"><span style="color:rgba(255,255,255,.75);display:flex;align-items:center">'+IC.eye+'</span><span id="vc-count" style="color:rgba(255,255,255,.75);font-size:14px;font-weight:500">'+vc.length+'</span></button><div style="flex:1"></div><button class="svlbtn" onclick="svShare()" style="flex-shrink:0;margin-right:4px;display:'+(_svSettingsState.allowSharing?'':'none')+'"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
           } else {
             if(dot3b)dot3b.style.display='none';
             acts.innerHTML='<button class="svlbtn" onclick="svLike()"><svg id="sv-heart" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button><div class="sv-rw"><textarea id="sv-ri" class="sv-ri" rows="1" placeholder="Message..." oninput="svRiInput(this)" onkeydown="svRiKD(event)" onfocus="svRiFocus()" onblur="svRiBlur()"></textarea><button id="sv-sb" style="display:none;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;align-items:center;justify-content:center" onclick="svSend()"><svg width="14" height="14" fill="none" stroke="#111" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></div><button class="svlbtn" id="sv-share-btn" onclick="svShare()" style="flex-shrink:0"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
@@ -7917,7 +7920,7 @@ function loadStories(){
       var closeFriendIds=(cfRes.data||[]).map(function(r){return r.friend_id;});
       // Step 2: fetch all recent stories
       _sb.from('stories')
-        .select('id,user_id,text,img_url,bg,tc,fi,audience,created_at,profiles(id,username,display_name,avatar_url)')
+        .select('id,user_id,text,img_url,bg,tc,fi,audience,allow_sharing,show_view_count,created_at,profiles(id,username,display_name,avatar_url)')
         .gte('created_at',since)
         .order('created_at',{ascending:true})
         .then(function(res){
@@ -7931,7 +7934,7 @@ function loadStories(){
           // Own stories -- always visible to self
           var ownStories=res.data.filter(function(s){return s.user_id===profile.id;});
           if(ownStories.length>0||localOwnItems.length>0){
-            var items=ownStories.map(function(s){return{id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',imgFilter:null};});
+            var items=ownStories.map(function(s){return{id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',allowSharing:s.allow_sharing!==false,showViewCount:s.show_view_count!==false,imgFilter:null};});
             // Remove pending local items that are now confirmed in DB
             localOwnItems.forEach(function(li){if(!items.find(function(i){return i.id===li.id;}))items.push(li);else _clearLocalStory(li.id);});
             items.sort(function(a,b){return new Date(a.ts)-new Date(b.ts);});
@@ -7954,7 +7957,7 @@ function loadStories(){
               groupMap[uid]={user:{id:u.id,username:u.username||'',display_name:u.display_name||u.username||'User',avatar_url:u.avatar_url||null},items:[],seen:false};
               groupOrder.push(uid);
             }
-            groupMap[uid].items.push({id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',imgFilter:null});
+            groupMap[uid].items.push({id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',allowSharing:s.allow_sharing!==false,showViewCount:s.show_view_count!==false,imgFilter:null});
           });
           groupOrder.forEach(function(uid){svGroups.push(groupMap[uid]);});
           // Render immediately -- don't wait for story_views
@@ -7975,7 +7978,7 @@ function loadStories(){
     }).catch(function(){
       // close_friends table may not exist yet -- proceed without it
       _sb.from('stories')
-        .select('id,user_id,text,img_url,bg,tc,fi,audience,created_at,profiles(id,username,display_name,avatar_url)')
+        .select('id,user_id,text,img_url,bg,tc,fi,audience,allow_sharing,show_view_count,created_at,profiles(id,username,display_name,avatar_url)')
         .gte('created_at',since)
         .order('created_at',{ascending:true})
         .then(function(res){
@@ -7986,7 +7989,7 @@ function loadStories(){
           svGroups=[];
           var ownStories=res.data.filter(function(s){return s.user_id===profile.id;});
           if(ownStories.length>0||localOwnItems.length>0){
-            var items=ownStories.map(function(s){return{id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',imgFilter:null};});
+            var items=ownStories.map(function(s){return{id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',allowSharing:s.allow_sharing!==false,showViewCount:s.show_view_count!==false,imgFilter:null};});
             localOwnItems.forEach(function(li){if(!items.find(function(i){return i.id===li.id;}))items.push(li);});
             items.sort(function(a,b){return new Date(a.ts)-new Date(b.ts);});
             svGroups.push({user:{id:'demo',username:profile.username||'you',display_name:profile.display_name||'You',avatar_url:profPhotoUrl||profile.avatar_url||null},items:items,seen:ownGroup?ownGroup.seen:true});
@@ -8002,7 +8005,7 @@ function loadStories(){
           others.forEach(function(s){
             var uid=s.user_id;
             if(!groupMap[uid]){var u=s.profiles||{id:uid,username:'user',display_name:'User',avatar_url:null};groupMap[uid]={user:{id:u.id,username:u.username||'',display_name:u.display_name||u.username||'User',avatar_url:u.avatar_url||null},items:[],seen:false};groupOrder.push(uid);}
-            groupMap[uid].items.push({id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',imgFilter:null});
+            groupMap[uid].items.push({id:s.id,text:s.text||'',img:s.img_url||null,ts:s.created_at,bg:s.bg||'#2C2C2C',tc:s.tc||'#fff',fi:s.fi||1,audience:s.audience||'followers',allowSharing:s.allow_sharing!==false,showViewCount:s.show_view_count!==false,imgFilter:null});
           });
           groupOrder.forEach(function(uid){svGroups.push(groupMap[uid]);});
           renderStrip();
@@ -8036,7 +8039,12 @@ function openSV(gi){
   if(isOwn){
     dot3.style.display='flex';
     var vc=svViews[svGI+'-0']||[];
-    acts.innerHTML='<button onclick="openViewsSheet()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:20px"><span style="color:rgba(255,255,255,.75);display:flex;align-items:center">'+IC.eye+'</span><span id="vc-count" style="color:rgba(255,255,255,.75);font-size:14px;font-weight:500">'+vc.length+'</span></button><div style="flex:1"></div><button class="svlbtn" onclick="svShare()" style="flex-shrink:0;margin-right:4px"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
+    var firstItem=g.items[0];
+    // Sync settings state from item
+    _svSettingsState.showViewCount=(firstItem&&typeof firstItem.showViewCount!=='undefined')?firstItem.showViewCount:true;
+    _svSettingsState.allowSharing=(firstItem&&typeof firstItem.allowSharing!=='undefined')?firstItem.allowSharing:true;
+    _svSettingsState.audience=(firstItem&&firstItem.audience)||'followers';
+    acts.innerHTML='<button onclick="openViewsSheet()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:20px;visibility:'+(_svSettingsState.showViewCount?'visible':'hidden')+'"><span style="color:rgba(255,255,255,.75);display:flex;align-items:center">'+IC.eye+'</span><span id="vc-count" style="color:rgba(255,255,255,.75);font-size:14px;font-weight:500">'+vc.length+'</span></button><div style="flex:1"></div><button class="svlbtn" onclick="svShare()" style="flex-shrink:0;margin-right:4px;display:'+(_svSettingsState.allowSharing?'':'none')+'"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
   } else {
     dot3.style.display='flex';
     acts.innerHTML='<button class="svlbtn" onclick="svLike()"><svg id="sv-heart" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button><div class="sv-rw"><textarea id="sv-ri" class="sv-ri" rows="1" placeholder="Message..." oninput="svRiInput(this)" onkeydown="svRiKD(event)" onfocus="svRiFocus()" onblur="svRiBlur()"></textarea><button id="sv-sb" style="display:none;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;align-items:center;justify-content:center" onclick="svSend()"><svg width="14" height="14" fill="none" stroke="#111" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button></div><button class="svlbtn" id="sv-share-btn" onclick="svShare()" style="flex-shrink:0"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path transform="rotate(-35, 12, 12)" d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z"/></svg></button>';
@@ -8059,8 +8067,8 @@ function openSV(gi){
   sv.style.display='flex';requestAnimationFrame(function(){requestAnimationFrame(function(){sv.style.opacity='1';});});
   renderSVFrame(false);startSVTmr();
 }
-function svHoldStart(){if(svPaused||svViewsOpen)return;svPaused=true;clearTimeout(svTmr);var elapsed=Date.now()-svBarStart;svBarDone=Math.min(svBarDone+elapsed,5000);var f=document.getElementById('svf-'+svII);if(f){var pct=(svBarDone/5000)*100;f.style.transition='none';f.style.width=pct+'%';}}
-function svHoldEnd(){if(!svPaused||svViewsOpen)return;svPaused=false;var remaining=5000-svBarDone;if(remaining<=10){svBarDone=0;svNext();return;}var f=document.getElementById('svf-'+svII);if(f){f.getBoundingClientRect();requestAnimationFrame(function(){requestAnimationFrame(function(){f.style.transition='width '+remaining+'ms linear';f.style.width='100%';});});}svBarStart=Date.now();svTmr=setTimeout(function(){svBarDone=0;svNext();},remaining);}
+function svHoldStart(){if(svPaused||svViewsOpen)return;svPaused=true;clearTimeout(svTmr);var elapsed=Date.now()-svBarStart;var dur=svGetDur();svBarDone=Math.min(svBarDone+elapsed,dur);var f=document.getElementById('svf-'+svII);if(f){var pct=(svBarDone/dur)*100;f.style.transition='none';f.style.width=pct+'%';}}
+function svHoldEnd(){if(!svPaused||svViewsOpen)return;svPaused=false;var dur=svGetDur();var remaining=dur-svBarDone;if(remaining<=10){svBarDone=0;svNext();return;}var f=document.getElementById('svf-'+svII);if(f){f.getBoundingClientRect();requestAnimationFrame(function(){requestAnimationFrame(function(){f.style.transition='width '+remaining+'ms linear';f.style.width='100%';});});}svBarStart=Date.now();svTmr=setTimeout(function(){svBarDone=0;svNext();},remaining);}
 function closeSV(){
   clearTimeout(svTmr);svPaused=false;svBarDone=0;svViewsOpen=false;
   var body=document.getElementById('svbody');
@@ -8122,9 +8130,10 @@ function svOpenMenu(){
   if(!svPaused){
     svPaused=true;clearTimeout(svTmr);
     var elapsed=Date.now()-svBarStart;
-    svBarDone=Math.min(svBarDone+elapsed,5000);
+    var _dur=svGetDur();
+    svBarDone=Math.min(svBarDone+elapsed,_dur);
     var _f=document.getElementById('svf-'+svII);
-    if(_f){_f.style.transition='none';_f.style.width=(svBarDone/5000*100)+'%';}
+    if(_f){_f.style.transition='none';_f.style.width=(svBarDone/_dur*100)+'%';}
   }
   var g=svGroups[svGI];var item=g&&g.items[svII];
   var isOwn=g&&(g.user.id==='demo'||(profile&&g.user.id===profile.id));
@@ -8447,17 +8456,41 @@ function svSaveEdit(){
 function svOpenSettings(){
   svPaused=true;clearTimeout(svTmr);
   var g=svGroups[svGI];var item=g&&g.items&&g.items[svII];
+  // Sync state from actual story item
+  if(item){
+    if(item.audience)_svSettingsState.audience=item.audience;
+    if(typeof item.allowSharing!=='undefined')_svSettingsState.allowSharing=item.allowSharing;
+    else _svSettingsState.allowSharing=true;
+    if(typeof item.showViewCount!=='undefined')_svSettingsState.showViewCount=item.showViewCount;
+    else _svSettingsState.showViewCount=true;
+  }
   var content=document.getElementById('sv-settings-content');
   content.innerHTML='';
   function mkSection(title){var d=document.createElement('div');d.className='sv-settings-section';d.textContent=title;content.appendChild(d);}
-  function mkToggle(label,sub,key){
+  function mkToggle(label,sub,key,dbCol){
     var row=document.createElement('div');row.className='sv-settings-row';
     var left=document.createElement('div');left.className='sv-settings-row-left';
     var lbl=document.createElement('div');lbl.className='sv-settings-row-lbl';lbl.textContent=label;
     left.appendChild(lbl);
     if(sub){var s=document.createElement('div');s.className='sv-settings-row-sub';s.textContent=sub;left.appendChild(s);}
     var tog=document.createElement('button');tog.className='sv-settings-toggle'+(_svSettingsState[key]?' on':'');
-    tog.onclick=function(){_svSettingsState[key]=!_svSettingsState[key];tog.classList.toggle('on',_svSettingsState[key]);};
+    tog.onclick=function(){
+      _svSettingsState[key]=!_svSettingsState[key];
+      tog.classList.toggle('on',_svSettingsState[key]);
+      if(dbCol&&item&&item.id&&item.id.indexOf('st')!==0){
+        var upd={};upd[dbCol]=_svSettingsState[key];
+        _sb.from('stories').update(upd).eq('id',item.id).then(function(){});
+      }
+      if(dbCol&&item)item[key]=_svSettingsState[key];
+      if(key==='allowSharing'){
+        var sb=document.getElementById('sv-share-btn');
+        if(sb)sb.style.display=_svSettingsState.allowSharing?'':'none';
+      }
+      if(key==='showViewCount'){
+        var vcBtn=document.querySelector('#sv-acts button[onclick="openViewsSheet()"]');
+        if(vcBtn)vcBtn.style.visibility=_svSettingsState.showViewCount?'visible':'hidden';
+      }
+    };
     row.appendChild(left);row.appendChild(tog);content.appendChild(row);
   }
   function mkAudience(){
@@ -8512,11 +8545,8 @@ function svOpenSettings(){
   }
   mkAudience();
   mkSection('Interactions');
-  mkToggle('Allow Replies','Let people reply to this moment','allowReplies');
-  mkToggle('Allow Sharing','Let people share this moment','allowSharing');
-  mkToggle('Show View Count','Display how many people have seen it','showViewCount');
-  mkSection('Save & Archive');
-  mkToggle('Auto-save to Device','Save a copy before it fades','saveToDevice');
+  mkToggle('Allow Sharing','Let people share this moment','allowSharing','allow_sharing');
+  mkToggle('Show View Count','Show view count on your own story','showViewCount','show_view_count');
   mkDuration();
   var bg=document.getElementById('sv-settings-bg');
   var sh=document.getElementById('sv-settings-sheet');
@@ -8626,9 +8656,10 @@ function svRiFocus(){
   if(!svPaused){
     svPaused=true;clearTimeout(svTmr);
     var elapsed=Date.now()-svBarStart;
-    svBarDone=Math.min(svBarDone+elapsed,5000);
+    var _d=svGetDur();
+    svBarDone=Math.min(svBarDone+elapsed,_d);
     var f=document.getElementById('svf-'+svII);
-    if(f){var pct=(svBarDone/5000)*100;f.style.transition='none';f.style.width=pct+'%';}
+    if(f){var pct=(svBarDone/_d)*100;f.style.transition='none';f.style.width=pct+'%';}
   }
 }
 function svRiBlur(){
@@ -8679,6 +8710,14 @@ function renderSVFrame(animate){
   if(item.img){var im=document.createElement('img');im.src=item.img;im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';if(item.imgFilter&&item.imgFilter!=='none')im.style.filter=item.imgFilter;body.insertBefore(im,body.firstChild);}
   else{var f3=SC_FONTS[item.fi||1];var bg=document.createElement('div');bg.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:48px 36px;background:'+(item.bg||'#111');if(item.text){var p2=document.createElement('p');p2.style.cssText='font-family:'+f3.ff+';font-size:28px;font-style:'+f3.fs+';font-weight:'+f3.fw+';text-align:center;line-height:1.5;color:'+(item.tc||'#fff');p2.textContent=item.text;bg.appendChild(p2);}body.insertBefore(bg,body.firstChild);}
   if(g.user.id==='demo'){
+    // Sync per-frame settings state from item
+    _svSettingsState.showViewCount=(typeof item.showViewCount!=='undefined')?item.showViewCount:true;
+    _svSettingsState.allowSharing=(typeof item.allowSharing!=='undefined')?item.allowSharing:true;
+    _svSettingsState.audience=item.audience||'followers';
+    var vcBtn=document.querySelector('#sv-acts button[onclick="openViewsSheet()"]');
+    if(vcBtn)vcBtn.style.visibility=_svSettingsState.showViewCount?'visible':'hidden';
+    var shrBtn=document.querySelector('#sv-acts button[onclick="svShare()"]');
+    if(shrBtn)shrBtn.style.display=_svSettingsState.allowSharing?'':'none';
     var sp=document.getElementById('vc-count');
     var vc=svViews[svGI+'-'+svII]||[];
     if(sp)sp.textContent=vc.length; // show local count instantly
@@ -8697,12 +8736,14 @@ function renderSVFrame(animate){
   }
   if(animate){body.style.opacity='0';requestAnimationFrame(function(){body.style.transition='opacity .18s ease';body.style.opacity='1';setTimeout(function(){body.style.transition='';},200);});}
 }
+function svGetDur(){return(_svSettingsState.duration||5)*1000;}
 function startSVTmr(){
   clearTimeout(svTmr);svBarDone=0;svPaused=false;svBarStart=Date.now();
+  var dur=svGetDur();
   var isOwn=svGroups[svGI]&&(svGroups[svGI].user.id==='demo'||(profile&&svGroups[svGI].user.id===profile.id));
   var f=document.getElementById('svf-'+svII);
-  if(f){f.style.transition='none';f.style.width='0%';requestAnimationFrame(function(){requestAnimationFrame(function(){f.style.transition='width 5s linear';f.style.width='100%';});});}
-  svTmr=setTimeout(function(){svBarDone=0;svNext();},5000);
+  if(f){f.style.transition='none';f.style.width='0%';requestAnimationFrame(function(){requestAnimationFrame(function(){f.style.transition='width '+(dur/1000)+'s linear';f.style.width='100%';});});}
+  svTmr=setTimeout(function(){svBarDone=0;svNext();},dur);
 }
 function svNext(){if(svViewsOpen)return;clearTimeout(svTmr);svBarDone=0;svPaused=false;var g=svGroups[svGI];if(!g)return closeSV();var isOwn=g.user.id==='demo'||(profile&&g.user.id===profile.id);if(svII<g.items.length-1){svII++;renderSVFrame(true);startSVTmr();}else if(isOwn){// Own story last frame -- just close
 closeSV();}else{// If opened from talk or chat, close instead of jumping to another user's story
