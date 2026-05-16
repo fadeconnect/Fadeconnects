@@ -8098,7 +8098,14 @@ var _svSettingsState={allowReplies:true,showViewCount:true,allowSharing:true,sav
 var _svMenuCloseTmr=null;
 function svOpenMenu(){
   clearTimeout(_svMenuCloseTmr);_svMenuCloseTmr=null;
-  svPaused=true;clearTimeout(svTmr);
+  // Freeze progress bar at current position
+  if(!svPaused){
+    svPaused=true;clearTimeout(svTmr);
+    var elapsed=Date.now()-svBarStart;
+    svBarDone=Math.min(svBarDone+elapsed,5000);
+    var _f=document.getElementById('svf-'+svII);
+    if(_f){_f.style.transition='none';_f.style.width=(svBarDone/5000*100)+'%';}
+  }
   var g=svGroups[svGI];var item=g&&g.items[svII];
   var isOwn=g&&(g.user.id==='demo'||(profile&&g.user.id===profile.id));
   var items=document.getElementById('sv-menu-items');
@@ -8146,7 +8153,7 @@ function svOpenMenu(){
 function svCloseMenu(){
   var bg=document.getElementById('sv-menu-bg');bg.classList.remove('on');
   clearTimeout(_svMenuCloseTmr);
-  _svMenuCloseTmr=setTimeout(function(){_svMenuCloseTmr=null;svPaused=false;startSVTmr();},280);
+  _svMenuCloseTmr=setTimeout(function(){_svMenuCloseTmr=null;svHoldEnd();},280);
 }
 function _svReportStory(item,reportedUid){
   // Show report category sheet
