@@ -496,6 +496,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 @keyframes cwDDPop{from{opacity:0;transform:scale(.93) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .cw-dd-item{display:flex;align-items:center;gap:13px;padding:13px 16px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
 .cw-dd-item:last-child{border-bottom:none}
+.cw-dd-item.danger+.cw-dd-item.danger{border-top:none;border-bottom:none}
 .cw-dd-item:active{background:var(--inp-bg)}
 .cw-dd-item.danger{color:#E8352A}
 .cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
@@ -5111,10 +5112,11 @@ function openEditCaption(postId){
   };
   row.appendChild(cancel);row.appendChild(save);items.appendChild(row);
   var ddbg=document.getElementById('dd-bg'),ddsh=document.getElementById('dd-sheet');
+  ddsh._swipeInited=false;
   ddbg.onclick=function(ev){ev.stopPropagation();closeDD();};
-  ddbg.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){ddbg.style.background='rgba(0,0,0,.25)';ddsh.style.transform='translateY(0)';});});
-  (function(){ initSheetSwipe(ddsh,null,function(){closeDD();}); })();
+  ddbg.classList.add('on');
+  requestAnimationFrame(function(){requestAnimationFrame(function(){ddsh.style.transform='translateY(0)';});});
+  initSheetSwipe(ddsh,null,function(){closeDD();});
   setTimeout(function(){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},420);
 }
 
@@ -5150,9 +5152,11 @@ function openChangeAudience(postId){
     items.appendChild(row);
   });
   var ddbg=document.getElementById('dd-bg'),ddsh=document.getElementById('dd-sheet');
+  ddsh._swipeInited=false;
   ddbg.onclick=function(ev){ev.stopPropagation();closeDD();};
-  ddbg.style.display='flex';
-  requestAnimationFrame(function(){requestAnimationFrame(function(){ddbg.style.background='rgba(0,0,0,.25)';ddsh.style.transform='translateY(0)';});});
+  ddbg.classList.add('on');
+  requestAnimationFrame(function(){requestAnimationFrame(function(){ddsh.style.transform='translateY(0)';});});
+  initSheetSwipe(ddsh,null,function(){closeDD();});
 }
 
 // -- SHARE POST ---------------------------------------------------------------
@@ -8822,11 +8826,11 @@ function openViewsSheet(){
         return{user:{id:u.id,display_name:u.display_name||u.username||'User',username:u.username||'',avatar_url:u.avatar_url||null},liked:likedByIds.has(r.user_id)};
       });
       var liked=views.filter(function(v){return v.liked;}).length;
-      document.getElementById('views-title').textContent='Views '+views.length+(liked?' . <3️ '+liked:'');
+      document.getElementById('views-title').textContent='Views '+views.length+(liked?' . ❤️ '+liked:'');
       list.innerHTML='';
       views.forEach(function(v){
         var row=document.createElement('div');row.className='view-row';
-        row.innerHTML='<div class="view-av" style="background:'+nc(v.user.display_name||v.user.username)+'">'+avH(v.user.avatar_url,v.user.display_name||v.user.username)+'</div><div class="view-name">'+E(v.user.display_name||v.user.username)+'</div>'+(v.liked?'<span style="font-size:20px"><3️</span>':'');
+        row.innerHTML='<div class="view-av" style="background:'+nc(v.user.display_name||v.user.username)+'">'+avH(v.user.avatar_url,v.user.display_name||v.user.username)+'</div><div class="view-name">'+E(v.user.display_name||v.user.username)+'</div>'+(v.liked?'<span style="font-size:20px">❤️</span>':'');
         if(v.user.id!==profile.id){
           (function(user){
             row.onclick=function(){
@@ -11466,7 +11470,7 @@ function renderCSList(){
           if(uid===profile.id)return verificationState.status==='approved';
           var u=USERS.find(function(x){return x.id===uid;});return !!(u&&u.is_verified);
         })(r.uid||null);
-        rnameEl.innerHTML='@'+E(rHandle)+(replyVerified?BADGE_INLINE:'');
+        rnameEl.innerHTML='@'+E(rHandle)+badgeFor(r.uid||null);
         rnameEl.onclick=rUser?function(){openProfFromCS(rUser);}:null;
         rav.onclick=rUser?function(){openProfFromCS(rUser);}:null;
         rtxtEl.innerHTML=renderMentions(r.text);
@@ -11967,10 +11971,19 @@ function openProf(u){
   Promise.all([
     profileFetch,
     _sb.from('follows').select('follower_id',{count:'exact',head:true}).eq('following_id',uid),
-    _sb.from('follows').select('following_id',{count:'exact',head:true}).eq('follower_id',uid)
+    _sb.from('follows').select('following_id',{count:'exact',head:true}).eq('follower_id',uid),
+    // Live-check if WE follow this user (handles accepted requests refreshing correctly)
+    profile?_sb.from('follows').select('follower_id').eq('follower_id',profile.id).eq('following_id',uid):Promise.resolve({data:[]}),
+    // Live-check if we have a pending request
+    profile?_sb.from('follow_requests').select('status').eq('requester_id',profile.id).eq('requested_id',uid).maybeSingle():Promise.resolve({data:null})
   ]).then(function(results){
     var folCount=results[1].count||0;
     var fingCount=results[2].count||0;
+    var isNowFollowing=!!(results[3]&&results[3].data&&results[3].data.length);
+    var pendingReq=results[4]&&results[4].data&&results[4].data.status==='pending';
+    // Sync local following set with live DB state
+    if(isNowFollowing)following.add(uid);
+    else following.delete(uid);
     // Update cached USERS entry so repeat opens are accurate
     var cached=USERS.find(function(x){return x.id===uid;});
     if(cached){cached.followers=folCount;cached.following=fingCount;}
@@ -11980,6 +11993,25 @@ function openProf(u){
       var fgEl=document.getElementById('prof-fing-n');
       if(fnEl)fnEl.textContent=folCount;
       if(fgEl)fgEl.textContent=fingCount;
+      // Sync follow button to live state
+      var fb=document.getElementById('fb-'+uid);
+      if(fb){
+        if(isNowFollowing){
+          fb.textContent='Following';fb.classList.remove('dark');
+          fb.style.background='transparent';fb.style.color='var(--text)';fb.style.border='1.5px solid var(--border)';
+          fb.dataset.pending='';
+        } else if(pendingReq){
+          fb.textContent='Requested';fb.classList.remove('dark');
+          fb.style.background='transparent';fb.style.color='var(--text)';fb.style.border='1.5px solid var(--border)';
+          fb.dataset.pending='1';
+        } else {
+          fb.textContent='Follow';fb.classList.add('dark');
+          fb.style.background='';fb.style.color='';fb.style.border='';
+          fb.dataset.pending='';
+        }
+      }
+      // Also re-render the private wall/grid if follow state changed
+      _renderProfBody(full,folCount,fingCount);
     }
   });
 }
