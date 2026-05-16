@@ -465,17 +465,27 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* CW header action buttons */
 .cw-hdr-actions{display:flex;align-items:center;gap:0;margin-left:auto;flex-shrink:0}
 /* CW Search bar */
-#cw-search-bar{display:none;align-items:center;gap:8px;padding:7px 14px 9px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;animation:cwSlideDown .2s ease}
-#cw-search-bar.on{display:flex}
-@keyframes cwSlideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.cw-search-wrap{flex:1;background:var(--inp-bg);border-radius:22px;display:flex;align-items:center;gap:7px;padding:9px 14px}
-.cw-search-wrap svg{flex-shrink:0;opacity:.4}
-.cw-search-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14.5px;font-family:'Inter',sans-serif;letter-spacing:-.01em}
+/* CHAT SEARCH BAR — slides in with max-height, never clips */
+#cw-search-bar{display:block;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden;max-height:0;opacity:0;transition:max-height .22s cubic-bezier(.4,0,.2,1),opacity .18s ease}
+#cw-search-bar.on{max-height:58px;opacity:1}
+.cw-search-inner{display:flex;align-items:center;padding:8px 10px 10px;gap:6px}
+.cw-search-wrap{flex:1;min-width:0;background:var(--inp-bg);border-radius:20px;display:flex;align-items:center;gap:6px;padding:8px 10px}
+.cw-search-wrap svg{flex-shrink:0;color:var(--sub)}
+.cw-search-wrap input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:'Inter',sans-serif;letter-spacing:-.01em;-webkit-user-select:text;user-select:text}
 .cw-search-wrap input::placeholder{color:var(--inp-ph)}
-.cw-search-cancel{color:var(--sub);font-size:13.5px;font-weight:500;cursor:pointer;flex-shrink:0;padding:4px 0 4px 4px;letter-spacing:-.01em}
-/* msg search highlight */
-.msg-srch-hl{background:rgba(255,255,100,.55);border-radius:3px;padding:0 1px;color:var(--text)}
-.bubble.me .msg-srch-hl{background:rgba(255,255,100,.38);color:#fff}
+#cw-search-clear{background:none;border:none;padding:0;cursor:pointer;display:none;flex-shrink:0;color:var(--sub);align-items:center;justify-content:center}
+#cw-search-clear.on{display:flex}
+.cw-match-count{font-size:12px;color:var(--sub);font-weight:500;flex-shrink:0;width:34px;text-align:center;opacity:0;transition:opacity .15s}
+.cw-match-count.on{opacity:1}
+.cw-nav-btn{background:none;border:none;cursor:pointer;padding:4px 3px;color:var(--text);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.28;transition:opacity .12s,transform .1s}
+.cw-nav-btn.on{opacity:1}
+.cw-nav-btn:active{transform:scale(.82)}
+.cw-search-cancel{color:var(--sub);font-size:13.5px;font-weight:500;cursor:pointer;flex-shrink:0;user-select:none;padding:4px 0 4px 2px;letter-spacing:-.01em}
+/* msg search highlights */
+.msg-srch-hl{background:rgba(255,210,0,.52);border-radius:3px;padding:0;color:var(--text);transition:background .15s}
+.msg-srch-hl.current{background:rgba(255,138,0,.82);outline:2px solid rgba(255,128,0,.3)}
+.bubble.me .msg-srch-hl{background:rgba(255,210,0,.38);color:#fff}
+.bubble.me .msg-srch-hl.current{background:rgba(255,138,0,.75)}
 /* CW dropdown */
 #cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
 #cw-dd-overlay.on{display:block}
@@ -1883,11 +1893,17 @@ body {
     </div>
   </div>
   <div id="cw-search-bar">
-    <div class="cw-search-wrap">
-      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M20.5 20.5l-4.5-4.5"/></svg>
-      <input id="cw-search-inp" type="search" placeholder="Search in conversation" oninput="cwSearchMessages(this.value)">
+    <div class="cw-search-inner">
+      <div class="cw-search-wrap">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M20.5 20.5l-4.5-4.5"/></svg>
+        <input id="cw-search-inp" type="text" placeholder="Search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" oninput="cwSearchMessages(this.value)">
+        <button id="cw-search-clear" onclick="cwClearSearch()" aria-label="Clear"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></button>
+      </div>
+      <span class="cw-match-count" id="cw-match-count"></span>
+      <button class="cw-nav-btn" id="cw-nav-up" onclick="cwStepMatch(-1)" aria-label="Previous match"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg></button>
+      <button class="cw-nav-btn" id="cw-nav-dn" onclick="cwStepMatch(1)" aria-label="Next match"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <span class="cw-search-cancel" onclick="cwCloseSearch()">Cancel</span>
     </div>
-    <span class="cw-search-cancel" onclick="cwCloseSearch()">Cancel</span>
   </div>
   <div id="cw-dd-overlay" onclick="cwCloseDD()">
     <div id="cw-dd" onclick="event.stopPropagation()">
@@ -10616,47 +10632,57 @@ function sendMsg(){
 /* ── CW HEADER: Search, Dropdown, Media, Confirm ── */
 var _mutedConvos=new Set();
 var _cwSearchOpen=false;
+var _cwMatches=[];
+var _cwMatchIdx=0;
 var _cwMediaMode='photos';
 
 function cwToggleSearch(){
   _cwSearchOpen=!_cwSearchOpen;
   var bar=document.getElementById('cw-search-bar');
   bar.classList.toggle('on',_cwSearchOpen);
-  if(_cwSearchOpen){setTimeout(function(){var i=document.getElementById('cw-search-inp');if(i)i.focus();},80);}
-  else{cwSearchMessages('');var i=document.getElementById('cw-search-inp');if(i)i.value='';}
+  if(_cwSearchOpen){
+    setTimeout(function(){var i=document.getElementById('cw-search-inp');if(i)i.focus();},200);
+  } else {
+    cwCloseSearch();
+  }
 }
 function cwCloseSearch(){
   _cwSearchOpen=false;
-  var bar=document.getElementById('cw-search-bar');
-  bar.classList.remove('on');
+  document.getElementById('cw-search-bar').classList.remove('on');
+  var inp=document.getElementById('cw-search-inp');if(inp)inp.value='';
   cwSearchMessages('');
-  var i=document.getElementById('cw-search-inp');if(i)i.value='';
+}
+function cwClearSearch(){
+  var inp=document.getElementById('cw-search-inp');if(inp){inp.value='';inp.focus();}
+  cwSearchMessages('');
 }
 function cwSearchMessages(q){
   var msgs=document.getElementById('msgs');
   if(!msgs)return;
-  // Remove previous highlights
+  // Remove all previous highlights
   msgs.querySelectorAll('.msg-srch-hl').forEach(function(s){
     var p=s.parentNode;p.replaceChild(document.createTextNode(s.textContent),s);p.normalize();
   });
-  if(!q||q.length<1)return;
+  _cwMatches=[];
+  _cwMatchIdx=0;
+  // Toggle clear button
+  var clr=document.getElementById('cw-search-clear');
+  if(clr)clr.classList.toggle('on',q&&q.length>0);
+  if(!q||q.length<1){cwUpdateSearchNav();return;}
   var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
-  msgs.querySelectorAll('.bubble:not(.sys)').forEach(function(b){
-    // Only highlight text nodes inside bubbles, not inside img/svg
-    walkTextNodes(b,re);
-  });
-  // Scroll to first match
-  var first=msgs.querySelector('.msg-srch-hl');
-  if(first)first.scrollIntoView({block:'center',behavior:'smooth'});
+  msgs.querySelectorAll('.bubble:not(.sys)').forEach(function(b){walkTextNodes(b,re);});
+  _cwMatches=Array.from(msgs.querySelectorAll('.msg-srch-hl'));
+  if(_cwMatches.length>0){cwSetCurrent(0);}
+  cwUpdateSearchNav();
 }
 function walkTextNodes(node,re){
   if(node.nodeType===3){
     var val=node.nodeValue;
+    re.lastIndex=0;
     if(!re.test(val)){re.lastIndex=0;return;}
     re.lastIndex=0;
     var frag=document.createDocumentFragment();
     var last=0,m;
-    re.lastIndex=0;
     while((m=re.exec(val))!==null){
       if(m.index>last)frag.appendChild(document.createTextNode(val.slice(last,m.index)));
       var span=document.createElement('span');span.className='msg-srch-hl';span.textContent=m[0];frag.appendChild(span);
@@ -10668,6 +10694,34 @@ function walkTextNodes(node,re){
   }
   if(node.nodeType===1&&(node.tagName==='IMG'||node.tagName==='SVG'||node.tagName==='VIDEO'))return;
   Array.from(node.childNodes).forEach(function(c){walkTextNodes(c,re);});
+}
+function cwSetCurrent(idx){
+  _cwMatches.forEach(function(s){s.classList.remove('current');});
+  if(_cwMatches[idx]){
+    _cwMatches[idx].classList.add('current');
+    _cwMatches[idx].scrollIntoView({block:'center',behavior:'smooth'});
+  }
+}
+function cwStepMatch(dir){
+  if(_cwMatches.length===0)return;
+  _cwMatchIdx=(_cwMatchIdx+dir+_cwMatches.length)%_cwMatches.length;
+  cwSetCurrent(_cwMatchIdx);
+  cwUpdateSearchNav();
+}
+function cwUpdateSearchNav(){
+  var total=_cwMatches.length;
+  var countEl=document.getElementById('cw-match-count');
+  var upBtn=document.getElementById('cw-nav-up');
+  var dnBtn=document.getElementById('cw-nav-dn');
+  var q=document.getElementById('cw-search-inp');
+  var hasQ=q&&q.value&&q.value.length>0;
+  if(countEl){
+    if(!hasQ){countEl.textContent='';countEl.classList.remove('on');}
+    else if(total===0){countEl.textContent='0';countEl.classList.add('on');}
+    else{countEl.textContent=(_cwMatchIdx+1)+'/'+total;countEl.classList.add('on');}
+  }
+  if(upBtn)upBtn.classList.toggle('on',total>0);
+  if(dnBtn)dnBtn.classList.toggle('on',total>0);
 }
 
 function cwToggleDD(e){
