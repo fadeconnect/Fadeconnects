@@ -4339,6 +4339,8 @@ function renderNotifs(){
       msg=actorLabel+' mentioned you'+(extra.mentionText?' <span style="color:var(--sub);font-weight:400">. '+E(extra.mentionText.slice(0,30))+'</span>':'');
     else if(n.type==='admin_verify_request')
       msg='<strong>'+E(name)+'</strong> submitted a <strong>verification request</strong>';
+    else if(n.type==='follow_request')
+      msg=actorLabel+' sent you a follow request';
     else if(n.type==='follow')
       msg=actorLabel+' started following you';
     else if(n.type==='message')
@@ -4378,9 +4380,18 @@ function renderNotifs(){
       }
     }
 
-    // Story thumbnail for story_like
-    if(n.type==='story_like'&&n.extra&&n.extra.gi!=null){
-      var sg=svGroups[n.extra.gi];var si2=sg&&sg.items&&sg.items[n.extra.ii||0];
+    // Story thumbnail for story_like — look up by storyId UUID, fall back to gi index
+    if(n.type==='story_like'){
+      var _sid=n.extra&&n.extra.storyId;
+      var si2=null;
+      if(_sid){
+        // Search all groups for a matching story item by UUID
+        for(var _sgi=0;_sgi<svGroups.length;_sgi++){
+          var _sg=svGroups[_sgi];
+          if(_sg&&_sg.items){var _found=_sg.items.find(function(it){return it.id===_sid;});if(_found){si2=_found;break;}}
+        }
+      }
+      if(!si2&&n.extra&&n.extra.gi!=null){var sg2=svGroups[n.extra.gi];si2=sg2&&sg2.items&&sg2.items[n.extra.ii||0];}
       if(si2&&si2.img){
         postThumb='<div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--border)"><img src="'+si2.img+'" style="width:100%;height:100%;object-fit:cover;display:block"/></div>';
       } else if(si2){
@@ -4401,11 +4412,16 @@ function renderNotifs(){
     } else if(n.type==='follow'&&a&&a.id){
       var isFollowingBack=following.has(a.id);
       rightHTML='<button id="fbn-'+n.id+'" style="background:'+(isFollowingBack?'transparent':'var(--text)')+';color:'+(isFollowingBack?'var(--text)':'var(--card)')+';border:1.5px solid var(--text);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(isFollowingBack?'Following':'Follow back')+'</button>';
+    } else if(n.type==='follow_request'&&a&&a.id){
+      rightHTML='<div style="display:flex;gap:6px;flex-shrink:0">'+
+        '<button id="freq-acc-'+n.id+'" style="background:var(--text);color:var(--card);border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap">Accept</button>'+
+        '<button id="freq-dec-'+n.id+'" style="background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap">Decline</button>'+
+        '</div>';
     } else {
       rightHTML='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">'+(!n.read?'<div class="ni-dot" id="ndot-'+n.id+'"></div>':'')+'<div class="ni-time" data-ts="'+n.ts+'">'+ago(n.ts)+'</div></div>';
     }
 
-    el.innerHTML='<div class="ni-av" style="background:'+nc(a.display_name||a.username)+'">'+avH(a.avatar_url,a.display_name||a.username)+'</div><div class="ni-txt">'+msg+'</div>'+postThumb+rightHTML;
+    el.innerHTML=avHTML+'<div class="ni-txt">'+msg+'</div>'+postThumb+rightHTML;
     // stagger entrance
     el.classList.add('anim-fade-up');
     el.style.animationDelay=(Math.min(display.indexOf(n),8)*25)+'ms';
@@ -4460,7 +4476,25 @@ function renderNotifs(){
       }
     }
 
-    // Avatar tap -> skip for verification (no user); own avatar -> Me tab; others -> profile
+    // follow_request Accept / Decline button wiring
+    if(n.type==='follow_request'&&a&&a.id){
+      var accBtn=el.querySelector('#freq-acc-'+n.id);
+      var decBtn=el.querySelector('#freq-dec-'+n.id);
+      if(accBtn)(function(actor,notif,ab,db){
+        ab.addEventListener('click',function(e){
+          e.stopPropagation();
+          ab.textContent='Accepted';ab.style.opacity='0.5';ab.disabled=true;if(db)db.style.display='none';
+          acceptFollowReq(actor.id,notif.id);
+        });
+      })(a,n,accBtn,decBtn);
+      if(decBtn)(function(actor,notif,ab,db){
+        db.addEventListener('click',function(e){
+          e.stopPropagation();
+          db.textContent='Declined';db.style.opacity='0.5';db.disabled=true;if(ab)ab.style.display='none';
+          declineFollowReq(actor.id,notif.id);
+        });
+      })(a,n,accBtn,decBtn);
+    }
     var avEl=el.querySelector('.ni-av')||(n.type==='verification'?null:el.querySelector('div[style*="border-radius:12px"]'));
     if(avEl&&n.type!=='verification'&&a&&a.id){
       (function(actor,notif){
@@ -4979,7 +5013,7 @@ function buildPost(p, showDelete){
         var rect=el.getBoundingClientRect();
         var h=document.createElement('div');
         h.className='dt-heart';
-        h.textContent='<3️';
+        h.textContent='❤️';
         h.style.left=(touch.clientX-rect.left-40)+'px';
         h.style.top=(touch.clientY-rect.top-40)+'px';
         el.style.position='relative';
@@ -8572,6 +8606,10 @@ function svLike(){
     _sb.from('story_likes').upsert({story_id:storyId,user_id:profile.id},{onConflict:'story_id,user_id'}).then(function(){});
     // update local views entry liked flag
     var k=svKey();var views=svViews[k]||[];var ve=views.find(function(v){return v.user.id===profile.id;});if(ve)ve.liked=true;
+    // Notify story owner
+    if(g.user&&g.user.id&&g.user.id!==profile.id){
+      pushN('story_like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},null,{storyId:storyId,storyText:(item.text||'').slice(0,40)},g.user.id);
+    }
   } else {
     _sb.from('story_likes').delete().eq('story_id',storyId).eq('user_id',profile.id).then(function(){});
     var k2=svKey();var views2=svViews[k2]||[];var ve2=views2.find(function(v){return v.user.id===profile.id;});if(ve2)ve2.liked=false;
@@ -11366,6 +11404,8 @@ function renderCSList(){
                 comment.likes=real;hc.textContent=real>0?real:'';
               });
             });
+            // pushN comment_like with debounce
+            if(comment.uid&&comment.uid!==profile.id){if(comment._likeNotifTimer)clearTimeout(comment._likeNotifTimer);comment._likeNotifTimer=setTimeout(function(){pushN('comment_like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},p.id,{commentText:(comment.text||'').slice(0,40)},comment.uid);},500);}
           } else {
             _sb.from('comment_likes').delete().eq('comment_id',comment.id).eq('user_id',profile.id).then(function(){
               _sb.from('comment_likes').select('comment_id',{count:'exact',head:true}).eq('comment_id',comment.id).then(function(cr){
@@ -11373,6 +11413,7 @@ function renderCSList(){
                 comment.likes=real;hc.textContent=real>0?real:'';
               });
             });
+            if(comment._likeNotifTimer){clearTimeout(comment._likeNotifTimer);comment._likeNotifTimer=null;}
           }
         }
       };
@@ -11442,7 +11483,10 @@ function renderCSList(){
         rhBtn.innerHTML='<svg width="14" height="14" fill="'+(r.liked?'#E8352A':'none')+'" stroke="'+(r.liked?'#E8352A':'currentColor')+'" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
         var rhCount=document.createElement('div');rhCount.className='cheart-count';rhCount.textContent=r.likes>0?r.likes:'';
         (function(reply,hb,hc,post,commentIdx,replyIdx){hb.onclick=function(){reply.liked=!reply.liked;reply.likes=Math.max(0,(reply.likes||0)+(reply.liked?1:-1));hb.className='cheart'+(reply.liked?' liked':'');hb.innerHTML='<svg width="14" height="14" fill="'+(reply.liked?'#E8352A':'none')+'" stroke="'+(reply.liked?'#E8352A':'currentColor')+'" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';hc.textContent=reply.likes>0?reply.likes:'';SFX(reply.liked?'like':'unlike');
-          if(profile&&profile.id){if(reply.liked){_sb.from('comment_likes').insert({comment_id:reply.id,user_id:profile.id}).then(function(){_sb.from('comment_likes').select('comment_id',{count:'exact',head:true}).eq('comment_id',reply.id).then(function(cr){var real=cr.count||reply.likes;reply.likes=real;hc.textContent=real>0?real:'';});});}else{_sb.from('comment_likes').delete().eq('comment_id',reply.id).eq('user_id',profile.id).then(function(){_sb.from('comment_likes').select('comment_id',{count:'exact',head:true}).eq('comment_id',reply.id).then(function(cr){var real=Math.max(0,cr.count||0);reply.likes=real;hc.textContent=real>0?real:'';});});}}
+          if(profile&&profile.id){if(reply.liked){_sb.from('comment_likes').insert({comment_id:reply.id,user_id:profile.id}).then(function(){_sb.from('comment_likes').select('comment_id',{count:'exact',head:true}).eq('comment_id',reply.id).then(function(cr){var real=cr.count||reply.likes;reply.likes=real;hc.textContent=real>0?real:'';});});
+            // pushN reply_like with debounce
+            if(reply.uid&&reply.uid!==profile.id){if(reply._likeNotifTimer)clearTimeout(reply._likeNotifTimer);reply._likeNotifTimer=setTimeout(function(){pushN('reply_like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},post.id,{replyText:(reply.text||'').slice(0,40)},reply.uid);},500);}
+          }else{_sb.from('comment_likes').delete().eq('comment_id',reply.id).eq('user_id',profile.id).then(function(){_sb.from('comment_likes').select('comment_id',{count:'exact',head:true}).eq('comment_id',reply.id).then(function(cr){var real=Math.max(0,cr.count||0);reply.likes=real;hc.textContent=real>0?real:'';});});if(reply._likeNotifTimer){clearTimeout(reply._likeNotifTimer);reply._likeNotifTimer=null;}}}
         };})(r,rhBtn,rhCount,p,ci,c.replies.indexOf(r));
         rhWrap.appendChild(rhBtn);rhWrap.appendChild(rhCount);
 
@@ -11535,6 +11579,15 @@ function addComment(){
     });
     // Pass recipientId directly -- works even if post isn't in caller's feed
     pushN('comment',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},csPid,{commentText:txt.slice(0,40)},postOwnerId);
+    // Scan for @mentions and notify each mentioned user (excluding post owner to avoid double-notif)
+    var _mentionMatches=txt.match(/@([A-Za-z0-9_]+)/g)||[];
+    _mentionMatches.forEach(function(m){
+      var handle=m.slice(1).toLowerCase();
+      var mentionedUser=USERS.find(function(u){return (u.username||'').toLowerCase()===handle;});
+      if(mentionedUser&&mentionedUser.id!==profile.id&&mentionedUser.id!==postOwnerId){
+        pushN('mention',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},csPid,{mentionText:txt.slice(0,40)},mentionedUser.id);
+      }
+    });
   }
 }
 
@@ -11819,7 +11872,7 @@ function _renderProfBody(full, followerCount, followingCount){
       '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">'+
         '<div id="prof-av-wrap" style="'+avWrapStyle+'"><div style="border-radius:50%;overflow:hidden;width:76px;height:76px;background:var(--card)'+(profHasStory?';padding:2px':'')+'">'+avContent+'</div></div>'+
         '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">'+
-          '<div style="display:flex;align-items:center;gap:5px"><span style="font-weight:700;font-size:15px;color:var(--text)">'+E(full.display_name)+'</span>'+badgeFor(full.id)+'</div>'+
+          '<div style="display:flex;align-items:center;gap:5px"><span style="font-weight:700;font-size:15px;color:var(--text)">'+E(full.display_name)+'</span>'+badgeFor(full.id)+(full.is_private?'<svg width="13" height="13" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>':'')+'</div>'+
           '<div style="display:flex;justify-content:space-around">'+
             '<div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-weight:700;font-size:17px;color:var(--text)">'+myPosts.length+'</span><span style="font-size:12px;color:var(--sub)">Drops</span></div>'+
             '<div id="prof-fol-count" onclick="openFollowSheet(\''+full.id+'\',\'followers\')" style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer"><span style="font-weight:700;font-size:17px;color:var(--text)" id="prof-fol-n">'+followerCount+'</span><span style="font-size:12px;color:var(--sub)">Followers</span></div>'+
@@ -11853,7 +11906,16 @@ function _renderProfBody(full, followerCount, followingCount){
   attachAvatarInteractions(profAvWrap, full.avatar_url||null, false, full.id);
   var g=document.getElementById('prof-grid');
   g.innerHTML='';g.className='';g.style.cssText='background:var(--bg)';
-  if(!myPosts.length){
+  // Private account wall — hide grid for non-followers who aren't the owner
+  var _isPrivateWall=full.is_private&&profile&&full.id!==profile.id&&!following.has(full.id);
+  if(_isPrivateWall){
+    g.style.cssText='background:var(--card);padding:52px 22px;text-align:center;border-top:1px solid var(--border)';
+    g.innerHTML='<div class="anim-fade-up" style="display:flex;flex-direction:column;align-items:center;gap:12px">'+
+      '<svg width="40" height="40" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+      '<div style="font-weight:700;font-size:15px;color:var(--text)">This account is private</div>'+
+      '<div style="font-size:13.5px;color:var(--sub);line-height:1.55;max-width:220px">Follow '+E(full.display_name)+' to see their drops.</div>'+
+      '</div>';
+  } else if(!myPosts.length){
     g.style.cssText='background:var(--card);padding:44px 22px;text-align:center';
     g.innerHTML='<div style="color:var(--sub);font-size:13.5px" class="anim-fade-up">Nothing dropped yet.</div>';
   } else {
@@ -12121,6 +12183,33 @@ function toggleFollow(uid,btn){
     }
   });
 }
+function acceptFollowReq(actorId, notifId){
+  if(!profile||!actorId)return;
+  // Insert into follows
+  _sb.from('follows').insert({follower_id:actorId,following_id:profile.id}).then(function(){});
+  // Delete from follow_requests
+  _sb.from('follow_requests').delete().eq('requester_id',actorId).eq('requested_id',profile.id).then(function(){});
+  // Update local follower count
+  if(profile)profile.followers=(profile.followers||0)+1;
+  // Update follower count display on Me tab
+  var meFC=document.querySelector('#me-body [onclick*="followers"]');
+  if(meFC){var fcSpan=meFC.querySelector('span');if(fcSpan)fcSpan.textContent=profile.followers;}
+  // Notify the requester that they've been accepted (send a follow notification back)
+  pushN('follow',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},null,{},actorId);
+  // Remove the notif from the local list and re-render
+  var idx=notifs.findIndex(function(n){return n.id===notifId;});
+  if(idx>-1)notifs.splice(idx,1);
+  SFX('follow');haptic('follow');T('Request accepted');
+  renderNotifs();
+}
+function declineFollowReq(actorId, notifId){
+  if(!actorId)return;
+  _sb.from('follow_requests').delete().eq('requester_id',actorId).eq('requested_id',profile.id).then(function(){});
+  var idx=notifs.findIndex(function(n){return n.id===notifId;});
+  if(idx>-1)notifs.splice(idx,1);
+  T('Request declined');
+  renderNotifs();
+}
 function toggleCF(uid,btn){
   if(CF.has(uid)){
     CF.delete(uid);
@@ -12321,7 +12410,9 @@ function buildSRoot(){
     // Hide "Get Verified" for founder -- they already have badges automatically
     ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}}]}]),
     {title:'Content',items:[{ico:IC.cal,label:'Scheduled Posts',act:function(){soPush('Scheduled Posts',buildSchedListPage);}},{ico:IC.block,label:'Blocked Users',act:function(){soPush('Blocked Users',buildBlockedPage);}},{ico:IC.chat,label:'Comment Permissions',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="cmt-perm-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.cmtPerm]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Comment Permissions',buildCmtPage);}},{ico:IC.users,label:'Story Audience',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="story-aud-lbl">'+({everyone:'Everyone',followers:'Followers',close_friends:'Close Friends'}[S.storyAudience]||'Followers')+'</span>'+IC.chev;},act:function(){soPush('Story Audience',buildAudSettingsPage);}}]},
-    {title:'Privacy',items:[{ico:IC.shield,label:'Private Account',tog:'private'},{ico:IC.shield,label:'Hide Like Counts',tog:'hideLikes'},{ico:IC.star,label:'Close Friends',act:function(){soPush('Close Friends',buildCFPage);}},{ico:IC.chat,label:'Activity Status',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="activity-vis-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.activityVisible]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Activity Status',buildActivityPage);}}]},
+    {title:'Privacy',items:[{ico:IC.shield,label:'Private Account',tog:'private'},{ico:IC.shield,label:'Hide Like Counts',tog:'hideLikes'},{ico:IC.star,label:'Close Friends',act:function(){soPush('Close Friends',buildCFPage);}},{ico:IC.chat,label:'Activity Status',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="activity-vis-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.activityVisible]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Activity Status',buildActivityPage);}},
+    ...(S.private?[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',label:'Follow Requests',act:function(){soPush('Follow Requests',buildPendingRequestsPage);}}]:[])
+    ]},
     {title:'Notifications',items:[{ico:IC.bell,label:'Push Notifications',tog:'pushNotifs'},{ico:IC.chat,label:'Talk Notifications',tog:'talkNotifs'}]},
     {title:'Appearance',items:[{ico:IC.bell,label:'Sound Effects',togSnd:true},{ico:IC.moon,label:'Dark Mode',togDark:true}]},
     {title:'Support',items:[{ico:IC.help,label:'Report a Problem',act:function(){soPush('Report a Problem',buildReportPage);}},{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2v13M8 11l4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>',label:'Install App',sub:'Add Fade to your home screen',act:function(){if(window._a2hsDeferredPrompt){window._a2hsDeferredPrompt.prompt();window._a2hsDeferredPrompt.userChoice.then(function(){window._a2hsDeferredPrompt=null;});}else if(navigator.standalone===false||(!window.matchMedia('(display-mode: standalone)').matches&&/iPhone|iPad|iPod/.test(navigator.userAgent))){showToast('On Safari: tap the Share button, then "Add to Home Screen"');}else{showToast('Open in Safari or Chrome to install Fade');}}}]},
@@ -12712,6 +12803,57 @@ function buildSchedListPage(el){_schedListEl=el;el.innerHTML='';var wrap=documen
 function toLocalDT(ts){var d=new Date(ts);var pad=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function openSchedForm(idx){_schedEditIdx=idx;_schedImgUrl=null;var isEdit=(idx>=0&&idx<scheduled.length);var s=isEdit?scheduled[idx]:null;document.getElementById('sfp-title').textContent=isEdit?'Edit Scheduled Drop':'Schedule a Drop';var body=document.getElementById('sfp-body');body.innerHTML='';var capField=document.createElement('div');capField.className='field';capField.innerHTML='<label class="lbl">Caption</label>';var capTa=document.createElement('textarea');capTa.className='inp';capTa.rows=4;capTa.placeholder="What's fading today...";if(isEdit&&s&&s.text)capTa.value=s.text;capField.appendChild(capTa);body.appendChild(capField);var photoField=document.createElement('div');photoField.className='field';photoField.innerHTML='<label class="lbl">Photo (optional)</label>';var pu=buildPhotoUpload('sched');photoField.appendChild(pu.row);body.appendChild(photoField);if(isEdit&&s&&s.img){_schedImgUrl=s.img;}var dtField=document.createElement('div');dtField.className='field';dtField.innerHTML='<label class="lbl">Date and Time</label>';var dtWrap=document.createElement('div');dtWrap.style.cssText='position:relative';var dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.className='inp';if(!isEdit)dtInp.min=toLocalDT(Date.now());if(isEdit&&s&&s.schedAt){dtInp.value=toLocalDT(s.schedAt);}dtInp.style.cssText='padding-left:42px;color:'+(isEdit&&s&&s.schedAt?'var(--inp-text)':'transparent');var dtIco=document.createElement('span');dtIco.style.cssText='position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;color:var(--inp-ph)';dtIco.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';var dtPh=document.createElement('div');dtPh.style.cssText='position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 42px;pointer-events:none;font-size:15px;color:var(--inp-ph);font-family:Inter,sans-serif';dtPh.textContent='Pick date and time';dtPh.style.display=dtInp.value?'none':'flex';dtInp.addEventListener('change',function(){dtPh.style.display=this.value?'none':'flex';this.style.color=this.value?'var(--inp-text)':'transparent';});dtWrap.appendChild(dtInp);dtWrap.appendChild(dtIco);dtWrap.appendChild(dtPh);dtField.appendChild(dtWrap);body.appendChild(dtField);var submitBtn=document.createElement('button');submitBtn.className='btn btn-dark';submitBtn.textContent=isEdit?'Save Changes':'Schedule Drop';submitBtn.onclick=function(){var capVal=capTa.value.trim();var dtVal=dtInp.value;if(!capVal&&!pu.hasImg())return T('Add a caption or photo');if(!dtVal)return T('Pick a date and time');var schedAt=new Date(dtVal).getTime();    if(isNaN(schedAt)||schedAt<=Date.now()+60000)return T('Pick a time at least 1 minute from now');var entry={id:isEdit&&s?s.id:('sc'+Date.now()),text:capVal,img:pu.hasImg()?_schedImgUrl:null,schedAt:schedAt};if(isEdit){scheduled[idx]=entry;}else{scheduled.push(entry);}saveScheduled();SFX('drop');T(isEdit?'Updated':'Scheduled');closeSchedForm();setTimeout(function(){if(_schedListEl)buildSchedListPage(_schedListEl);},60);};body.appendChild(submitBtn);var panel=document.getElementById('sched-form-panel');panel.style.display='';panel.style.visibility='';panel.style.pointerEvents='';panel.classList.add('on');}
 function closeSchedForm(){var panel=document.getElementById('sched-form-panel');panel.style.transform='translateX(100%)';setTimeout(function(){panel.classList.remove('on');panel.style.display='';panel.style.visibility='hidden';panel.style.pointerEvents='none';panel.style.transform='';_schedImgUrl=null;},320);}
+function buildPendingRequestsPage(el){
+  el.innerHTML='';
+  var wrap=document.createElement('div');wrap.style.cssText='padding:8px 0';
+  var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:28px';loading.innerHTML='<div class="ptr-ring"></div>';
+  wrap.appendChild(loading);el.appendChild(wrap);
+  if(!profile)return;
+  _sb.from('follow_requests').select('requester_id,created_at').eq('requested_id',profile.id).eq('status','pending').then(function(res){
+    wrap.innerHTML='';
+    if(res.error||!res.data||!res.data.length){
+      wrap.innerHTML='<div class="empty" style="padding:40px 22px"><div class="empt">No pending requests</div><div class="emps">When someone requests to follow you, they\'ll appear here.</div></div>';
+      return;
+    }
+    var ids=res.data.map(function(r){return r.requester_id;});
+    _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
+      var users=pr.data||[];
+      if(!users.length){wrap.innerHTML='<div class="empty" style="padding:40px 22px"><div class="empt">No pending requests</div></div>';return;}
+      users.forEach(function(u){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:13px;padding:13px 16px';
+        var avDiv=document.createElement('div');avDiv.style.cssText='width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username);avDiv.innerHTML=avH(u.avatar_url,u.display_name||u.username);
+        avDiv.style.cursor='pointer';avDiv.onclick=function(){soBack();setTimeout(function(){openProf(u);},260);};
+        var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+        info.innerHTML='<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username)+'</div><div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>';
+        var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0';
+        var accB=document.createElement('button');accB.style.cssText='background:var(--text);color:var(--card);border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';accB.textContent='Accept';
+        var decB=document.createElement('button');decB.style.cssText='background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';decB.textContent='Decline';
+        (function(uid,aBtn,dBtn,r){
+          aBtn.onclick=function(){
+            aBtn.textContent='✓';aBtn.style.opacity='0.5';aBtn.disabled=true;dBtn.style.display='none';
+            // find a fake notifId — use uid as key since we don't have a notif object here
+            _sb.from('follows').insert({follower_id:uid,following_id:profile.id}).then(function(){});
+            _sb.from('follow_requests').delete().eq('requester_id',uid).eq('requested_id',profile.id).then(function(){});
+            if(profile)profile.followers=(profile.followers||0)+1;
+            pushN('follow',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},null,{},uid);
+            SFX('follow');T('Accepted');
+            setTimeout(function(){if(r.parentNode)r.parentNode.removeChild(r);},400);
+          };
+          dBtn.onclick=function(){
+            dBtn.textContent='✓';dBtn.style.opacity='0.5';dBtn.disabled=true;aBtn.style.display='none';
+            _sb.from('follow_requests').delete().eq('requester_id',uid).eq('requested_id',profile.id).then(function(){});
+            T('Declined');
+            setTimeout(function(){if(r.parentNode)r.parentNode.removeChild(r);},400);
+          };
+        })(u.id,accB,decB,row);
+        btns.appendChild(accB);btns.appendChild(decB);
+        row.appendChild(avDiv);row.appendChild(info);row.appendChild(btns);
+        wrap.appendChild(row);
+      });
+    });
+  });
+}
 function buildActivityPage(el){
   var opts=[{v:'everyone',l:'Everyone',d:'All Fade users can see your activity'},{v:'followers',l:'Followers Only',d:'Only people you follow back'},{v:'nobody',l:'No One',d:'Hide your activity from everyone'}];
   el.innerHTML='<div style="padding:8px 16px"></div>';var wrap=el.firstChild;
@@ -13988,6 +14130,24 @@ function openFollowSheet(uid, type){
   var listEl = document.getElementById('fl-list');
   if(!sheet||!titleEl||!listEl) return;
   titleEl.textContent = title;
+
+  // Private account guard — block non-followers from seeing lists
+  if(!isMe){
+    var _sheetTarget=USERS.find(function(x){return x.id===uid;});
+    if(_sheetTarget&&_sheetTarget.is_private&&!following.has(uid)){
+      listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:52px 22px;text-align:center">'+
+        '<svg width="32" height="32" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+        '<div style="font-weight:600;font-size:14px;color:var(--text)">This list is private</div>'+
+        '<div style="font-size:13px;color:var(--sub)">Follow '+E(_sheetTarget.display_name)+' to see who they follow.</div>'+
+        '</div>';
+      var bg = document.getElementById('fl-bg');
+      sheet._swipeInited=false;
+      bg.classList.add('on');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+      initSheetSwipe(sheet, null, function(){closeFollowSheet();});
+      return;
+    }
+  }
   listEl.innerHTML = '<div style="display:flex;justify-content:center;padding:28px"><div class="ptr-ring"></div></div>';
   // Show sheet
   var bg = document.getElementById('fl-bg');
@@ -14281,6 +14441,11 @@ function likeClip(id,btn){
     span.textContent=cur+1;
     sb.from('clip_likes').upsert({user_id:profile.id,clip_id:id}).then(function(){});
     sb.from('clips').update({likes_count:cur+1}).eq('id',id).then(function(){});
+    // Notify clip owner
+    var _clipCard=btn.closest('.clip-card');var _clipOwnerId=_clipCard&&_clipCard.dataset.uid;
+    if(_clipOwnerId&&_clipOwnerId!==profile.id){
+      pushN('like',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},id,{postText:''},_clipOwnerId);
+    }
   }
 }
 
