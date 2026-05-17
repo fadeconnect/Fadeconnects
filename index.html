@@ -728,7 +728,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* 3-DOT SHEET */
 #dd-bg{display:flex;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
-#dd-bg.on{visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
+#dd-bg.on{visibility:visible;pointer-events:auto}
+#fl-bg.on{visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
 .dd-item{display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:15.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .dd-item.red{color:#E8352A}
 
@@ -781,7 +782,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* COMMENT SHEET — Instagram style */
 #cs-bg{display:flex;align-items:flex-end;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
 #cs-bg.on{visibility:visible;pointer-events:auto}
-#fl-bg.on{visibility:visible;pointer-events:auto}
 .cs-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .28s ease}
 #cs-bg.on .cs-dim{opacity:1}
 #cs-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:88dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);border:none;outline:none;overflow:hidden}
@@ -1872,19 +1872,14 @@ body {
 
 <!-- FOLLOW LIST SHEET -->
 <div id="fl-bg" onclick="closeFollowSheet()" style="display:flex;position:fixed;inset:0;z-index:700;align-items:flex-end;visibility:hidden;pointer-events:none">
-  <div class="fl-dim" style="position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .28s ease"></div>
-  <div id="fl-sheet" onclick="event.stopPropagation()" style="position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;max-height:82dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .34s cubic-bezier(.33,1,.68,1);padding-bottom:max(16px,env(safe-area-inset-bottom))">
-    <!-- drag handle -->
-    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>
-    <!-- header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;flex-shrink:0;border-bottom:1px solid var(--border)">
-      <div id="fl-title" style="font-weight:700;font-size:17px;letter-spacing:-.2px"></div>
-      <button onclick="closeFollowSheet()" style="background:var(--inp-bg);border:none;cursor:pointer;color:var(--text);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);animation:dimIn .28s ease"></div>
+  <div id="fl-sheet" onclick="event.stopPropagation()" style="position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:72dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)">
+    <div style="width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0">
+      <div id="fl-title" style="font-weight:700;font-size:16px"></div>
+      <button onclick="closeFollowSheet()" style="background:var(--inp-bg);border:none;cursor:pointer;color:var(--sub);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">✕</button>
     </div>
-    <!-- scrollable list -->
-    <div id="fl-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1;min-height:0"></div>
+    <div id="fl-list" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch"></div>
   </div>
 </div>
 
@@ -2189,8 +2184,6 @@ var convos=[];
 var _convosLoaded=false;
 var _realtimeChannel=null;
 var _presenceChannel=null;
-var _followChannel=null;
-var _followReqChannel=null;
 var _pendingNewPosts=0;
 
 function setupRealtime(){
@@ -3194,8 +3187,6 @@ var _sb = (function(){
       if(_adminChannel){_sb.removeChannel(_adminChannel);_adminChannel=null;}
       if(_notifChannel){_sb.removeChannel(_notifChannel);_notifChannel=null;}
       if(_circleChannel){_sb.removeChannel(_circleChannel);_circleChannel=null;}
-      if(_followChannel){_sb.removeChannel(_followChannel);_followChannel=null;}
-      if(_followReqChannel){_sb.removeChannel(_followReqChannel);_followReqChannel=null;}
 
       // -- Wipe presence/activity state ---------------------------------
       _onlineUsers = new Set();
@@ -3415,14 +3406,6 @@ function initApp(userProfile){
       if(res.data.is_private!=null){S.private=!!res.data.is_private;}
       if(res.data.hide_likes!=null){S.hideLikes=!!res.data.hide_likes;}
       if(res.data.activity_visible){S.activityVisible=res.data.activity_visible;}
-      // Load pending follow request count for private accounts
-      if(S.private){
-        _sb.from('follow_requests').select('requester_id',{count:'exact',head:true}).eq('requested_id',profile.id).eq('status','pending').then(function(cr){
-          _followReqCount=cr.count||0;
-          var badge=document.getElementById('follow-req-badge');
-          if(badge){badge.textContent=_followReqCount;badge.style.display=_followReqCount?'inline-flex':'none';}
-        });
-      }
     }
   });
   // Write last_active to DB on login and every 5 minutes
@@ -9872,61 +9855,6 @@ function subscribeToInbox(){
       });
     })
     .subscribe();
-
-  // -- FOLLOWS realtime: keep local `following` set in sync with DB ---
-  // When our accepted follow request lands in DB, the requester's button updates live
-  if(_followChannel){_sb.removeChannel(_followChannel);_followChannel=null;}
-  _followChannel=_sb.channel('follows-me-'+profile.id)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'follows',filter:'follower_id=eq.'+profile.id},function(payload){
-      var uid=payload.new.following_id;
-      following.add(uid);
-      // Update follow button if profile screen is open for this user
-      var fb=document.getElementById('fb-'+uid);
-      if(fb){
-        fb.textContent='Following';fb.classList.remove('dark');
-        fb.style.background='transparent';fb.style.color='var(--text)';fb.style.border='1.5px solid var(--border)';
-        fb.dataset.pending='';
-      }
-      // Refresh private wall if currently viewing that user's profile
-      if(_profUser&&_profUser.id===uid){
-        var fnEl=document.getElementById('prof-fol-n');
-        var folC=fnEl?parseInt(fnEl.textContent)||0:(_profUser.followers||0);
-        var fgEl=document.getElementById('prof-fing-n');
-        var fingC=fgEl?parseInt(fgEl.textContent)||0:(_profUser.following||0);
-        _renderProfBody(_profUser,folC,fingC,false);
-      }
-      // Refresh feed and story strip so private content becomes visible
-      renderFeed();
-      renderStrip();
-    })
-    .on('postgres_changes',{event:'DELETE',schema:'public',table:'follows',filter:'follower_id=eq.'+profile.id},function(payload){
-      var uid=payload.old.following_id;
-      following.delete(uid);
-      var fb=document.getElementById('fb-'+uid);
-      if(fb){
-        fb.textContent='Follow';fb.classList.add('dark');
-        fb.style.background='';fb.style.color='';fb.style.border='';
-        fb.dataset.pending='';
-      }
-    })
-    .subscribe();
-
-  // -- FOLLOW_REQUESTS realtime: live badge + page update for private accounts ---
-  if(_followReqChannel){_sb.removeChannel(_followReqChannel);_followReqChannel=null;}
-  _followReqChannel=_sb.channel('follow-req-'+profile.id)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'follow_requests',filter:'requested_id=eq.'+profile.id},function(payload){
-      var r=payload.new;
-      if(r.status!=='pending')return;
-      // Update badge in Settings Follow Requests row
-      _updateFollowReqBadge(1);
-      // If the requests page is currently open, prepend a new row
-      _liveInjectFollowReq(r.requester_id);
-    })
-    .on('postgres_changes',{event:'DELETE',schema:'public',table:'follow_requests',filter:'requested_id=eq.'+profile.id},function(payload){
-      // Decrement badge when a request is cancelled by the requester
-      _updateFollowReqBadge(-1);
-    })
-    .subscribe();
 }
 function addSysMsg(txt){var msgs=document.getElementById('msgs');var d=document.createElement('div');d.className='bubble sys';d.textContent=txt;msgs.appendChild(d);}
 function appendBubble(m){
@@ -11924,7 +11852,7 @@ function flashHighlight(el){
 }
 
 // -- PROFILE -------------------------------------------------------------------
-function _renderProfBody(full, followerCount, followingCount, pendingReq){
+function _renderProfBody(full, followerCount, followingCount){
   var myPosts=posts.filter(function(p){return p.uid===full.id;});
   var isF=following.has(full.id),isCF=CF.has(full.id);
   var avContent=full.avatar_url?'<img src="'+full.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>':('<div class="lav" style="font-size:32px;background:'+nc(full.display_name)+'">'+nl(full.display_name)+'</div>');
@@ -11959,7 +11887,7 @@ function _renderProfBody(full, followerCount, followingCount, pendingReq){
       '</div>'+
       (full.bio?'<div style="font-size:13.5px;line-height:1.55;margin-bottom:12px;color:var(--text)">'+E(full.bio)+'</div>':'')+
       '<div style="display:flex;gap:8px">'+
-        '<button class="pbtn '+(isF?'':'dark')+'" id="fb-'+full.id+'" style="flex:1;min-width:0;'+(isF?'background:transparent;color:var(--text);border:1.5px solid var(--border)':pendingReq?'background:transparent;color:var(--text);border:1.5px solid var(--border)':'')+'" onclick="toggleFollow(\''+full.id+'\',this)" '+(pendingReq&&!isF?'data-pending="1"':'')+'>'+((isF)?'Following':pendingReq?'Requested':'Follow')+'</button>'+
+        '<button class="pbtn dark" id="fb-'+full.id+'" style="flex:1;min-width:0" onclick="toggleFollow(\''+full.id+'\',this)">'+(isF?'Following':'Follow')+'</button>'+
         '<button class="pbtn" id="prof-msg-btn" style="flex:1;min-width:0">Message</button>'+
         '<button class="pbtn star" onclick="toggleCF(\''+full.id+'\',this)">'+(isCF?'<svg width="18" height="18" fill="#C8A800" stroke="#C8A800" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>':'<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>')+'</button>'+
       '</div>'+
@@ -12018,7 +11946,7 @@ function openProf(u){
   var full=_profUser;
   var profBarU=document.getElementById('prof-bar-username');if(profBarU)profBarU.textContent=full.username||'';
   // Render with cached counts first (instant), then update with live counts
-  _renderProfBody(full, full.followers||0, full.following||0, false);
+  _renderProfBody(full, full.followers||0, full.following||0);
   document.getElementById('prof-back-btn').onclick=closeProf;
   var ps=document.getElementById('prof-screen');
   // If coming from chat (which may be elevated to z-index 660), ensure prof-screen sits above it
@@ -12084,7 +12012,7 @@ function openProf(u){
         }
       }
       // Also re-render the private wall/grid if follow state changed
-      _renderProfBody(full,folCount,fingCount,pendingReq);
+      _renderProfBody(full,folCount,fingCount);
     }
   });
 }
@@ -12294,26 +12222,13 @@ function acceptFollowReq(actorId, notifId){
   _sb.from('follows').insert({follower_id:actorId,following_id:profile.id}).then(function(){});
   // Delete from follow_requests
   _sb.from('follow_requests').delete().eq('requester_id',actorId).eq('requested_id',profile.id).then(function(){});
-  // Update local follower count + persist to DB
-  var newFollowers=(profile.followers||0)+1;
-  profile.followers=newFollowers;
-  _sb.from('profiles').update({followers_count:newFollowers}).eq('id',profile.id).then(function(){});
+  // Update local follower count
+  if(profile)profile.followers=(profile.followers||0)+1;
   // Update follower count display on Me tab
   var meFC=document.querySelector('#me-body [onclick*="followers"]');
   if(meFC){var fcSpan=meFC.querySelector('span');if(fcSpan)fcSpan.textContent=profile.followers;}
-  // Notify the requester that they've been accepted
+  // Notify the requester that they've been accepted (send a follow notification back)
   pushN('follow',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},null,{},actorId);
-  // Sync requester's follow button if their profile screen is open
-  var theirFb=document.getElementById('fb-'+actorId);
-  if(theirFb){
-    theirFb.textContent='Following';theirFb.classList.remove('dark');
-    theirFb.style.background='transparent';theirFb.style.color='var(--text)';theirFb.style.border='1.5px solid var(--border)';
-    theirFb.dataset.pending='';
-  }
-  // Remove row from pending requests page DOM if open (rows tagged with data-req-uid)
-  document.querySelectorAll('[data-req-uid="'+actorId+'"]').forEach(function(r){
-    setTimeout(function(){if(r.parentNode)r.parentNode.removeChild(r);},400);
-  });
   // Remove the notif from the local list and re-render
   var idx=notifs.findIndex(function(n){return n.id===notifId;});
   if(idx>-1)notifs.splice(idx,1);
@@ -12529,7 +12444,7 @@ function buildSRoot(){
     ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}}]}]),
     {title:'Content',items:[{ico:IC.cal,label:'Scheduled Posts',act:function(){soPush('Scheduled Posts',buildSchedListPage);}},{ico:IC.block,label:'Blocked Users',act:function(){soPush('Blocked Users',buildBlockedPage);}},{ico:IC.chat,label:'Comment Permissions',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="cmt-perm-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.cmtPerm]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Comment Permissions',buildCmtPage);}},{ico:IC.users,label:'Story Audience',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="story-aud-lbl">'+({everyone:'Everyone',followers:'Followers',close_friends:'Close Friends'}[S.storyAudience]||'Followers')+'</span>'+IC.chev;},act:function(){soPush('Story Audience',buildAudSettingsPage);}}]},
     {title:'Privacy',items:[{ico:IC.shield,label:'Private Account',tog:'private'},{ico:IC.shield,label:'Hide Like Counts',tog:'hideLikes'},{ico:IC.star,label:'Close Friends',act:function(){soPush('Close Friends',buildCFPage);}},{ico:IC.chat,label:'Activity Status',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="activity-vis-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.activityVisible]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Activity Status',buildActivityPage);}},
-    ...(S.private?[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',label:'Follow Requests',right:function(){return'<span id="follow-req-badge" style="background:#E8352A;color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;min-width:20px;text-align:center;display:'+(_followReqCount?'inline-flex':'none')+'">'+_followReqCount+'</span><div style="margin-left:6px">'+IC.chev+'</div>';},act:function(){soPush('Follow Requests',buildPendingRequestsPage);}}]:[])
+    ...(S.private?[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',label:'Follow Requests',act:function(){soPush('Follow Requests',buildPendingRequestsPage);}}]:[])
     ]},
     {title:'Notifications',items:[{ico:IC.bell,label:'Push Notifications',tog:'pushNotifs'},{ico:IC.chat,label:'Talk Notifications',tog:'talkNotifs'}]},
     {title:'Appearance',items:[{ico:IC.bell,label:'Sound Effects',togSnd:true},{ico:IC.moon,label:'Dark Mode',togDark:true}]},
@@ -12921,61 +12836,18 @@ function buildSchedListPage(el){_schedListEl=el;el.innerHTML='';var wrap=documen
 function toLocalDT(ts){var d=new Date(ts);var pad=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function openSchedForm(idx){_schedEditIdx=idx;_schedImgUrl=null;var isEdit=(idx>=0&&idx<scheduled.length);var s=isEdit?scheduled[idx]:null;document.getElementById('sfp-title').textContent=isEdit?'Edit Scheduled Drop':'Schedule a Drop';var body=document.getElementById('sfp-body');body.innerHTML='';var capField=document.createElement('div');capField.className='field';capField.innerHTML='<label class="lbl">Caption</label>';var capTa=document.createElement('textarea');capTa.className='inp';capTa.rows=4;capTa.placeholder="What's fading today...";if(isEdit&&s&&s.text)capTa.value=s.text;capField.appendChild(capTa);body.appendChild(capField);var photoField=document.createElement('div');photoField.className='field';photoField.innerHTML='<label class="lbl">Photo (optional)</label>';var pu=buildPhotoUpload('sched');photoField.appendChild(pu.row);body.appendChild(photoField);if(isEdit&&s&&s.img){_schedImgUrl=s.img;}var dtField=document.createElement('div');dtField.className='field';dtField.innerHTML='<label class="lbl">Date and Time</label>';var dtWrap=document.createElement('div');dtWrap.style.cssText='position:relative';var dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.className='inp';if(!isEdit)dtInp.min=toLocalDT(Date.now());if(isEdit&&s&&s.schedAt){dtInp.value=toLocalDT(s.schedAt);}dtInp.style.cssText='padding-left:42px;color:'+(isEdit&&s&&s.schedAt?'var(--inp-text)':'transparent');var dtIco=document.createElement('span');dtIco.style.cssText='position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;color:var(--inp-ph)';dtIco.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';var dtPh=document.createElement('div');dtPh.style.cssText='position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 42px;pointer-events:none;font-size:15px;color:var(--inp-ph);font-family:Inter,sans-serif';dtPh.textContent='Pick date and time';dtPh.style.display=dtInp.value?'none':'flex';dtInp.addEventListener('change',function(){dtPh.style.display=this.value?'none':'flex';this.style.color=this.value?'var(--inp-text)':'transparent';});dtWrap.appendChild(dtInp);dtWrap.appendChild(dtIco);dtWrap.appendChild(dtPh);dtField.appendChild(dtWrap);body.appendChild(dtField);var submitBtn=document.createElement('button');submitBtn.className='btn btn-dark';submitBtn.textContent=isEdit?'Save Changes':'Schedule Drop';submitBtn.onclick=function(){var capVal=capTa.value.trim();var dtVal=dtInp.value;if(!capVal&&!pu.hasImg())return T('Add a caption or photo');if(!dtVal)return T('Pick a date and time');var schedAt=new Date(dtVal).getTime();    if(isNaN(schedAt)||schedAt<=Date.now()+60000)return T('Pick a time at least 1 minute from now');var entry={id:isEdit&&s?s.id:('sc'+Date.now()),text:capVal,img:pu.hasImg()?_schedImgUrl:null,schedAt:schedAt};if(isEdit){scheduled[idx]=entry;}else{scheduled.push(entry);}saveScheduled();SFX('drop');T(isEdit?'Updated':'Scheduled');closeSchedForm();setTimeout(function(){if(_schedListEl)buildSchedListPage(_schedListEl);},60);};body.appendChild(submitBtn);var panel=document.getElementById('sched-form-panel');panel.style.display='';panel.style.visibility='';panel.style.pointerEvents='';panel.classList.add('on');}
 function closeSchedForm(){var panel=document.getElementById('sched-form-panel');panel.style.transform='translateX(100%)';setTimeout(function(){panel.classList.remove('on');panel.style.display='';panel.style.visibility='hidden';panel.style.pointerEvents='none';panel.style.transform='';_schedImgUrl=null;},320);}
-// -- Follow request badge + live injection helpers ----------------------------
-var _followReqCount=0;
-function _updateFollowReqBadge(delta){
-  _followReqCount=Math.max(0,(_followReqCount||0)+delta);
-  // Update the badge next to "Follow Requests" row in Settings if visible
-  var badge=document.getElementById('follow-req-badge');
-  if(badge){badge.textContent=_followReqCount;badge.style.display=_followReqCount?'inline-flex':'none';}
-}
-function _liveInjectFollowReq(requesterId){
-  // Only inject if the pending requests page container is in the DOM
-  var container=document.getElementById('follow-req-page');
-  if(!container)return;
-  _sb.from('profiles').select('id,display_name,username,avatar_url').eq('id',requesterId).single().then(function(pr){
-    var u=pr.data;if(!u)return;
-    // Don't add duplicate
-    if(container.querySelector('[data-req-uid="'+u.id+'"]'))return;
-    var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:13px;padding:13px 16px';
-    row.setAttribute('data-req-uid',u.id);
-    var avDiv=document.createElement('div');avDiv.style.cssText='width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username);avDiv.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-    avDiv.style.cursor='pointer';avDiv.onclick=function(){soBack();setTimeout(function(){openProf(u);},260);};
-    var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
-    info.innerHTML='<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username)+'</div><div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>';
-    var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0';
-    var accB=document.createElement('button');accB.style.cssText='background:var(--text);color:var(--card);border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';accB.textContent='Accept';
-    var decB=document.createElement('button');decB.style.cssText='background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer';decB.textContent='Decline';
-    (function(uid,aBtn,dBtn,r){
-      aBtn.onclick=function(){aBtn.textContent='✓';aBtn.style.opacity='0.5';aBtn.disabled=true;dBtn.style.display='none';acceptFollowReq(uid,null);};
-      dBtn.onclick=function(){dBtn.textContent='✓';dBtn.style.opacity='0.5';dBtn.disabled=true;aBtn.style.display='none';
-        _sb.from('follow_requests').delete().eq('requester_id',uid).eq('requested_id',profile.id).then(function(){});
-        T('Declined');setTimeout(function(){if(r.parentNode)r.parentNode.removeChild(r);},400);
-      };
-    })(u.id,accB,decB,row);
-    btns.appendChild(accB);btns.appendChild(decB);
-    row.appendChild(avDiv);row.appendChild(info);row.appendChild(btns);
-    // Remove empty state if present
-    var empty=container.querySelector('.empty');if(empty&&empty.parentNode)empty.parentNode.removeChild(empty);
-    container.insertBefore(row,container.firstChild);
-  });
-}
 function buildPendingRequestsPage(el){
   el.innerHTML='';
   var wrap=document.createElement('div');wrap.style.cssText='padding:8px 0';
-  wrap.id='follow-req-page';
   var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:28px';loading.innerHTML='<div class="ptr-ring"></div>';
   wrap.appendChild(loading);el.appendChild(wrap);
   if(!profile)return;
   _sb.from('follow_requests').select('requester_id,created_at').eq('requested_id',profile.id).eq('status','pending').then(function(res){
     wrap.innerHTML='';
     if(res.error||!res.data||!res.data.length){
-      _followReqCount=0;_updateFollowReqBadge(0);
       wrap.innerHTML='<div class="empty" style="padding:40px 22px"><div class="empt">No pending requests</div><div class="emps">When someone requests to follow you, they\'ll appear here.</div></div>';
       return;
     }
-    _followReqCount=res.data.length;_updateFollowReqBadge(0);
     var ids=res.data.map(function(r){return r.requester_id;});
     _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
       var users=pr.data||[];
@@ -12983,7 +12855,6 @@ function buildPendingRequestsPage(el){
       users.forEach(function(u){
         var row=document.createElement('div');
         row.style.cssText='display:flex;align-items:center;gap:13px;padding:13px 16px';
-        row.setAttribute('data-req-uid',u.id);
         var avDiv=document.createElement('div');avDiv.style.cssText='width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username);avDiv.innerHTML=avH(u.avatar_url,u.display_name||u.username);
         avDiv.style.cursor='pointer';avDiv.onclick=function(){soBack();setTimeout(function(){openProf(u);},260);};
         var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
@@ -12994,9 +12865,13 @@ function buildPendingRequestsPage(el){
         (function(uid,aBtn,dBtn,r){
           aBtn.onclick=function(){
             aBtn.textContent='✓';aBtn.style.opacity='0.5';aBtn.disabled=true;dBtn.style.display='none';
-            // Use shared acceptFollowReq — handles DB, counts, notification, DOM cleanup
-            acceptFollowReq(uid, null);
-            // Row removal handled by acceptFollowReq via data-req-uid
+            // find a fake notifId — use uid as key since we don't have a notif object here
+            _sb.from('follows').insert({follower_id:uid,following_id:profile.id}).then(function(){});
+            _sb.from('follow_requests').delete().eq('requester_id',uid).eq('requested_id',profile.id).then(function(){});
+            if(profile)profile.followers=(profile.followers||0)+1;
+            pushN('follow',{id:profile.id,display_name:profile.display_name,username:profile.username,avatar_url:profile.avatar_url||null},null,{},uid);
+            SFX('follow');T('Accepted');
+            setTimeout(function(){if(r.parentNode)r.parentNode.removeChild(r);},400);
           };
           dBtn.onclick=function(){
             dBtn.textContent='✓';dBtn.style.opacity='0.5';dBtn.disabled=true;aBtn.style.display='none';
@@ -14280,17 +14155,16 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
 
 // -- FOLLOW LIST SHEET ---------------------------------------------------------
 function openFollowSheet(uid, type){
+  // type = 'followers' | 'following'
   var isMe = profile && uid === profile.id;
   var title = type === 'followers' ? 'Followers' : 'Following';
-  var bg = document.getElementById('fl-bg');
   var sheet = document.getElementById('fl-sheet');
   var titleEl = document.getElementById('fl-title');
   var listEl = document.getElementById('fl-list');
-  var dimEl = bg && bg.querySelector('.fl-dim');
   if(!sheet||!titleEl||!listEl) return;
   titleEl.textContent = title;
 
-  // Private account guard
+  // Private account guard — block non-followers from seeing lists
   if(!isMe){
     var _sheetTarget=USERS.find(function(x){return x.id===uid;});
     if(_sheetTarget&&_sheetTarget.is_private&&!following.has(uid)){
@@ -14299,99 +14173,66 @@ function openFollowSheet(uid, type){
         '<div style="font-weight:600;font-size:14px;color:var(--text)">This list is private</div>'+
         '<div style="font-size:13px;color:var(--sub)">Follow '+E(_sheetTarget.display_name)+' to see who they follow.</div>'+
         '</div>';
-      _openFlSheet(bg,sheet,dimEl);
+      var bg = document.getElementById('fl-bg');
+      sheet._swipeInited=false;
+      bg.classList.add('on');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+      initSheetSwipe(sheet, null, function(){closeFollowSheet();});
       return;
     }
   }
-  listEl.innerHTML='<div style="display:flex;justify-content:center;padding:36px"><div class="ptr-ring"></div></div>';
-  _openFlSheet(bg,sheet,dimEl);
-
+  listEl.innerHTML = '<div style="display:flex;justify-content:center;padding:28px"><div class="ptr-ring"></div></div>';
+  // Show sheet
+  var bg = document.getElementById('fl-bg');
+  sheet._swipeInited=false;
+  bg.classList.add('on');
+  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
+  initSheetSwipe(sheet, null, function(){closeFollowSheet();});
   // Fetch from Supabase
-  var query = type==='followers'
-    ? _sb.from('follows').select('follower_id').eq('following_id', uid)
-    : _sb.from('follows').select('following_id').eq('follower_id', uid);
-
+  var query;
+  if(type==='followers'){
+    // People who follow uid -- get follower_id list, then profiles
+    query = _sb.from('follows').select('follower_id').eq('following_id', uid);
+  } else {
+    // People uid follows -- get following_id list, then profiles
+    query = _sb.from('follows').select('following_id').eq('follower_id', uid);
+  }
   query.then(function(res){
     if(res.error||!res.data||!res.data.length){
-      listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:52px 22px;text-align:center">'+
-        '<div style="font-weight:600;font-size:15px;color:var(--text)">'+(type==='followers'?'No followers yet':'Not following anyone')+'</div>'+
-        '<div style="font-size:13px;color:var(--sub)">'+(type==='followers'?'When someone follows, they\'ll appear here.':'Accounts followed will appear here.')+'</div>'+
-        '</div>';
+      listEl.innerHTML='<div class="empty"><div class="empt">No '+(type==='followers'?'followers yet':'one followed yet')+'</div></div>';
       return;
     }
     var ids = res.data.map(function(r){return type==='followers'?r.follower_id:r.following_id;});
-    _sb.from('profiles').select('id,display_name,username,avatar_url,is_verified,badge_type,is_private').in('id',ids).then(function(pr){
+    _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
       listEl.innerHTML='';
       var users = pr.data||[];
-      if(!users.length){
-        listEl.innerHTML='<div style="padding:52px 22px;text-align:center;color:var(--sub);font-size:13.5px">No users found</div>';
-        return;
-      }
+      if(!users.length){listEl.innerHTML='<div class="empty"><div class="empt">No users found</div></div>';return;}
       users.forEach(function(u){
-        var isOwn = profile && u.id === profile.id;
-        var isF = following.has(u.id);
         var row = document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:13px;padding:12px 16px;-webkit-tap-highlight-color:transparent';
-        // Avatar
-        var avDiv = document.createElement('div');
-        avDiv.style.cssText='width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+';cursor:pointer';
-        avDiv.innerHTML=avH(u.avatar_url,u.display_name||u.username);
-        // Info
-        var info = document.createElement('div');
-        info.style.cssText='flex:1;min-width:0;cursor:pointer';
-        info.innerHTML=
-          '<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px">'+
-            '<span>'+E(u.display_name||u.username)+'</span>'+badgeFor(u.id)+
-            (u.is_private?'<svg width="11" height="11" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>':'')+
-          '</div>'+
-          '<div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>';
-        // Tap avatar or info -> open profile
-        function _goProf(){
+        row.style.cssText='display:flex;align-items:center;gap:13px;padding:13px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent';
+        row.innerHTML=
+          '<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+'">'+avH(u.avatar_url,u.display_name||u.username)+'</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username)+badgeFor(u.id)+'</div>'+
+            '<div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>'+
+          '</div>';
+        row.addEventListener('click', function(){
           closeFollowSheet();
-          setTimeout(function(){isOwn?goTab('me'):openProf(u);},260);
-        }
-        avDiv.addEventListener('click',_goProf);
-        info.addEventListener('click',_goProf);
-        row.appendChild(avDiv);
-        row.appendChild(info);
-        // Follow button — only for other users
-        if(!isOwn){
-          var fb = document.createElement('button');
-          fb.id='flb-'+u.id;
-          fb.style.cssText='flex-shrink:0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;transition:opacity .15s;white-space:nowrap;'+(isF?'background:transparent;color:var(--text);border:1.5px solid var(--border)':'background:var(--text);color:var(--card);border:none');
-          fb.textContent=isF?'Following':'Follow';
-          (function(uObj,btn){
-            btn.addEventListener('click',function(e){
-              e.stopPropagation();
-              toggleFollow(uObj.id,btn);
-              // sync matching fb- button if prof screen open
-              var profBtn=document.getElementById('fb-'+uObj.id);
-              if(profBtn){profBtn.textContent=btn.textContent;profBtn.style.cssText=btn.style.cssText;}
-            });
-          })(u,fb);
-          row.appendChild(fb);
-        }
+          setTimeout(function(){
+            if(profile && u.id === profile.id){goTab('me');}
+            else{openProf(u);}
+          }, 260);
+        });
         listEl.appendChild(row);
       });
     });
   });
 }
-function _openFlSheet(bg,sheet,dimEl){
-  sheet._swipeInited=false;
-  bg.classList.add('on');
-  requestAnimationFrame(function(){requestAnimationFrame(function(){
-    sheet.style.transform='translateY(0)';
-    if(dimEl)dimEl.style.opacity='1';
-  });});
-  initSheetSwipe(sheet, null, function(){closeFollowSheet();});
-}
 function closeFollowSheet(){
   var sheet=document.getElementById('fl-sheet');
   var bg=document.getElementById('fl-bg');
   if(sheet) sheet.style.transform='translateY(100%)';
-  setTimeout(function(){
-    if(bg){bg.classList.remove('on');bg.style.visibility='hidden';bg.style.pointerEvents='none';}
-  },320);
+  setTimeout(function(){if(bg)bg.classList.remove('on');},320);
 }
 
 // -- KEYBOARD AVOID ------------------------------------------------------------
