@@ -5029,6 +5029,8 @@ function buildPost(p, showDelete){
     var tgt=e.target;
     // Don't fire on buttons, avatars, or action row
     if(tgt.closest('.postacts')||tgt.closest('.post-menu-btn')||tgt.closest('.av'))return;
+    // Let the "more" button handle its own tap
+    if(tgt.closest('.post-more-btn'))return;
     // Always prevent default to block native text-selection menu on any tap
     e.preventDefault();
     if(now-_lastTap<300){
