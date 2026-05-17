@@ -729,7 +729,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* 3-DOT SHEET */
 #dd-bg{display:flex;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
 #dd-bg.on{visibility:visible;pointer-events:auto}
-#fl-screen{display:flex;position:fixed;inset:0;z-index:700;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#fl-screen{display:flex;position:fixed;inset:0;z-index:640;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #fl-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
 .dd-item{display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:15.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .dd-item.red{color:#E8352A}
@@ -12105,6 +12105,14 @@ function closeProf(){
       return;
     }
 
+    // Return to follow screen if we came from there
+    if(_profFromFollowScreen){
+      _profFromFollowScreen=false;
+      var flScr=document.getElementById('fl-screen');
+      if(flScr) flScr.classList.add('on');
+      return;
+    }
+
     // If we came from views, restore the story viewer exactly as it was
     if(_profFromViews&&_savedSVState!==null){
       _profFromViews=false;
@@ -12137,6 +12145,7 @@ function closeProf(){
 // each entry = {type:'prof'|'notif'|'tab', ...}
 var _chatBackCtx=null;
 var _profFromChat=false; // true when profile was opened from inside the chat window
+var _profFromFollowScreen=false; // true when profile was opened from followers/following screen
 
 function startConvoC(uid){
   var u=USERS.find(function(x){return x.id===uid;});
@@ -14259,11 +14268,18 @@ function _flRenderList(users,query){
     // Row tap → open profile
     row.addEventListener('click',function(e){
       if(e.target.closest('.fl-follow-btn'))return;
-      closeFollowSheet();
-      setTimeout(function(){
-        if(profile&&u.id===profile.id)goTab('me');
-        else openProf(u);
-      },260);
+      _profFromFollowScreen=true;
+      // Replace current history entry so back from prof returns to fl-screen, not double-stack
+      history.replaceState({_fade:'fl-screen'},'');
+      if(profile&&u.id===profile.id){
+        closeFollowSheet();
+        setTimeout(function(){goTab('me');},260);
+      } else {
+        // Keep fl-screen visible underneath, slide prof on top
+        var origOpen=window._origOpenProf||window.openProf;
+        history.pushState({_fade:'prof-screen'},'');
+        origOpen(u);
+      }
     });
     // Follow button tap
     var fbtn=row.querySelector('.fl-follow-btn');
@@ -17389,7 +17405,7 @@ function _buildEpCats(){
   var RECEDE_EASE_OUT  = 'cubic-bezier(.33,1,.68,1)';
 
   var OVERLAY_IDS = ['cw','notif-panel','prof-screen','circle-cw',
-                     'sched-form-panel','circle-info','so'];
+                     'sched-form-panel','circle-info','so','fl-screen'];
 
   function _getSW() { return document.getElementById('sw'); }
   /* Expose to swipe-back IIFE which runs in a separate closure */
@@ -17682,12 +17698,12 @@ function _buildEpCats(){
     var closed = false;
 
     // Close the topmost visible layer first (highest z-index wins).
-    // photo-viewer:1000, cs-bg:700, scroll-view:660, prof-screen:650, notif/cw:200-220
+    // photo-viewer:1000, cs-bg:700, prof-screen:650+, fl-screen:700, scroll-view:660, notif/cw:200-220
     var _toClose = [
       ['photo-viewer',     function(){ if(typeof window._pvClose==='function')window._pvClose(); }],
-      ['fl-screen',        'closeFollowSheet' ],
       ['cs-bg',            'closeCS'         ],
       ['prof-screen',      'closeProf'       ],
+      ['fl-screen',        'closeFollowSheet'],
       ['scroll-view',      'closeScrollView' ],
       ['sched-form-panel', 'closeSchedForm'  ],
       ['circle-info',      'closeCircleInfo' ],
