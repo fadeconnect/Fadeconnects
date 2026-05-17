@@ -3599,9 +3599,7 @@ function setupAllSheetSwipes() {
   whenReady('aud-bg', '#aud-sheet', null, function(){ closeAudSheet(); });
   // 7. VIEWS SHEET
   whenReady('views-bg', '#views-sheet', '.views-dim', function(){ closeViewsSheet({}); });
-  // 8. FOLLOWERS/FOLLOWING SHEET
-  whenReady('fl-screen', null, null, function(){ closeFollowSheet(); });
-  // 9. REACTION SHEET
+  // 8. REACTION SHEET
   whenReady('react-sheet-bg', '#react-sheet', '.react-dim', function(){ closeReactSheet(); });
   // 10. CHAT MEDIA SHEET
   whenReady('cw-media-sheet-ov', '#cw-media-sheet', null, function(){ cwCloseMedia(); });
@@ -12109,7 +12107,7 @@ function closeProf(){
     if(_profFromFollowScreen){
       _profFromFollowScreen=false;
       var flScr=document.getElementById('fl-screen');
-      if(flScr) flScr.classList.add('on');
+      if(flScr){flScr.style.visibility='';flScr.style.pointerEvents='';flScr.classList.add('on');}
       return;
     }
 
@@ -14268,17 +14266,16 @@ function _flRenderList(users,query){
     // Row tap → open profile
     row.addEventListener('click',function(e){
       if(e.target.closest('.fl-follow-btn'))return;
-      _profFromFollowScreen=true;
-      // Replace current history entry so back from prof returns to fl-screen, not double-stack
-      history.replaceState({_fade:'fl-screen'},'');
       if(profile&&u.id===profile.id){
         closeFollowSheet();
-        setTimeout(function(){goTab('me');},260);
+        setTimeout(function(){goTab('me');},300);
       } else {
-        // Keep fl-screen visible underneath, slide prof on top
-        var origOpen=window._origOpenProf||window.openProf;
+        _profFromFollowScreen=true;
+        // Use the unwrapped openProf so history wrapper doesn't double-push.
+        // We manually push prof-screen here so the stack is: fl-screen → prof-screen
         history.pushState({_fade:'prof-screen'},'');
-        origOpen(u);
+        var rawOpen=window._origOpenProf||window.openProf;
+        rawOpen(u);
       }
     });
     // Follow button tap
@@ -14364,6 +14361,7 @@ function openFollowSheet(uid,type){
       '<div style="font-weight:700;font-size:14px;color:var(--text)">This list is private</div>'+
       '<div style="font-size:13px;color:var(--sub)">Follow '+E(_target.display_name)+' to see who they follow.</div></div>';
     var scr=document.getElementById('fl-screen');
+    scr.style.transform='';scr.style.visibility='';scr.style.pointerEvents='';
     scr.classList.add('on');
     return;
   }
@@ -14383,8 +14381,11 @@ function openFollowSheet(uid,type){
   // Tab styles
   _flTabStyle(_flActiveTab);
 
-  // Open screen
+  // Open screen — reset any inline transform so CSS transition fires cleanly
   var scr=document.getElementById('fl-screen');
+  scr.style.transform='';
+  scr.style.visibility='';
+  scr.style.pointerEvents='';
   scr.classList.add('on');
 
   // Fetch active tab
@@ -14395,9 +14396,11 @@ function closeFollowSheet(){
   var scr=document.getElementById('fl-screen');
   if(!scr)return;
   scr.classList.remove('on');
-  // Always clear inline overrides so next open() works cleanly
+  // Clear ALL inline style overrides so CSS controls next open cleanly
   scr.style.visibility='';
   scr.style.pointerEvents='';
+  scr.style.transform='';
+  _profFromFollowScreen=false;
 }
 
 // -- KEYBOARD AVOID ------------------------------------------------------------
