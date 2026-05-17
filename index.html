@@ -147,8 +147,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .posttm{font-size:11.5px;color:var(--sub);margin-top:2px;font-weight:400;letter-spacing:.1px}
 .postbody{font-size:15px;line-height:1.75;padding:8px 16px 2px;font-weight:400;color:var(--text)}
 .post-caption{font-size:15px;line-height:1.72;padding:8px 16px 2px;font-weight:400}
-.postacts{display:flex;gap:20px;padding:10px 16px 18px;align-items:center}
-.actbtn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--sub);font-family:'Inter',sans-serif;transition:color .15s,transform .12s}
+.postacts{display:flex;gap:16px;padding:10px 16px 18px;align-items:center}
+.actbtn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--sub);font-family:'Inter',sans-serif;transition:color .15s,transform .12s}
 .actbtn:active{transform:scale(.88)}
 .actbtn.liked{color:#E8352A}
 .del-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);opacity:.5;margin-left:auto;display:flex;align-items:center}
@@ -5003,13 +5003,15 @@ function buildPost(p, showDelete){
   } else if(p.text){textHTML='<div class="postbody">'+E(p.text)+'</div>';}
   var _likeOwnerU=isOwn?null:(USERS.find(function(x){return x.id===p.uid;})||null);
   var _hideLikeCount=isOwn?S.hideLikes:(_likeOwnerU?!!_likeOwnerU.hide_likes:false);
-  var lc=_hideLikeCount?'':'<span id="lc-'+p.id+'">'+(p.likes||0)+'</span>';
-  var cc='<span id="cc-'+p.id+'">'+(p.commentsCount||p.comments.length||0)+'</span>';
+  var _lcVal=(p.likes||0);
+  var lc=_hideLikeCount?'':(_lcVal>0?'<span id="lc-'+p.id+'">'+_lcVal+'</span>':'<span id="lc-'+p.id+'"></span>');
+  var _ccVal=(p.commentsCount||p.comments.length||0);
+  var cc=_ccVal>0?'<span id="cc-'+p.id+'">'+_ccVal+'</span>':'<span id="cc-'+p.id+'"></span>';
   // Check the POST OWNER's comment permission, not the viewer's
   var _postOwner=USERS.find(function(x){return x.id===p.uid;})||{};
   var _ownerCmtPerm=isOwn?S.cmtPerm:(_postOwner.cmt_perm||'everyone');
   var canCmt=isOwn||(_ownerCmtPerm==='everyone')||(_ownerCmtPerm==='followers'&&following.has(p.uid));
-  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="24" height="24" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'</div>';
+  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="26" height="26" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'</div>';
   el.innerHTML=hdr+mediaHTML+textHTML+acts;
   // Wire carousel if multi-photo
   var _carouselEl=el.querySelector('.post-carousel');
@@ -14327,8 +14329,6 @@ function openFollowSheet(uid,type){
   // Detect if we're opening from inside prof-screen
   var ps=document.getElementById('prof-screen');
   _flOpenedFromProf=!!(ps&&ps.classList.contains('on'));
-  // Hide prof-screen so fl-screen (z-index 640) isn't blocked behind it (z-index 650)
-  if(_flOpenedFromProf&&ps){ps.style.visibility='hidden';ps.style.pointerEvents='none';}
   // Set owner name
   var ownerEl=document.getElementById('fl-owner-name');
   if(ownerEl){var o=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);ownerEl.textContent=o?(o.display_name||o.username||''):'';}
@@ -16842,8 +16842,8 @@ function _handleDeepLink(){
       (postData.text?'<div style="font-size:15px;line-height:1.75;padding:8px 16px 2px">'+E(postData.text)+'</div>':'')+
       imgHTML+
       '<div style="display:flex;gap:20px;padding:10px 16px 18px;align-items:center">'+
-        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'like posts\')"><svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+(postData.likes||0)+'</button>'+
-        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'comment\')"><svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+(postData.commentsCount||0)+'</button>'+
+        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'like posts\')"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+(postData.likes||0)+'</button>'+
+        '<button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--sub);font-family:Inter,sans-serif" onclick="_showGuestAuthPrompt(\'comment\')"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+(postData.commentsCount||0)+'</button>'+
       '</div>';
     content.appendChild(card);
 
