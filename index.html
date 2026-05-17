@@ -599,6 +599,9 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #prof-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:650;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #prof-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #prof-screen.on{display:flex;transform:translateX(0)}
+#fl-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:640;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#fl-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}
+@keyframes flRowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .prof-bar{display:flex;align-items:center;height:54px;padding:0 8px;position:relative}
 .prof-back{background:none;border:none;cursor:pointer;padding:10px;color:var(--text);display:flex;align-items:center;border-radius:10px;z-index:1}
 .prof-uname{font-weight:600;font-size:15px;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58%;pointer-events:none}
@@ -728,9 +731,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* 3-DOT SHEET */
 #dd-bg{display:flex;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
-#dd-bg.on{visibility:visible;pointer-events:auto}
-#fl-screen{display:flex;position:fixed;inset:0;z-index:640;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
-#fl-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
+#dd-bg.on{visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
 .dd-item{display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:15.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .dd-item.red{color:#E8352A}
 
@@ -771,7 +772,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #react-sheet-bg.on{display:flex}
 .react-dim{position:absolute;inset:0;background:rgba(0,0,0,.3);animation:dimIn .28s ease}
 @keyframes dimIn{from{opacity:0}to{opacity:1}}
-@keyframes flRowIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
 #react-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;padding-bottom:max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)}
 #react-sheet-bg.on #react-sheet{transform:translateY(0)}
 .react-sheet-handle{width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0}
@@ -1873,35 +1873,31 @@ body {
 
 <!-- FOLLOW LIST SHEET -->
 <div id="fl-screen">
-  <!-- TOPBAR -->
   <div style="display:flex;align-items:center;height:52px;padding:0 4px 0 2px;flex-shrink:0;position:relative">
     <button onclick="closeFollowSheet()" style="background:none;border:none;cursor:pointer;padding:8px 12px;color:var(--text);display:flex;align-items:center;border-radius:10px">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <div id="fl-owner-name" style="position:absolute;left:50%;transform:translateX(-50%);font-weight:800;font-size:15.5px;color:var(--text);letter-spacing:-0.5px;pointer-events:none;user-select:none;white-space:nowrap;overflow:hidden;max-width:60%"></div>
+    <div id="fl-owner-name" style="position:absolute;left:50%;transform:translateX(-50%);font-weight:700;font-size:16px;color:var(--text);pointer-events:none;user-select:none;white-space:nowrap;overflow:hidden;max-width:60%"></div>
   </div>
-  <!-- TABS -->
-  <div id="fl-tabs" style="display:flex;flex-shrink:0;padding:0 4px">
+  <div style="display:flex;flex-shrink:0;padding:0 4px">
     <button id="fl-tab-followers" onclick="flSwitchTab('followers')" style="flex:1;background:none;border:none;cursor:pointer;padding:10px 0 14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px">
       <span class="fl-tab-label" style="font-size:14px;letter-spacing:-0.3px;transition:all 0.2s">Followers</span>
-      <span id="fl-count-followers" class="fl-tab-count" style="font-size:12px;font-weight:700;letter-spacing:-0.1px;transition:all 0.2s">0</span>
+      <span id="fl-count-followers" style="font-size:12px;font-weight:700;transition:all 0.2s"></span>
     </button>
     <button id="fl-tab-following" onclick="flSwitchTab('following')" style="flex:1;background:none;border:none;cursor:pointer;padding:10px 0 14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px">
       <span class="fl-tab-label" style="font-size:14px;letter-spacing:-0.3px;transition:all 0.2s">Following</span>
-      <span id="fl-count-following" class="fl-tab-count" style="font-size:12px;font-weight:700;letter-spacing:-0.1px;transition:all 0.2s">0</span>
+      <span id="fl-count-following" style="font-size:12px;font-weight:700;transition:all 0.2s"></span>
     </button>
   </div>
-  <!-- SEARCH -->
   <div style="padding:4px 16px 10px;flex-shrink:0">
     <div style="display:flex;align-items:center;gap:8px;background:var(--inp-bg);border-radius:13px;padding:0 13px">
       <svg width="14" height="14" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/></svg>
-      <input id="fl-search" oninput="flOnSearch()" placeholder="Search" autocomplete="off" style="flex:1;background:none;border:none;outline:none;font-size:14.5px;color:var(--text);font-family:inherit;padding:10px 0;letter-spacing:-0.1px;-webkit-appearance:none"/>
+      <input id="fl-search" oninput="flOnSearch()" placeholder="Search" autocomplete="off" style="flex:1;background:none;border:none;outline:none;font-size:14.5px;color:var(--text);font-family:inherit;padding:10px 0;-webkit-appearance:none"/>
       <button id="fl-search-clear" onclick="flClearSearch()" style="display:none;background:var(--sub);border:none;cursor:pointer;width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0;flex-shrink:0">
         <svg width="8" height="8" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
       </button>
     </div>
   </div>
-  <!-- LIST -->
   <div id="fl-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 
@@ -12107,7 +12103,7 @@ function closeProf(){
     if(_profFromFollowScreen){
       _profFromFollowScreen=false;
       var flScr=document.getElementById('fl-screen');
-      if(flScr){flScr.style.visibility='';flScr.style.pointerEvents='';flScr.classList.add('on');}
+      if(flScr)flScr.classList.add('on');
       return;
     }
 
@@ -12143,7 +12139,6 @@ function closeProf(){
 // each entry = {type:'prof'|'notif'|'tab', ...}
 var _chatBackCtx=null;
 var _profFromChat=false; // true when profile was opened from inside the chat window
-var _profFromFollowScreen=false; // true when profile was opened from followers/following screen
 
 function startConvoC(uid){
   var u=USERS.find(function(x){return x.id===uid;});
@@ -14183,17 +14178,19 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
 }
 
 // -- FOLLOW LIST SHEET ---------------------------------------------------------
-// ── FOLLOW SCREEN ─────────────────────────────────────────────────────────────
+// ── FOLLOW SCREEN STATE ────────────────────────────────────────────────────────
 var _flUid=null, _flActiveTab='followers', _flData={followers:[],following:[]}, _flLoaded={followers:false,following:false};
+var _profFromFollowScreen=false;
 
-function _flTabStyle(active){
+function _flTabStyle(tab){
   ['followers','following'].forEach(function(t){
     var btn=document.getElementById('fl-tab-'+t);
-    var label=btn&&btn.querySelector('.fl-tab-label');
+    if(!btn)return;
+    var label=btn.querySelector('.fl-tab-label');
     var count=document.getElementById('fl-count-'+t);
-    var isActive=t===active;
-    if(label){label.style.fontWeight=isActive?'800':'500';label.style.color=isActive?'var(--text)':'var(--sub)';}
-    if(count){count.style.color=isActive?'var(--text)':'var(--sub)';}
+    var active=t===tab;
+    if(label){label.style.fontWeight=active?'800':'500';label.style.color=active?'var(--text)':'var(--sub)';}
+    if(count){count.style.color=active?'var(--text)':'var(--sub)';}
   });
 }
 
@@ -14201,103 +14198,79 @@ function flSwitchTab(tab){
   _flActiveTab=tab;
   _flTabStyle(tab);
   var si=document.getElementById('fl-search');
-  if(si){si.value='';flOnSearch();}
-  _flRenderList(_flData[tab]);
-  if(!_flLoaded[tab]&&_flUid) _flFetch(tab);
+  if(si)si.value='';
+  var clr=document.getElementById('fl-search-clear');
+  if(clr)clr.style.display='none';
+  _flRender(_flData[tab]);
+  if(!_flLoaded[tab]) _flFetch(tab);
 }
 
 function flOnSearch(){
   var si=document.getElementById('fl-search');
-  var clr=document.getElementById('fl-search-clear');
   var q=(si&&si.value)||'';
-  if(clr){clr.style.display=q?'flex':'none';}
+  var clr=document.getElementById('fl-search-clear');
+  if(clr)clr.style.display=q?'flex':'none';
   var base=_flData[_flActiveTab]||[];
-  if(!q.trim()){_flRenderList(base);return;}
+  if(!q.trim()){_flRender(base);return;}
   var terms=q.toLowerCase().split(/\s+/).filter(Boolean);
-  var filtered=base.filter(function(u){
-    var hay=((u.display_name||'')+(u.username||'')).toLowerCase();
-    return terms.every(function(t){return hay.includes(t);});
-  });
-  _flRenderList(filtered,q);
+  _flRender(base.filter(function(u){
+    return terms.every(function(t){return((u.display_name||'')+(u.username||'')).toLowerCase().includes(t);});
+  }),q);
 }
 
 function flClearSearch(){
   var si=document.getElementById('fl-search');
-  var clr=document.getElementById('fl-search-clear');
   if(si){si.value='';si.focus();}
-  if(clr)clr.style.display='none';
-  _flRenderList(_flData[_flActiveTab]);
+  document.getElementById('fl-search-clear').style.display='none';
+  _flRender(_flData[_flActiveTab]);
 }
 
-function _flRenderList(users,query){
+function _flRender(users,query){
   var listEl=document.getElementById('fl-list');
   if(!listEl)return;
   if(!users||!users.length){
-    var msg=query?'No results for \u201c'+query+'\u201d':((_flActiveTab==='followers')?'No followers yet':'Not following anyone yet');
-    var sub=query?'Try a different name or username.':(_flActiveTab==='followers')?'When people follow you, they\'ll appear here.':'You haven\'t followed anyone yet.';
-    listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:72px 40px;text-align:center">'+
-      '<div style="width:54px;height:54px;border-radius:16px;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;margin-bottom:2px">'+
-        '<svg width="22" height="22" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24">'+
-          (query?'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/>':
-                 '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>') +
-        '</svg></div>'+
-      '<div style="font-weight:800;font-size:15px;color:var(--text);letter-spacing:-0.4px">'+E(msg)+'</div>'+
-      '<div style="font-size:13.5px;color:var(--sub);line-height:1.55;max-width:220px">'+E(sub)+'</div>'+
-    '</div>';
+    var msg=query?'No results for \u201c'+query+'\u201d':(_flActiveTab==='followers'?'No followers yet':'Not following anyone yet');
+    listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:64px 32px;text-align:center">'+
+      '<svg width="32" height="32" fill="none" stroke="var(--sub)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+
+      '<div style="font-weight:700;font-size:14.5px;color:var(--text)">'+E(msg)+'</div></div>';
     return;
   }
   listEl.innerHTML='';
   users.forEach(function(u,i){
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 20px;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:flRowIn 0.26s cubic-bezier(.16,1,.3,1) both;animation-delay:'+(i*28)+'ms';
-    var isFollowing=following.has(u.id);
+    row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 20px;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:flRowIn 0.24s cubic-bezier(.16,1,.3,1) both;animation-delay:'+Math.min(i*28,280)+'ms';
     var isMe=profile&&u.id===profile.id;
+    var isFollowing=following.has(u.id);
     row.innerHTML=
       '<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+'">'+avH(u.avatar_url,u.display_name||u.username)+'</div>'+
       '<div style="flex:1;min-width:0">'+
         '<div style="display:flex;align-items:center;gap:4px">'+
-          '<span style="font-weight:700;font-size:14.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.3px">'+E(u.display_name||u.username)+'</span>'+
+          '<span style="font-weight:700;font-size:14.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+E(u.display_name||u.username)+'</span>'+
           badgeFor(u.id)+
         '</div>'+
-        '<div style="font-size:13px;color:var(--sub);margin-top:2px;letter-spacing:-0.1px">@'+E(u.username||'')+'</div>'+
+        '<div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>'+
       '</div>'+
-      (!isMe?'<button class="fl-follow-btn" data-uid="'+u.id+'" style="flex-shrink:0;height:32px;padding:0 16px;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.16s ease;letter-spacing:-0.2px;'+(isFollowing?'border:1.5px solid var(--border);background:transparent;color:var(--text)':'border:none;background:var(--text);color:var(--card)')+'">'+
+      (!isMe?'<button class="fl-fbtn" data-uid="'+u.id+'" style="flex-shrink:0;height:32px;padding:0 15px;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:-0.2px;transition:all 0.15s;'+(isFollowing?'border:1.5px solid var(--border);background:transparent;color:var(--text)':'border:none;background:var(--text);color:var(--card)')+'">'+
         (isFollowing?'Following':'Follow')+'</button>':'');
-    // Row tap → open profile
     row.addEventListener('click',function(e){
-      if(e.target.closest('.fl-follow-btn'))return;
-      if(profile&&u.id===profile.id){
-        closeFollowSheet();
-        setTimeout(function(){goTab('me');},300);
-      } else {
-        _profFromFollowScreen=true;
-        // Use the unwrapped openProf so history wrapper doesn't double-push.
-        // We manually push prof-screen here so the stack is: fl-screen → prof-screen
-        history.pushState({_fade:'prof-screen'},'');
-        var rawOpen=window._origOpenProf||window.openProf;
-        rawOpen(u);
-      }
+      if(e.target.closest&&e.target.closest('.fl-fbtn'))return;
+      if(isMe){closeFollowSheet();setTimeout(function(){goTab('me');},300);return;}
+      _profFromFollowScreen=true;
+      history.pushState({_fade:'prof-screen'},'');
+      (window._origOpenProf||window.openProf)(u);
     });
-    // Follow button tap
-    var fbtn=row.querySelector('.fl-follow-btn');
+    var fbtn=row.querySelector('.fl-fbtn');
     if(fbtn){
       fbtn.addEventListener('click',function(e){
         e.stopPropagation();
         toggleFollow(u.id,fbtn);
-        // Update local state for next render
         setTimeout(function(){
-          if(following.has(u.id)){
-            fbtn.textContent='Following';
-            fbtn.style.border='1.5px solid var(--border)';
-            fbtn.style.background='transparent';
-            fbtn.style.color='var(--text)';
-          } else {
-            fbtn.textContent='Follow';
-            fbtn.style.border='none';
-            fbtn.style.background='var(--text)';
-            fbtn.style.color='var(--card)';
-          }
-        },300);
+          var nowFollowing=following.has(u.id);
+          fbtn.textContent=nowFollowing?'Following':'Follow';
+          fbtn.style.border=nowFollowing?'1.5px solid var(--border)':'none';
+          fbtn.style.background=nowFollowing?'transparent':'var(--text)';
+          fbtn.style.color=nowFollowing?'var(--text)':'var(--card)';
+        },350);
       });
     }
     listEl.appendChild(row);
@@ -14307,110 +14280,52 @@ function _flRenderList(users,query){
 function _flFetch(tab){
   var listEl=document.getElementById('fl-list');
   if(!listEl)return;
-  // Show spinner only if list is currently empty
-  if(!_flData[tab].length) listEl.innerHTML='<div style="display:flex;justify-content:center;padding:40px"><div class="ptr-ring"></div></div>';
-  var q;
-  if(tab==='followers'){
-    q=_sb.from('follows').select('follower_id').eq('following_id',_flUid);
-  } else {
-    q=_sb.from('follows').select('following_id').eq('follower_id',_flUid);
-  }
+  if(!_flData[tab].length)listEl.innerHTML='<div style="display:flex;justify-content:center;padding:40px"><div class="ptr-ring"></div></div>';
+  var q=tab==='followers'
+    ?_sb.from('follows').select('follower_id').eq('following_id',_flUid)
+    :_sb.from('follows').select('following_id').eq('follower_id',_flUid);
   q.then(function(res){
     _flLoaded[tab]=true;
-    if(res.error||!res.data||!res.data.length){
-      _flData[tab]=[];
-      if(_flActiveTab===tab) _flRenderList([]);
-      return;
-    }
+    if(res.error||!res.data||!res.data.length){_flData[tab]=[];if(_flActiveTab===tab)_flRender([]);return;}
     var ids=res.data.map(function(r){return tab==='followers'?r.follower_id:r.following_id;});
-    // Update count badge
-    var countEl=document.getElementById('fl-count-'+tab);
-    if(countEl) countEl.textContent=ids.length;
+    var cnt=document.getElementById('fl-count-'+tab);
+    if(cnt)cnt.textContent=ids.length;
     _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
-      var users=pr.data||[];
-      _flData[tab]=users;
-      if(_flActiveTab===tab){
-        var si=document.getElementById('fl-search');
-        var q2=si&&si.value.trim();
-        if(q2) flOnSearch(); else _flRenderList(users);
-      }
+      _flData[tab]=pr.data||[];
+      if(_flActiveTab===tab){var si=document.getElementById('fl-search');var q2=si&&si.value.trim();if(q2)flOnSearch();else _flRender(_flData[tab]);}
     });
   });
 }
 
 function openFollowSheet(uid,type){
   if(!uid)return;
-  _flUid=uid;
-  _flActiveTab=type||'followers';
-  _flData={followers:[],following:[]};
-  _flLoaded={followers:false,following:false};
-
-  // Set owner name in topbar
+  _flUid=uid; _flActiveTab=type||'followers';
+  _flData={followers:[],following:[]}; _flLoaded={followers:false,following:false};
+  // Set owner name
   var ownerEl=document.getElementById('fl-owner-name');
-  if(ownerEl){
-    var ownerUser=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);
-    ownerEl.textContent=ownerUser?(ownerUser.display_name||ownerUser.username||''):'';
-  }
-
-  // Private account guard
-  var _target=USERS.find(function(x){return x.id===uid;});
-  if(_target&&_target.is_private&&!(profile&&uid===profile.id)&&!following.has(uid)){
-    var listEl=document.getElementById('fl-list');
-    if(listEl) listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:52px 22px;text-align:center">'+
+  if(ownerEl){var o=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);ownerEl.textContent=o?(o.display_name||o.username||''):'';}
+  // Private guard
+  var tgt=USERS.find(function(x){return x.id===uid;});
+  if(tgt&&tgt.is_private&&!(profile&&uid===profile.id)&&!following.has(uid)){
+    document.getElementById('fl-list').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:52px 22px;text-align:center">'+
       '<svg width="32" height="32" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
       '<div style="font-weight:700;font-size:14px;color:var(--text)">This list is private</div>'+
-      '<div style="font-size:13px;color:var(--sub)">Follow '+E(_target.display_name)+' to see who they follow.</div></div>';
-    var scr=document.getElementById('fl-screen');
-    scr.style.transition='none';
-    scr.style.transform='translateX(100%)';
-    scr.style.visibility='';scr.style.pointerEvents='';
-    requestAnimationFrame(function(){ scr.style.transition=''; scr.classList.add('on'); });
-    return;
+      '<div style="font-size:13px;color:var(--sub)">Follow '+E(tgt.display_name)+' to see who they follow.</div></div>';
   }
-
-  // Reset search
-  var si=document.getElementById('fl-search');
-  var clr=document.getElementById('fl-search-clear');
-  if(si) si.value='';
-  if(clr) clr.style.display='none';
-
-  // Set counts placeholder
-  ['followers','following'].forEach(function(t){
-    var c=document.getElementById('fl-count-'+t);
-    if(c) c.textContent='';
-  });
-
-  // Tab styles
+  // Reset search & counts
+  var si=document.getElementById('fl-search');if(si)si.value='';
+  var clr=document.getElementById('fl-search-clear');if(clr)clr.style.display='none';
+  ['followers','following'].forEach(function(t){var c=document.getElementById('fl-count-'+t);if(c)c.textContent='';});
   _flTabStyle(_flActiveTab);
-
-  // Open screen — force off-screen position, then re-enable transition and slide in
+  // Open
   var scr=document.getElementById('fl-screen');
-  scr.style.transition='none';
-  scr.style.transform='translateX(100%)';
-  scr.style.visibility='';
-  scr.style.pointerEvents='';
-  requestAnimationFrame(function(){
-    scr.style.transition='';
-    scr.classList.add('on');
-  });
-
-  // Fetch active tab
-  _flFetch(_flActiveTab);
+  scr.classList.add('on');
+  if(!tgt||!tgt.is_private||!(profile&&uid===profile.id)||following.has(uid))_flFetch(_flActiveTab);
 }
 
 function closeFollowSheet(){
   var scr=document.getElementById('fl-screen');
-  if(!scr)return;
-  // Force transform back to off-screen then let CSS transition play
-  scr.style.transition='none';
-  scr.style.transform='';
-  scr.style.visibility='';
-  scr.style.pointerEvents='';
-  // Re-enable transition on next frame so the slide-out animates
-  requestAnimationFrame(function(){
-    scr.style.transition='';
-    scr.classList.remove('on');
-  });
+  if(scr)scr.classList.remove('on');
   _profFromFollowScreen=false;
 }
 
@@ -17595,18 +17510,18 @@ function _buildEpCats(){
      correct close function instead of letting the page unload.
   ------------------------------------------------------------------*/
   var _HISTORY_PANELS = [
-    { openFn: 'openNotif',        closeFn: 'closeNotif',       panelId: 'notif-panel'      },
-    { openFn: 'openChat',         closeFn: 'closeCW',           panelId: 'cw'               },
-    { openFn: 'openProf',         closeFn: 'closeProf',         panelId: 'prof-screen'      },
-    { openFn: 'openSettings',     closeFn: 'closeSettings',     panelId: 'so'               },
-    { openFn: 'openCircleCW',     closeFn: 'closeCircleCW',     panelId: 'circle-cw'        },
-    { openFn: 'openSchedForm',    closeFn: 'closeSchedForm',    panelId: 'sched-form-panel' },
-    { openFn: 'openCircleInfo',   closeFn: 'closeCircleInfo',   panelId: 'circle-info'      },
-    { openFn: 'openSearch',       closeFn: 'closeSearch',       panelId: 's-search'         },
-    { openFn: 'openScrollView',   closeFn: 'closeScrollView',   panelId: 'scroll-view'      },
-    { openFn: 'openCS',           closeFn: 'closeCS',           panelId: 'cs-bg'            },
-    { openFn: 'openNotifPost',    closeFn: 'closeScrollView',   panelId: 'scroll-view'      },
-    { openFn: 'openFollowSheet',  closeFn: 'closeFollowSheet',  panelId: 'fl-screen'        },
+    { openFn: 'openNotif',       closeFn: 'closeNotif',      panelId: 'notif-panel'      },
+    { openFn: 'openChat',        closeFn: 'closeCW',         panelId: 'cw'               },
+    { openFn: 'openProf',        closeFn: 'closeProf',       panelId: 'prof-screen'      },
+    { openFn: 'openSettings',    closeFn: 'closeSettings',   panelId: 'so'               },
+    { openFn: 'openCircleCW',    closeFn: 'closeCircleCW',   panelId: 'circle-cw'        },
+    { openFn: 'openSchedForm',   closeFn: 'closeSchedForm',  panelId: 'sched-form-panel' },
+    { openFn: 'openCircleInfo',  closeFn: 'closeCircleInfo', panelId: 'circle-info'      },
+    { openFn: 'openSearch',      closeFn: 'closeSearch',     panelId: 's-search'         },
+    { openFn: 'openScrollView',  closeFn: 'closeScrollView', panelId: 'scroll-view'      },
+    { openFn: 'openCS',          closeFn: 'closeCS',         panelId: 'cs-bg'            },
+    { openFn: 'openNotifPost',   closeFn: 'closeScrollView', panelId: 'scroll-view'      },
+    { openFn: 'openFollowSheet', closeFn: 'closeFollowSheet',panelId: 'fl-screen'        },
   ];
 
   // Push a base state so the very first popstate has somewhere to land
@@ -17713,18 +17628,18 @@ function _buildEpCats(){
     var closed = false;
 
     // Close the topmost visible layer first (highest z-index wins).
-    // photo-viewer:1000, cs-bg:700, prof-screen:650+, fl-screen:700, scroll-view:660, notif/cw:200-220
+    // photo-viewer:1000, cs-bg:700, scroll-view:660, prof-screen:650, notif/cw:200-220
     var _toClose = [
       ['photo-viewer',     function(){ if(typeof window._pvClose==='function')window._pvClose(); }],
-      ['cs-bg',            'closeCS'         ],
-      ['prof-screen',      'closeProf'       ],
-      ['fl-screen',        'closeFollowSheet'],
-      ['scroll-view',      'closeScrollView' ],
-      ['sched-form-panel', 'closeSchedForm'  ],
-      ['circle-info',      'closeCircleInfo' ],
-      ['cw',               'closeCW'         ],
-      ['circle-cw',        'closeCircleCW'   ],
-      ['so',               'closeSettings'   ],
+      ['cs-bg',            'closeCS'          ],
+      ['prof-screen',      'closeProf'        ],
+      ['fl-screen',        'closeFollowSheet' ],
+      ['scroll-view',      'closeScrollView'  ],
+      ['sched-form-panel', 'closeSchedForm'   ],
+      ['circle-info',      'closeCircleInfo'  ],
+      ['cw',               'closeCW'          ],
+      ['circle-cw',        'closeCircleCW'    ],
+      ['so',               'closeSettings'    ],
     ];
     for (var i = 0; i < _toClose.length; i++) {
       var el = document.getElementById(_toClose[i][0]);
@@ -17868,7 +17783,7 @@ function _buildEpCats(){
   ------------------------------------------------------------------*/
   var PANELS = [
     'cw', 'notif-panel', 'prof-screen',
-    'circle-cw', 'sched-form-panel', 'circle-info', 'so', 'fl-screen'
+    'circle-cw', 'sched-form-panel', 'circle-info', 'so'
   ];
 
   /* Run after DOM is fully parsed */
