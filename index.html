@@ -729,8 +729,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* 3-DOT SHEET */
 #dd-bg{display:flex;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
 #dd-bg.on{visibility:visible;pointer-events:auto}
-#fl-bg{display:flex;position:fixed;inset:0;z-index:700;align-items:flex-end;visibility:hidden;pointer-events:none}
-#fl-bg.on{visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
+#fl-screen{display:flex;position:fixed;inset:0;z-index:700;background:var(--card);flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#fl-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
 .dd-item{display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:15.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .dd-item.red{color:#E8352A}
 
@@ -771,6 +771,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #react-sheet-bg.on{display:flex}
 .react-dim{position:absolute;inset:0;background:rgba(0,0,0,.3);animation:dimIn .28s ease}
 @keyframes dimIn{from{opacity:0}to{opacity:1}}
+@keyframes flRowIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
 #react-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;padding-bottom:max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)}
 #react-sheet-bg.on #react-sheet{transform:translateY(0)}
 .react-sheet-handle{width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0}
@@ -1527,7 +1528,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* Bottom sheets also get the spring treatment */
 #cs-sheet,
-#fl-sheet,
 #react-sheet,
 #views-sheet,
 #aud-sheet,
@@ -1872,16 +1872,37 @@ body {
 </div>
 
 <!-- FOLLOW LIST SHEET -->
-<div id="fl-bg" onclick="closeFollowSheet()">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);animation:dimIn .28s ease"></div>
-  <div id="fl-sheet" onclick="event.stopPropagation()" style="position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:72dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)">
-    <div style="width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0">
-      <div id="fl-title" style="font-weight:700;font-size:16px"></div>
-      <button onclick="closeFollowSheet()" style="background:var(--inp-bg);border:none;cursor:pointer;color:var(--sub);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">✕</button>
-    </div>
-    <div id="fl-list" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch"></div>
+<div id="fl-screen">
+  <!-- TOPBAR -->
+  <div style="display:flex;align-items:center;height:52px;padding:0 4px 0 2px;flex-shrink:0;position:relative">
+    <button onclick="closeFollowSheet()" style="background:none;border:none;cursor:pointer;padding:8px 12px;color:var(--text);display:flex;align-items:center;border-radius:10px">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div id="fl-owner-name" style="position:absolute;left:50%;transform:translateX(-50%);font-weight:800;font-size:15.5px;color:var(--text);letter-spacing:-0.5px;pointer-events:none;user-select:none;white-space:nowrap;overflow:hidden;max-width:60%"></div>
   </div>
+  <!-- TABS -->
+  <div id="fl-tabs" style="display:flex;flex-shrink:0;padding:0 4px">
+    <button id="fl-tab-followers" onclick="flSwitchTab('followers')" style="flex:1;background:none;border:none;cursor:pointer;padding:10px 0 14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px">
+      <span class="fl-tab-label" style="font-size:14px;letter-spacing:-0.3px;transition:all 0.2s">Followers</span>
+      <span id="fl-count-followers" class="fl-tab-count" style="font-size:12px;font-weight:700;letter-spacing:-0.1px;transition:all 0.2s">0</span>
+    </button>
+    <button id="fl-tab-following" onclick="flSwitchTab('following')" style="flex:1;background:none;border:none;cursor:pointer;padding:10px 0 14px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px">
+      <span class="fl-tab-label" style="font-size:14px;letter-spacing:-0.3px;transition:all 0.2s">Following</span>
+      <span id="fl-count-following" class="fl-tab-count" style="font-size:12px;font-weight:700;letter-spacing:-0.1px;transition:all 0.2s">0</span>
+    </button>
+  </div>
+  <!-- SEARCH -->
+  <div style="padding:4px 16px 10px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:8px;background:var(--inp-bg);border-radius:13px;padding:0 13px">
+      <svg width="14" height="14" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/></svg>
+      <input id="fl-search" oninput="flOnSearch()" placeholder="Search" autocomplete="off" style="flex:1;background:none;border:none;outline:none;font-size:14.5px;color:var(--text);font-family:inherit;padding:10px 0;letter-spacing:-0.1px;-webkit-appearance:none"/>
+      <button id="fl-search-clear" onclick="flClearSearch()" style="display:none;background:var(--sub);border:none;cursor:pointer;width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0;flex-shrink:0">
+        <svg width="8" height="8" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- LIST -->
+  <div id="fl-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 
 <!-- CHAT -->
@@ -3579,7 +3600,7 @@ function setupAllSheetSwipes() {
   // 7. VIEWS SHEET
   whenReady('views-bg', '#views-sheet', '.views-dim', function(){ closeViewsSheet({}); });
   // 8. FOLLOWERS/FOLLOWING SHEET
-  whenReady('fl-bg', '#fl-sheet', null, function(){ closeFollowSheet(); });
+  whenReady('fl-screen', null, null, function(){ closeFollowSheet(); });
   // 9. REACTION SHEET
   whenReady('react-sheet-bg', '#react-sheet', '.react-dim', function(){ closeReactSheet(); });
   // 10. CHAT MEDIA SHEET
@@ -14155,85 +14176,211 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
 }
 
 // -- FOLLOW LIST SHEET ---------------------------------------------------------
-function openFollowSheet(uid, type){
-  // type = 'followers' | 'following'
-  var isMe = profile && uid === profile.id;
-  var title = type === 'followers' ? 'Followers' : 'Following';
-  var sheet = document.getElementById('fl-sheet');
-  var titleEl = document.getElementById('fl-title');
-  var listEl = document.getElementById('fl-list');
-  if(!sheet||!titleEl||!listEl) return;
-  titleEl.textContent = title;
+// ── FOLLOW SCREEN ─────────────────────────────────────────────────────────────
+var _flUid=null, _flActiveTab='followers', _flData={followers:[],following:[]}, _flLoaded={followers:false,following:false};
 
-  // Private account guard — block non-followers from seeing lists
-  if(!isMe){
-    var _sheetTarget=USERS.find(function(x){return x.id===uid;});
-    if(_sheetTarget&&_sheetTarget.is_private&&!following.has(uid)){
-      listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:52px 22px;text-align:center">'+
-        '<svg width="32" height="32" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
-        '<div style="font-weight:600;font-size:14px;color:var(--text)">This list is private</div>'+
-        '<div style="font-size:13px;color:var(--sub)">Follow '+E(_sheetTarget.display_name)+' to see who they follow.</div>'+
-        '</div>';
-      var bg = document.getElementById('fl-bg');
-      sheet._swipeInited=false;
-      bg.classList.add('on');
-      requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
-      initSheetSwipe(sheet, null, function(){closeFollowSheet();});
-      return;
-    }
+function _flTabStyle(active){
+  ['followers','following'].forEach(function(t){
+    var btn=document.getElementById('fl-tab-'+t);
+    var label=btn&&btn.querySelector('.fl-tab-label');
+    var count=document.getElementById('fl-count-'+t);
+    var isActive=t===active;
+    if(label){label.style.fontWeight=isActive?'800':'500';label.style.color=isActive?'var(--text)':'var(--sub)';}
+    if(count){count.style.color=isActive?'var(--text)':'var(--sub)';}
+  });
+}
+
+function flSwitchTab(tab){
+  _flActiveTab=tab;
+  _flTabStyle(tab);
+  var si=document.getElementById('fl-search');
+  if(si){si.value='';flOnSearch();}
+  _flRenderList(_flData[tab]);
+  if(!_flLoaded[tab]&&_flUid) _flFetch(tab);
+}
+
+function flOnSearch(){
+  var si=document.getElementById('fl-search');
+  var clr=document.getElementById('fl-search-clear');
+  var q=(si&&si.value)||'';
+  if(clr){clr.style.display=q?'flex':'none';}
+  var base=_flData[_flActiveTab]||[];
+  if(!q.trim()){_flRenderList(base);return;}
+  var terms=q.toLowerCase().split(/\s+/).filter(Boolean);
+  var filtered=base.filter(function(u){
+    var hay=((u.display_name||'')+(u.username||'')).toLowerCase();
+    return terms.every(function(t){return hay.includes(t);});
+  });
+  _flRenderList(filtered,q);
+}
+
+function flClearSearch(){
+  var si=document.getElementById('fl-search');
+  var clr=document.getElementById('fl-search-clear');
+  if(si){si.value='';si.focus();}
+  if(clr)clr.style.display='none';
+  _flRenderList(_flData[_flActiveTab]);
+}
+
+function _flRenderList(users,query){
+  var listEl=document.getElementById('fl-list');
+  if(!listEl)return;
+  if(!users||!users.length){
+    var msg=query?'No results for \u201c'+query+'\u201d':((_flActiveTab==='followers')?'No followers yet':'Not following anyone yet');
+    var sub=query?'Try a different name or username.':(_flActiveTab==='followers')?'When people follow you, they\'ll appear here.':'You haven\'t followed anyone yet.';
+    listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:72px 40px;text-align:center">'+
+      '<div style="width:54px;height:54px;border-radius:16px;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;margin-bottom:2px">'+
+        '<svg width="22" height="22" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24">'+
+          (query?'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/>':
+                 '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>') +
+        '</svg></div>'+
+      '<div style="font-weight:800;font-size:15px;color:var(--text);letter-spacing:-0.4px">'+E(msg)+'</div>'+
+      '<div style="font-size:13.5px;color:var(--sub);line-height:1.55;max-width:220px">'+E(sub)+'</div>'+
+    '</div>';
+    return;
   }
-  listEl.innerHTML = '<div style="display:flex;justify-content:center;padding:28px"><div class="ptr-ring"></div></div>';
-  // Show sheet
-  var bg = document.getElementById('fl-bg');
-  sheet._swipeInited=false;
-  bg.classList.add('on');
-  requestAnimationFrame(function(){requestAnimationFrame(function(){sheet.style.transform='translateY(0)';});});
-  initSheetSwipe(sheet, null, function(){closeFollowSheet();});
-  // Fetch from Supabase
-  var query;
-  if(type==='followers'){
-    // People who follow uid -- get follower_id list, then profiles
-    query = _sb.from('follows').select('follower_id').eq('following_id', uid);
-  } else {
-    // People uid follows -- get following_id list, then profiles
-    query = _sb.from('follows').select('following_id').eq('follower_id', uid);
-  }
-  query.then(function(res){
-    if(res.error||!res.data||!res.data.length){
-      listEl.innerHTML='<div class="empty"><div class="empt">No '+(type==='followers'?'followers yet':'one followed yet')+'</div></div>';
-      return;
-    }
-    var ids = res.data.map(function(r){return type==='followers'?r.follower_id:r.following_id;});
-    _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
-      listEl.innerHTML='';
-      var users = pr.data||[];
-      if(!users.length){listEl.innerHTML='<div class="empty"><div class="empt">No users found</div></div>';return;}
-      users.forEach(function(u){
-        var row = document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:13px;padding:13px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent';
-        row.innerHTML=
-          '<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+'">'+avH(u.avatar_url,u.display_name||u.username)+'</div>'+
-          '<div style="flex:1;min-width:0">'+
-            '<div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username)+badgeFor(u.id)+'</div>'+
-            '<div style="font-size:13px;color:var(--sub);margin-top:2px">@'+E(u.username||'')+'</div>'+
-          '</div>';
-        row.addEventListener('click', function(){
-          closeFollowSheet();
-          setTimeout(function(){
-            if(profile && u.id === profile.id){goTab('me');}
-            else{openProf(u);}
-          }, 260);
-        });
-        listEl.appendChild(row);
+  listEl.innerHTML='';
+  users.forEach(function(u,i){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 20px;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:flRowIn 0.26s cubic-bezier(.16,1,.3,1) both;animation-delay:'+(i*28)+'ms';
+    var isFollowing=following.has(u.id);
+    var isMe=profile&&u.id===profile.id;
+    row.innerHTML=
+      '<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username)+'">'+avH(u.avatar_url,u.display_name||u.username)+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:4px">'+
+          '<span style="font-weight:700;font-size:14.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.3px">'+E(u.display_name||u.username)+'</span>'+
+          badgeFor(u.id)+
+        '</div>'+
+        '<div style="font-size:13px;color:var(--sub);margin-top:2px;letter-spacing:-0.1px">@'+E(u.username||'')+'</div>'+
+      '</div>'+
+      (!isMe?'<button class="fl-follow-btn" data-uid="'+u.id+'" style="flex-shrink:0;height:32px;padding:0 16px;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.16s ease;letter-spacing:-0.2px;'+(isFollowing?'border:1.5px solid var(--border);background:transparent;color:var(--text)':'border:none;background:var(--text);color:var(--card)')+'">'+
+        (isFollowing?'Following':'Follow')+'</button>':'');
+    // Row tap → open profile
+    row.addEventListener('click',function(e){
+      if(e.target.closest('.fl-follow-btn'))return;
+      closeFollowSheet();
+      setTimeout(function(){
+        if(profile&&u.id===profile.id)goTab('me');
+        else openProf(u);
+      },260);
+    });
+    // Follow button tap
+    var fbtn=row.querySelector('.fl-follow-btn');
+    if(fbtn){
+      fbtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        toggleFollow(u.id,fbtn);
+        // Update local state for next render
+        setTimeout(function(){
+          if(following.has(u.id)){
+            fbtn.textContent='Following';
+            fbtn.style.border='1.5px solid var(--border)';
+            fbtn.style.background='transparent';
+            fbtn.style.color='var(--text)';
+          } else {
+            fbtn.textContent='Follow';
+            fbtn.style.border='none';
+            fbtn.style.background='var(--text)';
+            fbtn.style.color='var(--card)';
+          }
+        },300);
       });
+    }
+    listEl.appendChild(row);
+  });
+}
+
+function _flFetch(tab){
+  var listEl=document.getElementById('fl-list');
+  if(!listEl)return;
+  // Show spinner only if list is currently empty
+  if(!_flData[tab].length) listEl.innerHTML='<div style="display:flex;justify-content:center;padding:40px"><div class="ptr-ring"></div></div>';
+  var q;
+  if(tab==='followers'){
+    q=_sb.from('follows').select('follower_id').eq('following_id',_flUid);
+  } else {
+    q=_sb.from('follows').select('following_id').eq('follower_id',_flUid);
+  }
+  q.then(function(res){
+    _flLoaded[tab]=true;
+    if(res.error||!res.data||!res.data.length){
+      _flData[tab]=[];
+      if(_flActiveTab===tab) _flRenderList([]);
+      return;
+    }
+    var ids=res.data.map(function(r){return tab==='followers'?r.follower_id:r.following_id;});
+    // Update count badge
+    var countEl=document.getElementById('fl-count-'+tab);
+    if(countEl) countEl.textContent=ids.length;
+    _sb.from('profiles').select('id,display_name,username,avatar_url').in('id',ids).then(function(pr){
+      var users=pr.data||[];
+      _flData[tab]=users;
+      if(_flActiveTab===tab){
+        var si=document.getElementById('fl-search');
+        var q2=si&&si.value.trim();
+        if(q2) flOnSearch(); else _flRenderList(users);
+      }
     });
   });
 }
+
+function openFollowSheet(uid,type){
+  if(!uid)return;
+  _flUid=uid;
+  _flActiveTab=type||'followers';
+  _flData={followers:[],following:[]};
+  _flLoaded={followers:false,following:false};
+
+  // Set owner name in topbar
+  var ownerEl=document.getElementById('fl-owner-name');
+  if(ownerEl){
+    var ownerUser=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);
+    ownerEl.textContent=ownerUser?(ownerUser.display_name||ownerUser.username||''):'';
+  }
+
+  // Private account guard
+  var _target=USERS.find(function(x){return x.id===uid;});
+  if(_target&&_target.is_private&&!(profile&&uid===profile.id)&&!following.has(uid)){
+    var listEl=document.getElementById('fl-list');
+    if(listEl) listEl.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:52px 22px;text-align:center">'+
+      '<svg width="32" height="32" fill="none" stroke="var(--sub)" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+      '<div style="font-weight:700;font-size:14px;color:var(--text)">This list is private</div>'+
+      '<div style="font-size:13px;color:var(--sub)">Follow '+E(_target.display_name)+' to see who they follow.</div></div>';
+    var scr=document.getElementById('fl-screen');
+    scr.style.display='';scr.style.visibility='';scr.style.pointerEvents='';scr.classList.add('on');
+    return;
+  }
+
+  // Reset search
+  var si=document.getElementById('fl-search');
+  var clr=document.getElementById('fl-search-clear');
+  if(si) si.value='';
+  if(clr) clr.style.display='none';
+
+  // Set counts placeholder
+  ['followers','following'].forEach(function(t){
+    var c=document.getElementById('fl-count-'+t);
+    if(c) c.textContent='';
+  });
+
+  // Tab styles
+  _flTabStyle(_flActiveTab);
+
+  // Open screen
+  var scr=document.getElementById('fl-screen');
+  scr.style.display='';scr.style.visibility='';scr.style.pointerEvents='';scr.classList.add('on');
+
+  // Fetch active tab
+  _flFetch(_flActiveTab);
+}
+
 function closeFollowSheet(){
-  var sheet=document.getElementById('fl-sheet');
-  var bg=document.getElementById('fl-bg');
-  if(sheet) sheet.style.transform='translateY(100%)';
-  setTimeout(function(){if(bg)bg.classList.remove('on');},320);
+  var scr=document.getElementById('fl-screen');
+  if(scr) scr.classList.remove('on');
+  setTimeout(function(){
+    if(scr){scr.style.visibility='hidden';scr.style.pointerEvents='none';}
+  },320);
 }
 
 // -- KEYBOARD AVOID ------------------------------------------------------------
