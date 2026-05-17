@@ -14327,6 +14327,8 @@ function openFollowSheet(uid,type){
   // Detect if we're opening from inside prof-screen
   var ps=document.getElementById('prof-screen');
   _flOpenedFromProf=!!(ps&&ps.classList.contains('on'));
+  // Hide prof-screen so fl-screen (z-index 640) isn't blocked behind it (z-index 650)
+  if(_flOpenedFromProf&&ps){ps.style.visibility='hidden';ps.style.pointerEvents='none';}
   // Set owner name
   var ownerEl=document.getElementById('fl-owner-name');
   if(ownerEl){var o=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);ownerEl.textContent=o?(o.display_name||o.username||''):'';}
