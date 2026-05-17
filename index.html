@@ -14181,6 +14181,7 @@ function _buildReportCard(rep,pmap,pendingArr,resolvedArr,updateBadge,contentWra
 // ── FOLLOW SCREEN STATE ────────────────────────────────────────────────────────
 var _flUid=null, _flActiveTab='followers', _flData={followers:[],following:[]}, _flLoaded={followers:false,following:false};
 var _profFromFollowScreen=false;
+var _flOpenedFromProf=false; // true when fl-screen was opened while prof-screen was already open
 
 function _flTabStyle(tab){
   ['followers','following'].forEach(function(t){
@@ -14254,10 +14255,32 @@ function _flRender(users,query){
         (isFollowing?'Following':'Follow')+'</button>':'');
     row.addEventListener('click',function(e){
       if(e.target.closest&&e.target.closest('.fl-fbtn'))return;
-      if(isMe){closeFollowSheet();setTimeout(function(){goTab('me');},300);return;}
-      _profFromFollowScreen=true;
-      history.pushState({_fade:'prof-screen'},'');
-      (window._origOpenProf||window.openProf)(u);
+      if(isMe){
+        // Tapped own profile row
+        if(_flOpenedFromProf){
+          // Just close fl, prof-screen is already under (or go to me tab)
+          closeFollowSheet();
+        } else {
+          closeFollowSheet();
+          setTimeout(function(){goTab('me');},300);
+        }
+        return;
+      }
+      if(_flOpenedFromProf){
+        // fl was opened from inside prof-screen
+        // Close fl (restores prof underneath), then open the tapped user's prof on top
+        var flScr=document.getElementById('fl-screen');
+        if(flScr)flScr.classList.remove('on');
+        _flOpenedFromProf=false;
+        _profFromFollowScreen=true;
+        history.pushState({_fade:'prof-screen'},'');
+        (window._origOpenProf||window.openProf)(u);
+      } else {
+        // fl was opened from feed — open prof on top of fl
+        _profFromFollowScreen=true;
+        history.pushState({_fade:'prof-screen'},'');
+        (window._origOpenProf||window.openProf)(u);
+      }
     });
     var fbtn=row.querySelector('.fl-fbtn');
     if(fbtn){
@@ -14301,6 +14324,9 @@ function openFollowSheet(uid,type){
   if(!uid)return;
   _flUid=uid; _flActiveTab=type||'followers';
   _flData={followers:[],following:[]}; _flLoaded={followers:false,following:false};
+  // Detect if we're opening from inside prof-screen
+  var ps=document.getElementById('prof-screen');
+  _flOpenedFromProf=!!(ps&&ps.classList.contains('on'));
   // Set owner name
   var ownerEl=document.getElementById('fl-owner-name');
   if(ownerEl){var o=USERS.find(function(x){return x.id===uid;})||(profile&&profile.id===uid?profile:null);ownerEl.textContent=o?(o.display_name||o.username||''):'';}
@@ -14317,6 +14343,7 @@ function openFollowSheet(uid,type){
   var clr=document.getElementById('fl-search-clear');if(clr)clr.style.display='none';
   ['followers','following'].forEach(function(t){var c=document.getElementById('fl-count-'+t);if(c)c.textContent='';});
   _flTabStyle(_flActiveTab);
+  _profFromFollowScreen=false;
   // Open
   var scr=document.getElementById('fl-screen');
   scr.classList.add('on');
@@ -14326,6 +14353,13 @@ function openFollowSheet(uid,type){
 function closeFollowSheet(){
   var scr=document.getElementById('fl-screen');
   if(scr)scr.classList.remove('on');
+  // If fl-screen was opened from within prof-screen, restore prof-screen
+  if(_flOpenedFromProf){
+    _flOpenedFromProf=false;
+    var ps=document.getElementById('prof-screen');
+    if(ps){ps.style.visibility='';ps.style.pointerEvents='';ps.classList.add('on');}
+    return;
+  }
   _profFromFollowScreen=false;
 }
 
@@ -17632,8 +17666,8 @@ function _buildEpCats(){
     var _toClose = [
       ['photo-viewer',     function(){ if(typeof window._pvClose==='function')window._pvClose(); }],
       ['cs-bg',            'closeCS'          ],
-      ['prof-screen',      'closeProf'        ],
       ['fl-screen',        'closeFollowSheet' ],
+      ['prof-screen',      'closeProf'        ],
       ['scroll-view',      'closeScrollView'  ],
       ['sched-form-panel', 'closeSchedForm'   ],
       ['circle-info',      'closeCircleInfo'  ],
