@@ -14361,8 +14361,10 @@ function openFollowSheet(uid,type){
       '<div style="font-weight:700;font-size:14px;color:var(--text)">This list is private</div>'+
       '<div style="font-size:13px;color:var(--sub)">Follow '+E(_target.display_name)+' to see who they follow.</div></div>';
     var scr=document.getElementById('fl-screen');
-    scr.style.transform='';scr.style.visibility='';scr.style.pointerEvents='';
-    scr.classList.add('on');
+    scr.style.transition='none';
+    scr.style.transform='translateX(100%)';
+    scr.style.visibility='';scr.style.pointerEvents='';
+    requestAnimationFrame(function(){ scr.style.transition=''; scr.classList.add('on'); });
     return;
   }
 
@@ -14381,12 +14383,16 @@ function openFollowSheet(uid,type){
   // Tab styles
   _flTabStyle(_flActiveTab);
 
-  // Open screen — reset any inline transform so CSS transition fires cleanly
+  // Open screen — force off-screen position, then re-enable transition and slide in
   var scr=document.getElementById('fl-screen');
-  scr.style.transform='';
+  scr.style.transition='none';
+  scr.style.transform='translateX(100%)';
   scr.style.visibility='';
   scr.style.pointerEvents='';
-  scr.classList.add('on');
+  requestAnimationFrame(function(){
+    scr.style.transition='';
+    scr.classList.add('on');
+  });
 
   // Fetch active tab
   _flFetch(_flActiveTab);
@@ -14395,11 +14401,16 @@ function openFollowSheet(uid,type){
 function closeFollowSheet(){
   var scr=document.getElementById('fl-screen');
   if(!scr)return;
-  scr.classList.remove('on');
-  // Clear ALL inline style overrides so CSS controls next open cleanly
+  // Force transform back to off-screen then let CSS transition play
+  scr.style.transition='none';
+  scr.style.transform='';
   scr.style.visibility='';
   scr.style.pointerEvents='';
-  scr.style.transform='';
+  // Re-enable transition on next frame so the slide-out animates
+  requestAnimationFrame(function(){
+    scr.style.transition='';
+    scr.classList.remove('on');
+  });
   _profFromFollowScreen=false;
 }
 
@@ -17568,13 +17579,14 @@ function _buildEpCats(){
     }
   }
 
-  _addParallax('openNotif',      'closeNotif');
-  _addParallax('openChat',       'closeCW');
-  _addParallax('openProf',       'closeProf');
-  _addParallax('openSettings',   'closeSettings');
-  _addParallax('openCircleCW',   'closeCircleCW');
-  _addParallax('openSchedForm',  'closeSchedForm');
-  _addParallax('openCircleInfo', 'closeCircleInfo');
+  _addParallax('openNotif',       'closeNotif');
+  _addParallax('openChat',        'closeCW');
+  _addParallax('openProf',        'closeProf');
+  _addParallax('openSettings',    'closeSettings');
+  _addParallax('openCircleCW',    'closeCircleCW');
+  _addParallax('openSchedForm',   'closeSchedForm');
+  _addParallax('openCircleInfo',  'closeCircleInfo');
+  _addParallax('openFollowSheet', 'closeFollowSheet');
 
   /* -- NATIVE SWIPE-BACK via History API ----------------------------
      Each panel open pushes a history entry. When the OS fires a
@@ -17856,7 +17868,7 @@ function _buildEpCats(){
   ------------------------------------------------------------------*/
   var PANELS = [
     'cw', 'notif-panel', 'prof-screen',
-    'circle-cw', 'sched-form-panel', 'circle-info', 'so'
+    'circle-cw', 'sched-form-panel', 'circle-info', 'so', 'fl-screen'
   ];
 
   /* Run after DOM is fully parsed */
