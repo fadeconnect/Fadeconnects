@@ -729,6 +729,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* 3-DOT SHEET */
 #dd-bg{display:flex;position:fixed;inset:0;z-index:700;visibility:hidden;pointer-events:none}
 #dd-bg.on{visibility:visible;pointer-events:auto}
+#fl-bg{display:flex;position:fixed;inset:0;z-index:700;align-items:flex-end;visibility:hidden;pointer-events:none}
 #fl-bg.on{visibility:visible;pointer-events:auto}#dd-sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:0 0 max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);position:fixed;bottom:0;left:0;right:0}
 .dd-item{display:flex;align-items:center;gap:12px;padding:16px 22px;font-size:15.5px;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .dd-item.red{color:#E8352A}
@@ -1871,7 +1872,7 @@ body {
 </div>
 
 <!-- FOLLOW LIST SHEET -->
-<div id="fl-bg" onclick="closeFollowSheet()" style="display:flex;position:fixed;inset:0;z-index:700;align-items:flex-end;visibility:hidden;pointer-events:none">
+<div id="fl-bg" onclick="closeFollowSheet()">
   <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);animation:dimIn .28s ease"></div>
   <div id="fl-sheet" onclick="event.stopPropagation()" style="position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:72dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94)">
     <div style="width:34px;height:3px;background:var(--border);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>
