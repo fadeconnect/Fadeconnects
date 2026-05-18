@@ -18,6 +18,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+/* ── Global copy/selection lock ── */
+*:not(input):not(textarea){-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 :root{--bg:#fff;--card:#fff;--border:#F0F0EE;--text:#1A1A1A;--sub:#9A9A95;--inp-bg:#F5F5F3;--inp-border:#EBEBEA;--inp-text:#1A1A1A;--inp-ph:#AEAEAA;--bubble-me:#7C3AED;--bubble-them:#F0F0F0;--bubble-them-text:#111;--nb:max(10px,env(safe-area-inset-bottom));--nt:env(safe-area-inset-top,0px);--nav-h:62px}
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
 #root{height:100dvh;position:relative;overflow:hidden;padding-top:var(--nt)}
@@ -2201,6 +2204,24 @@ body {
 </div>
 
 <script>
+// ── Global copy/selection/context-menu lock ──────────────────────────────────
+(function(){
+  // Block copy & cut everywhere (clipboard stays empty)
+  document.addEventListener('copy',  function(e){ e.preventDefault(); e.stopPropagation(); }, true);
+  document.addEventListener('cut',   function(e){ e.preventDefault(); e.stopPropagation(); }, true);
+  // Block right-click / long-press context menu (Android "Copy" popup)
+  document.addEventListener('contextmenu', function(e){
+    // Allow on inputs/textareas so paste still works
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+  // Block text selection start everywhere except inputs/textareas
+  document.addEventListener('selectstart', function(e){
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+})();
+// ─────────────────────────────────────────────────────────────────────────────
 // -- COLORS --------------------------------------------------------------------
 var AV_COLORS=['#7C3AED','#DB2777','#0EA5E9','#059669','#D97706','#DC2626','#2563EB','#0D9488','#EA580C'];
 function nc(n){var s=0;for(var i=0;i<(n||'').length;i++)s+=(n||'').charCodeAt(i);return AV_COLORS[s%AV_COLORS.length];}
@@ -3383,13 +3404,6 @@ function trySignup(){
 
 function initApp(userProfile){
   profile = userProfile;
-  // Prevent double-tap text selection in browsers (already blocked in PWA via user-select:none on .post)
-  (function(){
-    var _ssTarget=document.getElementById('feed')||document.body;
-    _ssTarget.addEventListener('selectstart',function(e){
-      var t=e.target;while(t&&t!==document.body){if(t.classList&&(t.classList.contains('post')||t.classList.contains('postbody')||t.classList.contains('postcap'))){e.preventDefault();return;}t=t.parentElement;}
-    });
-  })();
   // Restore per-user dark mode preference
   try{
     var _dk=localStorage.getItem('fade_dark_'+profile.id);
