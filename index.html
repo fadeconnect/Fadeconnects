@@ -6345,6 +6345,7 @@ function openCreator(){
   if(hint){hint.style.opacity='1';}
   var cr=document.getElementById('story-creator');cr.style.display='flex';cr.classList.remove('sc-editing');
   history.pushState({_fade:'story-creator'},'');
+  history.pushState({_fade:'sentinel'},'');
   requestAnimationFrame(function(){requestAnimationFrame(function(){cr.style.opacity='1';});});
 }
 
@@ -8254,7 +8255,7 @@ function openSV(gi){
   svGroups[gi].seen=true;
   renderStrip();
   // Push history so native back swipe closes the viewer
-  if(!_svReturnCtx){history.pushState({_fade:'sv'},'');}
+  if(!_svReturnCtx){history.pushState({_fade:'sv'},'');history.pushState({_fade:'sentinel'},'');}
   var isOwn=g.user.id==='demo'||(profile&&g.user.id===profile.id);
   var acts=document.getElementById('sv-acts');
   var dot3=document.getElementById('sv-3dot');
@@ -8539,6 +8540,7 @@ function svOpenEdit(){
   _svEditAttachSwipe();
   // Push history so native swipe-back returns to scroll-view instead of closing app
   history.pushState({_fade:'sv-edit'},'');
+  history.pushState({_fade:'sentinel'},'');
   var bg=document.getElementById('sv-edit-bg');bg.style.display='flex';
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
 }
@@ -10750,6 +10752,7 @@ function buildStoryShareCard(p,isMine){
       _svReturnCtx='chat';
       svGI=foundGI;svII=foundII;
       history.pushState({_fade:'sv'},'');
+      history.pushState({_fade:'sentinel'},'');
       openSV(svGI);
     } else {
       T('Loading...');loadStories();
@@ -10759,7 +10762,7 @@ function buildStoryShareCard(p,isMine){
           var fi2=svGroups[i].items.findIndex(function(it){return it.id===p.storyId;});
           if(fi2>=0){gi2=i;ii2=fi2;break;}
         }
-        if(gi2>=0){_svReturnCtx='chat';svGI=gi2;svII=ii2;history.pushState({_fade:'sv'},'');openSV(svGI);}
+        if(gi2>=0){_svReturnCtx='chat';svGI=gi2;svII=ii2;history.pushState({_fade:'sv'},'');history.pushState({_fade:'sentinel'},'');openSV(svGI);}
         else{T('This moment has faded');}
       },1400);
     }
@@ -13493,6 +13496,7 @@ function saveProfile(){
 
     _pvOpen=true;
     history.pushState({_fade:'photo-viewer'},'');
+    history.pushState({_fade:'sentinel'},'');
     overlay.style.display='flex';
     overlay.style.opacity='0';
     overlay.style.transition='opacity .2s ease';
@@ -13555,6 +13559,7 @@ function openSVFromTalk(uid){
   if(gi<0){T('No active moments');return;}
   _svReturnCtx='talk';
   history.pushState({_fade:'sv'},'');
+  history.pushState({_fade:'sentinel'},'');
   openSV(gi);
 }
 function openSVFromChat(uid){
@@ -13562,6 +13567,7 @@ function openSVFromChat(uid){
   if(gi<0){T('No active moments');return;}
   _svReturnCtx='chat';
   history.pushState({_fade:'sv'},'');
+  history.pushState({_fade:'sentinel'},'');
   openSV(gi);
 }
 // -- TALK LIST STORY RING HELPER -----------------------------------------------
@@ -14507,11 +14513,13 @@ function _flRender(users,query){
         _flOpenedFromProf=false;
         _profFromFollowScreen=true;
         history.pushState({_fade:'prof-screen'},'');
+        history.pushState({_fade:'sentinel'},'');
         (window._origOpenProf||window.openProf)(u);
       } else {
         // fl was opened from feed — open prof on top of fl
         _profFromFollowScreen=true;
         history.pushState({_fade:'prof-screen'},'');
+        history.pushState({_fade:'sentinel'},'');
         (window._origOpenProf||window.openProf)(u);
       }
     });
@@ -17792,10 +17800,14 @@ function _buildEpCats(){
     { openFn: 'openFollowSheet', closeFn: 'closeFollowSheet',panelId: 'fl-screen'        },
   ];
 
-  // Push a base state so the very first popstate has somewhere to land
-  if (!history.state || !history.state._fade) {
-    history.replaceState({ _fade: 'base' }, '');
-  }
+  // Build a 2-entry history stack so iOS native swipe-back always has
+  // somewhere to pop into and fires popstate instead of exiting the app.
+  // Entry 0 (base): the floor -- never popped away.
+  // Entry 1 (sentinel): what the OS actually pops on every swipe.
+  // After each popstate we immediately re-push the sentinel so the stack
+  // is always depth-2, keeping the loop closed forever.
+  history.replaceState({ _fade: 'base' }, '');
+  history.pushState({ _fade: 'sentinel' }, '');
 
   // Save originals before wrapping (used by openProfFromCS to avoid double-push)
   window._origOpenProf = window.openProf;
@@ -17805,7 +17817,10 @@ function _buildEpCats(){
     var origOpen = window[cfg.openFn];
     if (!origOpen) return;
     window[cfg.openFn] = function() {
+      // Push panel entry so popstate can identify which panel to close,
+      // then push sentinel on top so the OS always has something to pop.
       history.pushState({ _fade: cfg.panelId }, '');
+      history.pushState({ _fade: 'sentinel' }, '');
       origOpen.apply(this, arguments);
     };
   });
@@ -17835,32 +17850,45 @@ function _buildEpCats(){
   if (_origSoNav) {
     window.soNav = function() {
       history.pushState({ _fade: 'so-sub' }, '');
+      history.pushState({ _fade: 'sentinel' }, '');
       _origSoNav.apply(this, arguments);
     };
   }
 
-  // popstate: fired by native OS swipe-back or Android back button
+  // popstate: fired by native OS swipe-back or Android back button.
+  // The sentinel entry sits on top of the stack at all times.
+  // When the OS pops it, e.state is the entry below (panelId / so-sub / base).
+  // We handle the back action then immediately re-push the sentinel so
+  // the stack is always depth≥2 and the OS loop never breaks open.
   window.addEventListener('popstate', function(e) {
     var state = e.state;
 
+    // Re-anchor: landed on base floor -- push sentinel back and bail.
+    if (!state || state._fade === 'base') {
+      history.pushState({ _fade: 'sentinel' }, '');
+      return;
+    }
+
     // Story creator discard dialog: back from dialog -> hide it, keep editing
-    if (state && state._fade === 'sc-discard') {
+    if (state._fade === 'sc-discard') {
       _scHideDiscardDialog();
-      // Push story-creator state back so next swipe triggers creator flow
-      history.pushState({_fade:'story-creator'},'');
+      history.pushState({ _fade: 'story-creator' }, '');
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
     // Edit Moment: native swipe-back closes edit screen and returns to story viewer
-    if (state && state._fade === 'sv-edit') {
+    if (state._fade === 'sv-edit') {
       if (typeof window.svCloseEdit === 'function') window.svCloseEdit();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
-    // Story viewer: native swipe-back closes it and returns to talk/chat
+    // Story viewer: native swipe-back closes it
     var svEl = document.getElementById('sv');
     if (svEl && svEl.style.display === 'flex') {
       if (typeof window.closeSV === 'function') window.closeSV();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
@@ -17869,20 +17897,22 @@ function _buildEpCats(){
     if (scEl && scEl.style.display === 'flex') {
       if (typeof window._scTryClose === 'function') window._scTryClose();
       else if (typeof window.closeCreator === 'function') window.closeCreator();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
     // Settings sub-page back -- go one level inside settings
-    if (state && state._fade === 'so-sub') {
+    if (state._fade === 'so-sub') {
       if (typeof window.soBack === 'function') window.soBack();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
-    // If settings panel is open and we still have sub-pages on the stack,
-    // a swipe-back should go back one sub-page, not close the whole panel.
+    // If settings panel is open and we still have sub-pages, go back one level
     var soEl = document.getElementById('so');
     if (soEl && soEl.classList.contains('on') && window.soStack && window.soStack.length > 0) {
       if (typeof window.soBack === 'function') window.soBack();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
 
@@ -17890,10 +17920,9 @@ function _buildEpCats(){
     var notifEl = document.getElementById('notif-panel');
     if (notifEl && notifEl.classList.contains('on')) {
       if (typeof window.closeNotif === 'function') window.closeNotif();
+      history.pushState({ _fade: 'sentinel' }, '');
       return;
     }
-
-    var closed = false;
 
     // Close the topmost visible layer first (highest z-index wins).
     // photo-viewer:1000, cs-bg:700, scroll-view:660, prof-screen:650, notif/cw:200-220
@@ -17912,36 +17941,24 @@ function _buildEpCats(){
     for (var i = 0; i < _toClose.length; i++) {
       var el = document.getElementById(_toClose[i][0]);
       var closeFnOrStr = _toClose[i][1];
-      var isOpen = el && (el.style.display==='flex' || el.classList.contains('on'));
+      var isOpen = el && (el.style.display === 'flex' || el.classList.contains('on'));
       if (isOpen) {
-        if(typeof closeFnOrStr==='function'){closeFnOrStr();}
-        else{var fn = window[closeFnOrStr];if (typeof fn === 'function') fn();}
-        closed = true;
+        if (typeof closeFnOrStr === 'function') { closeFnOrStr(); }
+        else { var fn = window[closeFnOrStr]; if (typeof fn === 'function') fn(); }
         break;
       }
     }
 
     // Search screen uses .active (not .on)
-    if (!closed) {
-      var searchEl = document.getElementById('s-search');
-      if (searchEl && searchEl.classList.contains('active')) {
-        if (typeof window.closeSearch === 'function') window.closeSearch();
-        closed = true;
-      }
+    var searchEl = document.getElementById('s-search');
+    if (searchEl && searchEl.classList.contains('active')) {
+      if (typeof window.closeSearch === 'function') window.closeSearch();
     }
 
-    // If no panel was open, push base state back so next swipe doesn't exit the app
-    if (!closed) {
-      history.pushState({ _fade: 'base' }, '');
-    }
-    // Always ensure we have at least one forward entry so the OS never fires
-    // a real browser-back that would leave the app. This keeps the popstate
-    // system as a closed loop no matter how many times the user swipes.
-    setTimeout(function(){
-      if(!history.state||!history.state._fade){
-        history.pushState({_fade:'base'},'');
-      }
-    },0);
+    // Always re-push the sentinel synchronously so the OS always has
+    // something to pop on the next swipe. This keeps the popstate loop
+    // closed forever without relying on setTimeout timing.
+    history.pushState({ _fade: 'sentinel' }, '');
   });
 
   /* -- goTab: force #sw back the instant a tab is tapped.
