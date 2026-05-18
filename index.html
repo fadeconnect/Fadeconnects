@@ -11273,7 +11273,7 @@ function openCS(pid){
   // Open sheet
   var bg=document.getElementById('cs-bg');
   var s=document.getElementById('cs-sheet');
-  if(s){s._swipeInited=false;}
+  if(s){s._swipeInited=false;s.style.transform='';s.style.transition='';}
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
   (function(){ var d=bg.querySelector('.cs-dim'); initSheetSwipe(s,d,function(){closeCS();}); })();
   setTimeout(function(){var inp=document.getElementById('cs-inp');if(inp)inp.focus({preventScroll:true});},400);
@@ -11335,7 +11335,7 @@ function openCS(pid){
       });
     });
 }
-function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');closeCmtDelBar();setTimeout(function(){csPid=null;},320);}
+function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');closeCmtDelBar();var s=document.getElementById('cs-sheet');if(s){setTimeout(function(){s.style.transform='';s.style.transition='';},320);}setTimeout(function(){csPid=null;},320);}
 function csBgClose(e){if(e.target===document.getElementById('cs-bg')||e.target.classList.contains('cs-dim'))closeCS();}
 
 // -- COMMENT HOLD-TO-DELETE ----------------------------------------------------
