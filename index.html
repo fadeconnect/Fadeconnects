@@ -3271,6 +3271,9 @@ var _sb = (function(){
       document.getElementById('form-up').style.display='none';
       document.getElementById('si-email').value='';
       document.getElementById('si-pw').value='';
+      // Always reset sign-in button so it's never stuck on "Signing in..."
+      var _siBtn = document.querySelector('#form-in .btn-dark');
+      if(_siBtn){ _siBtn.textContent = 'Sign in'; _siBtn.disabled = false; }
       requestAnimationFrame(function(){
         requestAnimationFrame(function(){
           auth.style.pointerEvents = '';
@@ -3332,6 +3335,7 @@ function signIn(){
   function resetBtn(){ if(btn){ btn.textContent = 'Sign in'; btn.disabled = false; } }
   _sb.auth.signInWithPassword({ email: email, password: pw }).then(function(res){
     if(res.error){ resetBtn(); return T(res.error.message || 'Sign in failed'); }
+    resetBtn();
   }).catch(function(err){ resetBtn(); T(err.message || 'Sign in failed'); });
 }
 
