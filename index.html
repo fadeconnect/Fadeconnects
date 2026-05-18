@@ -715,7 +715,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* NOTIF */
 #notif-panel{display:flex;position:fixed;inset:0;background:var(--card);z-index:220;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #notif-panel.on{display:flex;transform:translateX(0);visibility:visible;pointer-events:auto}
-.ni{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer}
+.ni{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;transition:background .35s ease}
+.ni.unread{background:var(--inp-bg)}
 .ni-av{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
 .ni-txt{flex:1;font-size:13.5px;line-height:1.5}
 .ni-time{font-size:11.5px;color:var(--sub);flex-shrink:0}
@@ -4051,13 +4052,6 @@ function loadNotifs(cb){
 }
 var _notifRefreshTimer=null;
 function openNotif(){
-  // Mark all as read in Supabase immediately when panel opens
-  if(profile){
-    _sb.from('notifications').update({is_read:true}).eq('user_id',profile.id).eq('is_read',false).then(function(){});
-  }
-  notifs.forEach(function(n){n.read=true;});
-  var _od=document.getElementById('notif-dot');
-  if(_od){_od.classList.remove('on');_od.style.display='none';}
   renderNotifs();
   var p=document.getElementById('notif-panel');
   p.style.display='';p.style.visibility='';p.style.pointerEvents='';p.classList.add('on');
@@ -4143,13 +4137,13 @@ function closeSearch(){
     goTab(ct);
   }
 }
-function markNotifRead(n){
+function markNotifRead(n,elRef){
   if(n.read)return;
   n.read=true;
-  if(notifs.every(function(x){return x.read;})){
-    var dot=document.getElementById('notif-dot');
-    if(dot){dot.classList.remove('on');dot.style.display='none';}
-  }
+  // Remove tint from the row element if provided
+  if(elRef) elRef.classList.remove('unread');
+  if(profile) _sb.from('notifications').update({is_read:true}).eq('id',n.id).then(function(){});
+  checkUnreadDot();
 }
 function checkUnreadDot(){
   var dot=document.getElementById('notif-dot');
@@ -4166,13 +4160,14 @@ function markAllRead(){
   notifs.forEach(function(n){n.read=true;});
   var dot=document.getElementById('notif-dot');
   if(dot){dot.classList.remove('on');dot.style.display='none';}
+  // Fade out unread tint on all rows in DOM (no re-render needed)
+  document.querySelectorAll('#notif-list .ni.unread').forEach(function(row){row.classList.remove('unread');});
   // Mark all as read in Supabase
   if(profile){
     _sb.from('notifications').update({is_read:true}).eq('user_id',profile.id).eq('is_read',false).then(function(){});
   }
   var btn=document.getElementById('mark-all-btn');
   if(btn){btn.textContent='Done';btn.style.color='var(--text)';setTimeout(function(){btn.textContent='Mark all read';btn.style.color='var(--sub)';},1200);}
-  renderNotifs();
 }
 /* -- Notification swipe-to-delete styles (injected once) -- */
 (function(){
@@ -4484,10 +4479,11 @@ function renderNotifs(){
         '<button id="freq-dec-'+n.id+'" style="background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap">Decline</button>'+
         '</div>';
     } else {
-      rightHTML='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">'+(!n.read?'<div class="ni-dot" id="ndot-'+n.id+'"></div>':'')+'<div class="ni-time" data-ts="'+n.ts+'">'+ago(n.ts)+'</div></div>';
+      rightHTML='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0"><div class="ni-time" data-ts="'+n.ts+'">'+ago(n.ts)+'</div></div>';
     }
 
     el.innerHTML=avHTML+'<div class="ni-txt">'+msg+'</div>'+postThumb+rightHTML;
+    if(!n.read) el.classList.add('unread');
     // stagger entrance
     el.classList.add('anim-fade-up');
     el.style.animationDelay=(Math.min(display.indexOf(n),8)*25)+'ms';
@@ -4496,10 +4492,10 @@ function renderNotifs(){
     if(n.type==='follow'&&a&&a.id){
       var fbBtn=el.querySelector('#fbn-'+n.id);
       if(fbBtn){
-        (function(actor,btn,notif){
+        (function(actor,btn,notif,row){
           btn.addEventListener('click',function(e){
             e.stopPropagation();
-            markNotifRead(notif);
+            markNotifRead(notif,row);
             if(following.has(actor.id)){
               following.delete(actor.id);
               actor.followers=Math.max(0,(actor.followers||0)-1);
@@ -4538,7 +4534,7 @@ function renderNotifs(){
               }
             });
           });
-        })(a,fbBtn,n);
+        })(a,fbBtn,n,el);
       }
     }
 
@@ -4563,11 +4559,11 @@ function renderNotifs(){
     }
     var avEl=el.querySelector('.ni-av')||(n.type==='verification'?null:el.querySelector('div[style*="border-radius:12px"]'));
     if(avEl&&n.type!=='verification'&&a&&a.id){
-      (function(actor,notif){
+      (function(actor,notif,row){
         avEl.style.cursor='pointer';
         avEl.onclick=function(e){
           e.stopPropagation();
-          markNotifRead(notif);
+          markNotifRead(notif,row);
           if(actor.id==='demo'){
             // Own avatar: close notif panel -> go to Me tab
             closeNotif();
@@ -4580,14 +4576,18 @@ function renderNotifs(){
             openProf(actor);
           }
         };
-      })(a,n);
+      })(a,n,el);
     }
 
     // Row tap -> navigate
     el.onclick=function(){
-      markNotifRead(n);
-      var dot=document.getElementById('ndot-'+n.id);
-      if(dot)dot.remove();
+      if(!n.read){
+        n.read=true;
+        el.classList.remove('unread');
+        // Persist single read to DB
+        if(profile) _sb.from('notifications').update({is_read:true}).eq('id',n.id).then(function(){});
+        checkUnreadDot();
+      }
       _notifScrollY=l.scrollTop;
 
       if(n.type==='admin_verify_request'){
