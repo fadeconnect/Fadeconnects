@@ -3414,6 +3414,11 @@ function initApp(userProfile){
   profPhotoUrl = profile.avatar_url || null;
   var csMyAv = document.getElementById('cs-myav');
   if(csMyAv) csMyAv.innerHTML = avH(profPhotoUrl||profile.avatar_url||null, profile.display_name);
+  // SIGNED_OUT sets display:none on these overlays as inline style -- clear it so they can open again
+  ['compose-bg','share-bg','ep-bg','cs-bg','cw','notif-panel','prof-screen','so','scroll-view'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display='';
+  });
   var auth = document.getElementById('s-auth');
   if(auth){ auth.style.pointerEvents='none'; auth.style.transition='opacity .3s ease'; auth.style.opacity='0'; setTimeout(function(){ auth.style.display='none'; },300); }
   var nav = document.getElementById('nav');
@@ -5313,7 +5318,7 @@ function doDelPost(id){
 }
 
 // -- COMPOSE -------------------------------------------------------------------
-function openCompose(){cFiles=[];renderPhotoTray();var bg=document.getElementById('compose-bg');var sh=bg.querySelector('.sheet');if(sh){sh.style.transform='translateY(100)';}requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');if(sh)sh.style.transform='translateY(0)';});});setTimeout(function(){var t=document.getElementById('c-text');if(t)t.focus();},350);}
+function openCompose(){cFiles=[];renderPhotoTray();var bg=document.getElementById('compose-bg');var sh=bg.querySelector('.sheet');if(sh){sh.style.transform='translateY(100%)';}requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');if(sh)sh.style.transform='translateY(0)';});});setTimeout(function(){var t=document.getElementById('c-text');if(t)t.focus();},350);}
 
 function closeCompose(){closeSheet('compose-bg');}
 function pickCI(e){
