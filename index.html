@@ -788,8 +788,11 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #cs-bg.on{visibility:visible;pointer-events:auto}
 .cs-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .28s ease}
 #cs-bg.on .cs-dim{opacity:1}
-#cs-sheet{position:relative;background:var(--card);width:100%;border-radius:20px 20px 0 0;height:88dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);border:none;outline:none;overflow:hidden}
+#cs-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-radius:20px 20px 0 0;height:88dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .38s cubic-bezier(.25,.46,.45,.94);border:none;outline:none;overflow:hidden;will-change:transform}
 #cs-bg.on #cs-sheet{transform:translateY(0)}
+#cs-bg.on #cs-sheet.cs-collapsed{transform:translateY(calc(100% - 220px))}
+#cs-bg.on #cs-sheet.cs-peek{transform:translateY(calc(100% - 52%))}
+#cs-bg.on #cs-sheet.cs-expanded{transform:translateY(0)}
 .cs-handle{width:34px;height:3px;background:var(--border);border-radius:2px;margin:10px auto 0;flex-shrink:0}
 .cs-hdr{display:flex;align-items:center;justify-content:center;padding:10px 16px 10px;flex-shrink:0;position:relative}
 .cs-title{font-size:15px;font-weight:700;text-align:center}
@@ -3536,6 +3539,10 @@ function initSheetSwipe(sheet, dim, closeFn) {
       decided = true;
       if (Math.abs(dx) > Math.abs(dy)) { locked = true; return; }
       var scroller = getScroller();
+      // Swipe up on a collapsed/peek comment sheet → expand full
+      if (dy < -10 && sheet.id === 'cs-sheet' && typeof csExpandFull === 'function' && (sheet.classList.contains('cs-collapsed') || sheet.classList.contains('cs-peek'))) {
+        csExpandFull(); locked = true; return;
+      }
       if (dy < 0 || (scroller && scroller.scrollTop > 2)) { locked = true; return; }
     }
     if (locked) return;
@@ -11273,9 +11280,26 @@ function openCS(pid){
   // Open sheet
   var bg=document.getElementById('cs-bg');
   var s=document.getElementById('cs-sheet');
-  if(s){s._swipeInited=false;s.style.transform='';s.style.transition='';}
+  if(s){
+    s._swipeInited=false;
+    s.style.transform='';s.style.transition='';
+    s.classList.remove('cs-collapsed','cs-peek','cs-expanded');
+    // While loading: peek at medium height; will adjust once comments load
+    s.classList.add('cs-peek');
+  }
   requestAnimationFrame(function(){requestAnimationFrame(function(){bg.classList.add('on');});});
-  (function(){ var d=bg.querySelector('.cs-dim'); initSheetSwipe(s,d,function(){closeCS();}); })();
+  (function(){
+    var d=bg.querySelector('.cs-dim');
+    initSheetSwipe(s,d,function(){closeCS();});
+    // Scroll on cs-list expands to full
+    var l=document.getElementById('cs-list');
+    if(l&&!l._expandInited){
+      l._expandInited=true;
+      l.addEventListener('scroll',function(){
+        if(l.scrollTop>10){csExpandFull();}
+      },{passive:true});
+    }
+  })();
   setTimeout(function(){var inp=document.getElementById('cs-inp');if(inp)inp.focus({preventScroll:true});},400);
 
   // Fetch comments -- replace skeleton when ready
@@ -11335,7 +11359,8 @@ function openCS(pid){
       });
     });
 }
-function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');closeCmtDelBar();var s=document.getElementById('cs-sheet');if(s){setTimeout(function(){s.style.transform='';s.style.transition='';},320);}setTimeout(function(){csPid=null;},320);}
+function csExpandFull(){var s=document.getElementById('cs-sheet');if(!s||s.classList.contains('cs-expanded'))return;s.classList.remove('cs-collapsed','cs-peek');s.classList.add('cs-expanded');}
+function closeCS(){var bg=document.getElementById('cs-bg');bg.classList.remove('on');closeCmtDelBar();var s=document.getElementById('cs-sheet');if(s){setTimeout(function(){s.style.transform='';s.style.transition='';s.classList.remove('cs-collapsed','cs-peek','cs-expanded');},320);}var l=document.getElementById('cs-list');if(l){l._expandInited=false;}setTimeout(function(){csPid=null;},320);}
 function csBgClose(e){if(e.target===document.getElementById('cs-bg')||e.target.classList.contains('cs-dim'))closeCS();}
 
 // -- COMMENT HOLD-TO-DELETE ----------------------------------------------------
@@ -11381,13 +11406,18 @@ function execCmtDelete(){
     var p3=posts.find(function(x){return x.id===csPid;});
     var list=document.getElementById('cs-list');
     if(list&&p3&&!(p3.comments||[]).length){
-      list.innerHTML='<div class="empty" style="padding:50px 22px;text-align:center"><div class="emps">No comments yet. Be first!</div></div>';
+      list.innerHTML='<div style="padding:40px 24px 24px;text-align:center"><span style="font-size:13px;color:var(--sub);font-weight:400">Be the first to comment.</span></div>';
     }
   },220);
 }
 function renderCSList(){
   var p=posts.find(function(x){return x.id===csPid;}),l=document.getElementById('cs-list');if(!l||!p)return;
-  if(!(p.comments||[]).length){l.innerHTML='<div class="empty" style="padding:50px 22px;text-align:center"><div class="emps">No comments yet. Be first!</div></div>';return;}
+  var s=document.getElementById('cs-sheet');
+  if(!(p.comments||[]).length){
+    if(s){s.classList.remove('cs-peek','cs-expanded');s.classList.add('cs-collapsed');}
+    l.innerHTML='<div style="padding:40px 24px 24px;text-align:center"><span style="font-size:13px;color:var(--sub);font-weight:400">Be the first to comment.</span></div>';return;
+  }
+  if(s&&!s.classList.contains('cs-expanded')){s.classList.remove('cs-collapsed','cs-peek');s.classList.add('cs-peek');}
   l.innerHTML='';
 
   (p.comments||[]).forEach(function(c,ci){
