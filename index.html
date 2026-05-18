@@ -494,11 +494,9 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 /* CW dropdown */
 #cw-dd-overlay{display:none;position:absolute;inset:0;z-index:300}
 #cw-dd-overlay.on{display:block}
-#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-width:215px;box-shadow:0 10px 36px rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.06);animation:cwDDPop .22s cubic-bezier(.34,1.3,.64,1);transform-origin:top right}
+#cw-dd{position:absolute;top:52px;right:12px;background:var(--card);border-radius:20px;overflow:hidden;min-width:215px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.06);animation:cwDDPop .22s cubic-bezier(.34,1.3,.64,1);transform-origin:top right;padding:6px}
 @keyframes cwDDPop{from{opacity:0;transform:scale(.93) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.cw-dd-item{display:flex;align-items:center;gap:13px;padding:13px 16px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
-.cw-dd-item:last-child{border-bottom:none}
-.cw-dd-item.danger+.cw-dd-item.danger{border-top:none;border-bottom:none}
+.cw-dd-item{display:flex;align-items:center;gap:13px;padding:11px 12px;font-size:14.5px;font-weight:500;color:var(--text);cursor:pointer;border-radius:12px;transition:background .12s;-webkit-tap-highlight-color:transparent;letter-spacing:-.01em}
 .cw-dd-item:active{background:var(--inp-bg)}
 .cw-dd-item.danger{color:#E8352A}
 .cw-dd-ico{width:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
@@ -753,19 +751,21 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* CTX MENU */
 #ctx-overlay{display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.08)}
-#msg-ctx{display:none;position:fixed;z-index:999;background:var(--card);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:200px;overflow:hidden}
+#msg-ctx{display:none;position:fixed;z-index:999;background:var(--card);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.06);min-width:210px;overflow:hidden;padding:6px}
 @keyframes ctxPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
-.ctx-emojis{display:flex;align-items:center;gap:2px;padding:10px 12px 8px}
+.ctx-emojis{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 4px}
 @keyframes emoji-float{0%{transform:translateY(0px) rotate(0deg)}25%{transform:translateY(-5px) rotate(-4deg)}50%{transform:translateY(0px) rotate(0deg)}75%{transform:translateY(-3px) rotate(3deg)}100%{transform:translateY(0px) rotate(0deg)}}
-.ctx-emoji{font-size:26px;cursor:pointer;padding:4px 5px;border-radius:50%;line-height:1;display:inline-block;animation:emoji-float 2.2s ease-in-out infinite;transition:transform .12s}
-.ctx-emoji:active{transform:scale(.82)}
+.ctx-emoji{font-size:28px;cursor:pointer;padding:5px 6px;border-radius:50%;line-height:1;display:inline-block;animation:emoji-float 2.2s ease-in-out infinite;transition:transform .12s,background .1s}
+.ctx-emoji:active{transform:scale(.78);background:var(--inp-bg)}
 .ctx-emoji:nth-child(1){animation-delay:0s}
 .ctx-emoji:nth-child(2){animation-delay:.22s}
 .ctx-emoji:nth-child(3){animation-delay:.44s}
 .ctx-emoji:nth-child(4){animation-delay:.66s}
 .ctx-emoji:nth-child(5){animation-delay:.88s}
 .ctx-emoji:nth-child(6){animation-delay:1.1s}
-.ctx-item{display:flex;align-items:center;gap:12px;padding:13px 18px;font-size:15px;cursor:pointer;color:var(--text);font-family:'Inter',sans-serif}
+.ctx-divider{height:1px;background:var(--border);margin:4px 0}
+.ctx-item{display:flex;align-items:center;gap:12px;padding:11px 12px;font-size:15px;cursor:pointer;color:var(--text);font-family:'Inter',sans-serif;border-radius:12px;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.ctx-item:active{background:var(--inp-bg)}
 .ctx-item.red{color:#E8352A}
 
 /* REACT SHEET */
@@ -2011,6 +2011,7 @@ body {
 <div id="ctx-overlay" onclick="closeCtx()"></div>
 <div id="msg-ctx">
   <div class="ctx-emojis"><span class="ctx-emoji" onclick="ctxReact('❤️')">❤️</span><span class="ctx-emoji" onclick="ctxReact('😂')">😂</span><span class="ctx-emoji" onclick="ctxReact('😮')">😮</span><span class="ctx-emoji" onclick="ctxReact('😢')">😢</span><span class="ctx-emoji" onclick="ctxReact('😡')">😡</span><span class="ctx-emoji" onclick="ctxReact('👍')">👍</span></div>
+  <div class="ctx-divider"></div>
   <div class="ctx-item" onclick="ctxReply()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Reply</div>
 
   <div class="ctx-item" id="ctx-copy-btn" onclick="ctxCopy()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</div>
