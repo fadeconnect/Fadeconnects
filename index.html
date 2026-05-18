@@ -4204,10 +4204,15 @@ function closeSearch(){
   var ss=document.getElementById('s-search');
   var returnSc=document.getElementById('s-'+ct);
   if(ss){
-    /* Slide search out to right; simultaneously slide current tab in from left */
+    /* Mark the return screen active BEFORE animating so goTab is never needed */
+    document.querySelectorAll('#sw .screen').forEach(function(sc){
+      sc.classList.remove('active','left');
+    });
+    /* Slide search out to right */
     ss.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94),opacity .22s ease';
     ss.style.transform='translateX(100%)';
     ss.style.opacity='0';
+    /* Simultaneously slide current tab in from left-behind position */
     if(returnSc){
       returnSc.style.transition='none';
       returnSc.style.transform='translateX(-20%)';
@@ -4217,12 +4222,18 @@ function closeSearch(){
       returnSc.style.transform='translateX(0)';
       returnSc.style.opacity='1';
     }
+    /* Clean up inline styles after animation -- do NOT call goTab (causes blink) */
     setTimeout(function(){
+      ss.classList.remove('active');
       ss.style.transition='';
       ss.style.transform='';
       ss.style.opacity='';
-      if(returnSc){returnSc.style.transition='';returnSc.style.transform='';returnSc.style.opacity='';}
-      goTab(ct);
+      if(returnSc){
+        returnSc.classList.add('active');
+        returnSc.style.transition='';
+        returnSc.style.transform='';
+        returnSc.style.opacity='';
+      }
     },320);
   } else {
     goTab(ct);
@@ -10878,48 +10889,40 @@ function showCtx(bEl,m,w,bs,isMine){
   // always: pill on top, connector pointing down, menu below
   popup.style.flexDirection='column';
   connector.style.clipPath='polygon(0% 0%,100% 0%,50% 100%)';
-  // render off-screen so we can measure real heights
-  popup.style.cssText='display:flex;visibility:hidden;position:fixed;top:-9999px;left:0;width:260px;flex-direction:column;pointer-events:none;z-index:999';
+  // measure off-screen
+  popup.style.cssText='display:flex;visibility:hidden;position:fixed;top:-9999px;left:0;width:260px;flex-direction:column;pointer-events:none';
   document.getElementById('ctx-overlay').style.display='block';
-  // rAF ensures layout is flushed so offsetHeight is accurate
-  requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
-      var rect=bEl.getBoundingClientRect();
-      var vw=window.innerWidth,vh=window.innerHeight;
-      var popupW=260,gap=10,margin=10;
-      // read real rendered heights now that layout has run
-      var pillH=pill.offsetHeight||54;
-      var connH=connector.offsetHeight||9;
-      var menuH=menuCard.offsetHeight||120;
-      var totalH=pillH+connH+menuH;
-      // prefer above bubble so menu doesn't obscure what was tapped
-      var top=rect.top-totalH-gap;
-      if(top<margin){
-        // not enough room above — try below
-        top=rect.bottom+gap;
-      }
-      // hard clamp to viewport
-      top=Math.max(margin,Math.min(top,vh-totalH-margin));
-      // horizontal alignment: right-align for own messages, left-align for theirs
-      var left;
-      if(isMine){
-        popup.classList.add('ctx-right');popup.classList.remove('ctx-left');
-        left=rect.right-popupW;
-      } else {
-        popup.classList.add('ctx-left');popup.classList.remove('ctx-right');
-        left=rect.left;
-      }
-      left=Math.max(margin,Math.min(left,vw-popupW-margin));
-      // reset emoji bounce animation so it replays every open
-      var emojis=popup.querySelectorAll('.ctx-emoji');
-      emojis.forEach(function(e){e.style.animation='none';void e.offsetHeight;e.style.animation='';});
-      popup.style.top=top+'px';
-      popup.style.left=left+'px';
-      popup.style.visibility='visible';
-      popup.style.pointerEvents='auto';
-      popup.style.animation='ctxPop .18s cubic-bezier(.34,1.2,.64,1) both';
-    });
-  });
+  setTimeout(function(){
+    var rect=bEl.getBoundingClientRect();
+    var vw=window.innerWidth,vh=window.innerHeight;
+    var popupW=260,gap=8,margin=8;
+    var pillH=pill.offsetHeight||54;
+    var connH=9;
+    var menuH=menuCard.offsetHeight||150;
+    var totalH=pillH+connH+menuH;
+    // prefer above bubble (pill on top, menu hangs below pill)
+    var top=rect.top-totalH-gap;
+    if(top<margin) top=rect.bottom+gap; // fallback: below bubble
+    top=Math.max(margin,Math.min(top,vh-totalH-margin));
+    // horizontal alignment
+    var left;
+    if(isMine){
+      popup.classList.add('ctx-right');popup.classList.remove('ctx-left');
+      left=rect.right-popupW;
+    } else {
+      popup.classList.add('ctx-left');popup.classList.remove('ctx-right');
+      left=rect.left;
+    }
+    left=Math.max(margin,Math.min(left,vw-popupW-margin));
+    // reset emoji bounce animation so it replays every open
+    var emojis=popup.querySelectorAll('.ctx-emoji');
+    emojis.forEach(function(e){e.style.animation='none';e.offsetHeight;e.style.animation='';});
+    popup.style.top=top+'px';
+    popup.style.left=left+'px';
+    popup.style.visibility='visible';
+    popup.style.pointerEvents='auto';
+    popup.style.animation='ctxPop .18s cubic-bezier(.34,1.2,.64,1) both';
+  },10);
 }
 function closeCtx(){var p=document.getElementById('msg-ctx');p.style.display='none';p.style.animation='';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
 function ctxReact(emoji){if(!_ctxMsg||!_ctxBsEl)return closeCtx();var m=_ctxMsg,bs=_ctxBsEl,isMine=_ctxIsMine;var removing=m.reaction===emoji;m.reaction=removing?null:emoji;if(!removing)SFX('react');var old=bs.querySelector('.rxn-badge');if(old)old.remove();if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));closeCtx();if(!removing)T(emoji+' added');_sb.from('messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});}
