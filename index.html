@@ -11638,7 +11638,7 @@ function addComment(){
     p.comments.push(newCmt);
     // Optimistic count -- instant in feed, realtime corrects if needed
     p.commentsCount=(p.commentsCount||0)+1;
-    document.querySelectorAll('#cc-'+csPid).forEach(function(el){el.textContent=p.commentsCount;});
+    document.querySelectorAll('#cc-'+csPid).forEach(function(el){el.textContent=p.commentsCount;el.style.display='';});
     renderCSList();
     var postOwnerId=p.uid;
     _sb.from('comments').insert({post_id:csPid,user_id:profile&&profile.id,text:txt}).select('id').single().then(function(ins){
