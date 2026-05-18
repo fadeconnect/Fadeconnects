@@ -3790,48 +3790,36 @@ function showSearchHome(){
   r.innerHTML='';
   _syncClearBtn(false);
 
-  // -- Recent searches: compact horizontal pills ----------------------------
+  // -- Recent searches: original tall-row style -----------------------------
   var history=getSRH();
   if(history.length){
     var recHdr=document.createElement('div');
-    recHdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px';
+    recHdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:18px 16px 8px';
     recHdr.innerHTML=
       '<span style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px">Recent</span>'+
       '<button onclick="clearAllSRH();showSearchHome()" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);padding:4px 0">Clear all</button>';
     r.appendChild(recHdr);
-
-    var pillRow=document.createElement('div');
-    pillRow.id='srh-pills';
-    pillRow.style.cssText='display:flex;gap:8px;padding:0 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch';
-    if(!document.getElementById('srh-pills-style')){
-      var ps=document.createElement('style');
-      ps.id='srh-pills-style';
-      ps.textContent='#srh-pills::-webkit-scrollbar{display:none}#srh-pills{scrollbar-width:none}';
-      document.head.appendChild(ps);
-    }
-    history.forEach(function(q){
-      var pill=document.createElement('div');
-      pill.style.cssText='display:inline-flex;align-items:center;gap:6px;flex-shrink:0;background:var(--inp-bg);border-radius:20px;padding:7px 10px 7px 13px;cursor:pointer;transition:opacity .15s';
-      pill.innerHTML=
-        '<span style="font-size:13.5px;font-weight:500;color:var(--text);white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis">'+E(q)+'</span>'+
-        '<button data-srh="'+E(q)+'" style="background:rgba(155,155,155,.18);border:none;border-radius:50%;width:17px;height:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0" onclick="event.stopPropagation();removeSRH(this.dataset.srh);showSearchHome()">'+
-          '<svg width="8" height="8" fill="none" stroke="var(--sub)" stroke-width="2.5" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>'+
+    history.forEach(function(q,i){
+      var row=document.createElement('div');
+      row.className='anim-fade-up';
+      row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 16px;cursor:pointer';
+      row.style.animationDelay=(Math.min(i,6)*20)+'ms';
+      row.innerHTML=
+        '<div style="width:34px;height:34px;border-radius:50%;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+          '<svg width="14" height="14" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>'+
+        '</div>'+
+        '<span style="flex:1;font-size:14.5px;font-weight:500;color:var(--text)">'+E(q)+'</span>'+
+        '<button data-srh="'+E(q)+'" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);display:flex;align-items:center;border-radius:50%" onclick="event.stopPropagation();removeSRH(this.dataset.srh);showSearchHome()">'+
+          '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'+
         '</button>';
-      pill.addEventListener('touchstart',function(){this.style.opacity='.5';},{passive:true});
-      pill.addEventListener('touchend',function(){this.style.opacity='1';},{passive:true});
-      pill.onclick=function(e){if(e.target.closest('button'))return;var inp=document.getElementById('sinp');if(inp)inp.value=q;doSearch(q);};
-      pillRow.appendChild(pill);
+      row.onclick=function(e){if(e.target.closest('button'))return;var inp=document.getElementById('sinp');if(inp)inp.value=q;doSearch(q);};
+      r.appendChild(row);
     });
-    r.appendChild(pillRow);
-
-    var div=document.createElement('div');
-    div.style.cssText='height:1px;background:var(--border);margin:14px 0 0';
-    r.appendChild(div);
   }
 
   // -- Discover header ------------------------------------------------------
   var discHdr=document.createElement('div');
-  discHdr.style.cssText='padding:14px 16px 4px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px';
+  discHdr.style.cssText='padding:'+(history.length?'20px':'18px')+' 16px 8px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px';
   discHdr.textContent='Discover';
   r.appendChild(discHdr);
 
@@ -3860,7 +3848,7 @@ function showSearchHome(){
 
   // -- Fetch discover posts: most liked, not expired ------------------------
   _sb.from('posts')
-    .select('id,user_id,text,image_url,images,created_at,expires_at,likes_count,comments_count')
+    .select('id,user_id,text,img_url,likes_count,comments_count,created_at,expires_at,audience')
     .gt('expires_at',new Date().toISOString())
     .order('likes_count',{ascending:false})
     .limit(30)
@@ -3877,7 +3865,7 @@ function showSearchHome(){
         return;
       }
 
-      // Collect unknown user IDs to fetch in one query
+      // Batch-fetch any users not already in local cache
       var unknownIds=[];
       rawPosts.forEach(function(row){
         if(!USERS.find(function(x){return x.id===row.user_id;})&&unknownIds.indexOf(row.user_id)<0)
@@ -3885,23 +3873,32 @@ function showSearchHome(){
       });
 
       function renderDiscoverPosts(rows){
+        // Also fetch liked state for these posts
+        if(!profile){_doRender(rows,[]);return;}
+        var ids=rows.map(function(row){return row.id;});
+        _sb.from('likes').select('post_id').eq('user_id',profile.id).in('post_id',ids)
+          .then(function(lr){
+            var likedIds=(lr.data||[]).map(function(x){return x.post_id;});
+            _doRender(rows,likedIds);
+          });
+      }
+
+      function _doRender(rows,likedIds){
         rows.forEach(function(row,i){
           var u=USERS.find(function(x){return x.id===row.user_id;})||{id:row.user_id,username:'',display_name:'User',avatar_url:null,is_verified:false,badge_type:null};
           var p={
-            id:row.id,uid:row.user_id,
+            id:row.id,
+            uid:row.user_id,
+            author:{display_name:u.display_name||u.username||'User',username:u.username||'',avatar_url:u.avatar_url||null},
             text:row.text||'',
-            image_url:row.image_url||null,
-            images:row.images||null,
+            img:row.img_url||null,
             ts:row.created_at,
             expires_at:row.expires_at,
             likes:row.likes_count||0,
-            comments:row.comments_count||0,
-            liked:!!(likedPosts&&likedPosts.has(row.id)),
-            user:u.display_name||u.username||'User',
-            username:u.username||'',
-            avatar:u.avatar_url||null,
-            display_name:u.display_name||u.username||'User',
-            avatar_url:u.avatar_url||null
+            comments:[],
+            commentsCount:row.comments_count||0,
+            liked:likedIds.indexOf(row.id)>-1,
+            audience:row.audience||'everyone'
           };
           var el=buildPost(p,false);
           el.classList.add('anim-fade-up');
