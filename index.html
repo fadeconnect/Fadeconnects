@@ -141,6 +141,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes skelPulse{0%,100%{opacity:1}50%{opacity:.4}}
 .posthd{display:flex;align-items:center;gap:13px;padding:14px 16px 10px}
 .post{background:var(--card);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .post img{-webkit-touch-callout:none;pointer-events:none}
@@ -3789,51 +3790,144 @@ function showSearchHome(){
   r.innerHTML='';
   _syncClearBtn(false);
 
-  // -- Recent searches ------------------------------------------------------
+  // -- Recent searches: compact horizontal pills ----------------------------
   var history=getSRH();
   if(history.length){
     var recHdr=document.createElement('div');
-    recHdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:18px 16px 8px';
+    recHdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px';
     recHdr.innerHTML=
       '<span style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px">Recent</span>'+
       '<button onclick="clearAllSRH();showSearchHome()" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);padding:4px 0">Clear all</button>';
     r.appendChild(recHdr);
-    history.forEach(function(q,i){
-      var row=document.createElement('div');
-      row.className='anim-fade-up';
-      row.style.cssText='display:flex;align-items:center;gap:13px;padding:11px 16px;cursor:pointer';
-      row.style.animationDelay=(Math.min(i,6)*20)+'ms';
-      row.innerHTML=
-        '<div style="width:34px;height:34px;border-radius:50%;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
-          '<svg width="14" height="14" fill="none" stroke="var(--sub)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>'+
-        '</div>'+
-        '<span style="flex:1;font-size:14.5px;font-weight:500;color:var(--text)">'+E(q)+'</span>'+
-        '<button data-srh="'+E(q)+'" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);display:flex;align-items:center;border-radius:50%" onclick="event.stopPropagation();removeSRH(this.dataset.srh);showSearchHome()">'+
-          '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'+
+
+    var pillRow=document.createElement('div');
+    pillRow.id='srh-pills';
+    pillRow.style.cssText='display:flex;gap:8px;padding:0 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+    if(!document.getElementById('srh-pills-style')){
+      var ps=document.createElement('style');
+      ps.id='srh-pills-style';
+      ps.textContent='#srh-pills::-webkit-scrollbar{display:none}#srh-pills{scrollbar-width:none}';
+      document.head.appendChild(ps);
+    }
+    history.forEach(function(q){
+      var pill=document.createElement('div');
+      pill.style.cssText='display:inline-flex;align-items:center;gap:6px;flex-shrink:0;background:var(--inp-bg);border-radius:20px;padding:7px 10px 7px 13px;cursor:pointer;transition:opacity .15s';
+      pill.innerHTML=
+        '<span style="font-size:13.5px;font-weight:500;color:var(--text);white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis">'+E(q)+'</span>'+
+        '<button data-srh="'+E(q)+'" style="background:rgba(155,155,155,.18);border:none;border-radius:50%;width:17px;height:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0" onclick="event.stopPropagation();removeSRH(this.dataset.srh);showSearchHome()">'+
+          '<svg width="8" height="8" fill="none" stroke="var(--sub)" stroke-width="2.5" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>'+
         '</button>';
-      row.onclick=function(e){if(e.target.closest('button'))return;var inp=document.getElementById('sinp');if(inp)inp.value=q;doSearch(q);};
-      r.appendChild(row);
+      pill.addEventListener('touchstart',function(){this.style.opacity='.5';},{passive:true});
+      pill.addEventListener('touchend',function(){this.style.opacity='1';},{passive:true});
+      pill.onclick=function(e){if(e.target.closest('button'))return;var inp=document.getElementById('sinp');if(inp)inp.value=q;doSearch(q);};
+      pillRow.appendChild(pill);
     });
+    r.appendChild(pillRow);
+
+    var div=document.createElement('div');
+    div.style.cssText='height:1px;background:var(--border);margin:14px 0 0';
+    r.appendChild(div);
   }
 
-  // -- Suggested people (not yet following) --------------------------------
-  var suggested=USERS.filter(function(u){
-    return profile&&u.id!==profile.id&&!following.has(u.id);
-  }).slice(0,8);
-  if(suggested.length){
-    var sugHdr=document.createElement('div');
-    sugHdr.style.cssText='padding:'+(history.length?'20px':'18px')+' 16px 8px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px';
-    sugHdr.textContent='Suggested';
-    r.appendChild(sugHdr);
-    suggested.forEach(function(u,i){
-      r.appendChild(_buildPersonRow(u,history.length+i));
-    });
-  }
+  // -- Discover header ------------------------------------------------------
+  var discHdr=document.createElement('div');
+  discHdr.style.cssText='padding:14px 16px 4px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px';
+  discHdr.textContent='Discover';
+  r.appendChild(discHdr);
 
-  // -- Fallback if nothing to show ------------------------------------------
-  if(!history.length&&!suggested.length){
-    r.innerHTML='<div class="empty" style="padding:60px 22px;text-align:center"><div class="empt">Search Fade</div><div class="emps" style="margin-top:6px">Find people or search keywords</div></div>';
+  // -- Skeleton post cards while loading ------------------------------------
+  var skelWrap=document.createElement('div');
+  skelWrap.id='disc-skel';
+  for(var s=0;s<4;s++){
+    var sk=document.createElement('div');
+    var d=s*120;
+    sk.style.cssText='padding:14px 16px;border-bottom:1px solid var(--border)';
+    sk.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
+        '<div style="width:38px;height:38px;border-radius:50%;background:var(--inp-bg);flex-shrink:0;animation:skelPulse 1.4s ease '+d+'ms infinite"></div>'+
+        '<div style="flex:1;display:flex;flex-direction:column;gap:6px">'+
+          '<div style="height:12px;border-radius:6px;background:var(--inp-bg);width:35%;animation:skelPulse 1.4s ease '+d+'ms infinite"></div>'+
+          '<div style="height:10px;border-radius:6px;background:var(--inp-bg);width:22%;animation:skelPulse 1.4s ease '+(d+80)+'ms infinite"></div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:6px">'+
+        '<div style="height:12px;border-radius:6px;background:var(--inp-bg);width:90%;animation:skelPulse 1.4s ease '+d+'ms infinite"></div>'+
+        '<div style="height:12px;border-radius:6px;background:var(--inp-bg);width:70%;animation:skelPulse 1.4s ease '+(d+60)+'ms infinite"></div>'+
+      '</div>';
+    skelWrap.appendChild(sk);
   }
+  r.appendChild(skelWrap);
+
+  // -- Fetch discover posts: most liked, not expired ------------------------
+  _sb.from('posts')
+    .select('id,user_id,text,image_url,images,created_at,expires_at,likes_count,comments_count')
+    .gt('expires_at',new Date().toISOString())
+    .order('likes_count',{ascending:false})
+    .limit(30)
+    .then(function(res){
+      var skel=document.getElementById('disc-skel');
+      if(skel)skel.remove();
+
+      var rawPosts=(res.data||[]);
+      if(!rawPosts.length){
+        discHdr.remove();
+        if(!history.length){
+          r.innerHTML='<div class="empty" style="padding:60px 22px;text-align:center"><div class="empt">Nothing here yet</div><div class="emps" style="margin-top:6px">Be the first to drop something</div></div>';
+        }
+        return;
+      }
+
+      // Collect unknown user IDs to fetch in one query
+      var unknownIds=[];
+      rawPosts.forEach(function(row){
+        if(!USERS.find(function(x){return x.id===row.user_id;})&&unknownIds.indexOf(row.user_id)<0)
+          unknownIds.push(row.user_id);
+      });
+
+      function renderDiscoverPosts(rows){
+        rows.forEach(function(row,i){
+          var u=USERS.find(function(x){return x.id===row.user_id;})||{id:row.user_id,username:'',display_name:'User',avatar_url:null,is_verified:false,badge_type:null};
+          var p={
+            id:row.id,uid:row.user_id,
+            text:row.text||'',
+            image_url:row.image_url||null,
+            images:row.images||null,
+            ts:row.created_at,
+            expires_at:row.expires_at,
+            likes:row.likes_count||0,
+            comments:row.comments_count||0,
+            liked:!!(likedPosts&&likedPosts.has(row.id)),
+            user:u.display_name||u.username||'User',
+            username:u.username||'',
+            avatar:u.avatar_url||null,
+            display_name:u.display_name||u.username||'User',
+            avatar_url:u.avatar_url||null
+          };
+          var el=buildPost(p,false);
+          el.classList.add('anim-fade-up');
+          el.style.animationDelay=(Math.min(i,12)*30)+'ms';
+          if(p.liked){
+            var h=el.querySelector('#hi-'+p.id);if(h)h.setAttribute('fill','currentColor');
+            var lb=el.querySelector('#lb-'+p.id);if(lb)lb.classList.add('liked');
+          }
+          r.appendChild(el);
+        });
+      }
+
+      if(unknownIds.length){
+        _sb.from('profiles')
+          .select('id,username,display_name,avatar_url,is_verified,badge_type,is_private')
+          .in('id',unknownIds)
+          .then(function(pRes){
+            (pRes.data||[]).forEach(function(u){
+              if(!USERS.find(function(x){return x.id===u.id;}))USERS.push(u);
+            });
+            renderDiscoverPosts(rawPosts);
+          });
+      } else {
+        renderDiscoverPosts(rawPosts);
+      }
+    });
 }
 
 function _buildPersonRow(u,animIdx){
