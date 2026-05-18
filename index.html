@@ -751,6 +751,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 
 /* CTX MENU */
 #ctx-overlay{display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.08)}
+#ctx-emojis-pill{display:none;position:fixed;z-index:999;background:var(--card);border-radius:999px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:6px 10px;gap:2px;align-items:center;justify-content:space-between}
 #msg-ctx{display:none;position:fixed;z-index:999;background:var(--card);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.06);min-width:210px;overflow:hidden;padding:6px}
 @keyframes ctxPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
 .ctx-emojis{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 4px}
@@ -2009,10 +2010,11 @@ body {
 
 <!-- CTX MENU -->
 <div id="ctx-overlay" onclick="closeCtx()"></div>
+<div id="ctx-emojis-pill">
+  <span class="ctx-emoji" onclick="ctxReact('❤️')">❤️</span><span class="ctx-emoji" onclick="ctxReact('😂')">😂</span><span class="ctx-emoji" onclick="ctxReact('😮')">😮</span><span class="ctx-emoji" onclick="ctxReact('😢')">😢</span><span class="ctx-emoji" onclick="ctxReact('😡')">😡</span><span class="ctx-emoji" onclick="ctxReact('👍')">👍</span>
+</div>
 <div id="msg-ctx">
-  <div class="ctx-emojis"><span class="ctx-emoji" onclick="ctxReact('❤️')">❤️</span><span class="ctx-emoji" onclick="ctxReact('😂')">😂</span><span class="ctx-emoji" onclick="ctxReact('😮')">😮</span><span class="ctx-emoji" onclick="ctxReact('😢')">😢</span><span class="ctx-emoji" onclick="ctxReact('😡')">😡</span><span class="ctx-emoji" onclick="ctxReact('👍')">👍</span></div>
   <div class="ctx-item" onclick="ctxReply()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Reply</div>
-
   <div class="ctx-item" id="ctx-copy-btn" onclick="ctxCopy()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</div>
   <div class="ctx-item red" id="ctx-unsend-btn" onclick="ctxUnsend()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 15l6-6M15 15L9 9"/></svg>Unsend</div>
 </div>
@@ -10725,8 +10727,39 @@ function attachHold(el,m,w,bs,isMine){
   el.addEventListener('touchcancel',cancel);
   el.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();showCtx(el,m,w,bs,isMine);});
 }
-function showCtx(bEl,m,w,bs,isMine){_ctxMsg=m;_ctxBsEl=bs;_ctxIsMine=isMine;document.getElementById('ctx-unsend-btn').style.display=isMine?'flex':'none';document.getElementById('ctx-copy-btn').style.display=m.isPhoto&&m.img?'none':'flex';var ctx=document.getElementById('msg-ctx');ctx.style.cssText='display:block;visibility:hidden;position:fixed;top:-9999px;left:0;min-width:220px';document.getElementById('ctx-overlay').style.display='block';setTimeout(function(){var rect=bEl.getBoundingClientRect();var ctxW=ctx.offsetWidth||230,ctxH=ctx.offsetHeight||160,gap=6,margin=8,vw=window.innerWidth,vh=window.innerHeight;var top=rect.bottom+gap;if(top+ctxH>vh-margin)top=rect.top-ctxH-gap;if(top<margin)top=margin;var left=isMine?rect.right-ctxW:rect.left;if(left+ctxW>vw-margin)left=vw-ctxW-margin;if(left<margin)left=margin;ctx.style.top=top+'px';ctx.style.left=left+'px';ctx.style.visibility='visible';ctx.style.animation='ctxPop .18s ease forwards';},10);}
-function closeCtx(){document.getElementById('msg-ctx').style.display='none';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
+function showCtx(bEl,m,w,bs,isMine){
+  _ctxMsg=m;_ctxBsEl=bs;_ctxIsMine=isMine;
+  document.getElementById('ctx-unsend-btn').style.display=isMine?'flex':'none';
+  document.getElementById('ctx-copy-btn').style.display=m.isPhoto&&m.img?'none':'flex';
+  var ctx=document.getElementById('msg-ctx');
+  var pill=document.getElementById('ctx-emojis-pill');
+  var gap=8,margin=8,pillGap=6;
+  // Show hidden off-screen to measure
+  ctx.style.cssText='display:block;visibility:hidden;position:fixed;top:-9999px;left:0;min-width:210px';
+  pill.style.cssText='display:flex;visibility:hidden;position:fixed;top:-9999px;left:0';
+  document.getElementById('ctx-overlay').style.display='block';
+  setTimeout(function(){
+    var rect=bEl.getBoundingClientRect();
+    var vw=window.innerWidth,vh=window.innerHeight;
+    var ctxW=ctx.offsetWidth||220,ctxH=ctx.offsetHeight||120;
+    var pillW=pill.offsetWidth||260,pillH=pill.offsetHeight||52;
+    // Horizontal: align to bubble side
+    var left=isMine?rect.right-ctxW:rect.left;
+    if(left+ctxW>vw-margin)left=vw-ctxW-margin;
+    if(left<margin)left=margin;
+    var pillLeft=isMine?rect.right-pillW:rect.left;
+    if(pillLeft+pillW>vw-margin)pillLeft=vw-pillW-margin;
+    if(pillLeft<margin)pillLeft=margin;
+    // Vertical: try pill above bubble, actions below; flip if needed
+    var pillTop=rect.top-pillH-pillGap;
+    var ctxTop=rect.bottom+gap;
+    if(pillTop<margin){pillTop=rect.bottom+gap;ctxTop=pillTop+pillH+pillGap;}
+    if(ctxTop+ctxH>vh-margin){ctxTop=rect.top-ctxH-gap;pillTop=ctxTop-pillH-pillGap;}
+    pill.style.top=pillTop+'px';pill.style.left=pillLeft+'px';pill.style.visibility='visible';pill.style.animation='ctxPop .18s ease forwards';
+    ctx.style.top=ctxTop+'px';ctx.style.left=left+'px';ctx.style.visibility='visible';ctx.style.animation='ctxPop .2s ease forwards';
+  },10);
+}
+function closeCtx(){document.getElementById('msg-ctx').style.display='none';var pill=document.getElementById('ctx-emojis-pill');pill.style.display='none';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
 function ctxReact(emoji){if(!_ctxMsg||!_ctxBsEl)return closeCtx();var m=_ctxMsg,bs=_ctxBsEl,isMine=_ctxIsMine;var removing=m.reaction===emoji;m.reaction=removing?null:emoji;if(!removing)SFX('react');var old=bs.querySelector('.rxn-badge');if(old)old.remove();if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));closeCtx();if(!removing)T(emoji+' added');_sb.from('messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});}
 function ctxReply(){if(!_ctxMsg)return closeCtx();_replyMsg=_ctxMsg;var sName=_ctxMsg.sid==='demo'?'You':(chatUser&&chatUser.display_name||'Them');_replyMsg._sName=sName;document.getElementById('reply-name').textContent=sName;document.getElementById('reply-preview').textContent=replyPreviewText(_ctxMsg);document.getElementById('reply-bar').classList.add('on');document.getElementById('chatinp').focus();closeCtx();}
 function cancelReplyBar(){_replyMsg=null;document.getElementById('reply-bar').classList.remove('on');}
