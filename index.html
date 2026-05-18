@@ -11300,7 +11300,7 @@ function openCS(pid){
       },{passive:true});
     }
   })();
-  setTimeout(function(){var inp=document.getElementById('cs-inp');if(inp)inp.focus({preventScroll:true});},400);
+  // No auto-focus — keyboard opens only when user taps the input
 
   // Fetch comments -- replace skeleton when ready
   _sb.from('comments')
@@ -14444,6 +14444,7 @@ function closeFollowSheet(){
   window.visualViewport.addEventListener('scroll',adjustCS,{passive:true});
   document.addEventListener('focusin',function(e){
     if(e.target&&(e.target.id==='cs-inp'||e.target.classList.contains('csinp'))){
+      if(typeof csExpandFull==='function')csExpandFull();
       setTimeout(adjustCS,300);
     }
   });
