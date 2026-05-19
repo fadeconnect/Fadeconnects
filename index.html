@@ -758,7 +758,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #ctx-overlay{display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.5)}
 #ctx-emojis-pill{display:none}
 /* Telegram-style popup wrapper */
-#msg-ctx{display:none;position:fixed;z-index:999;flex-direction:column;width:260px;pointer-events:none}
+#msg-ctx{display:none;position:fixed;z-index:999;flex-direction:column;width:260px;pointer-events:none;transform-origin:top center}
 #msg-ctx.ctx-right{align-items:flex-end}
 #msg-ctx.ctx-left{align-items:flex-start}
 @keyframes ctxPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
@@ -775,7 +775,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .ctx-emoji:active{transform:scale(1.5)}
 /* Triangle connector pointing down from pill to menu */
 #ctx-connector{flex-shrink:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--card);filter:drop-shadow(0 2px 2px rgba(0,0,0,.08))}
-/* ctx-connector margins set dynamically by showCtx JS */
+
 /* Action menu card */
 #ctx-menu-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.18);width:100%}
 .ctx-item{display:flex;align-items:center;gap:18px;padding:15px 22px;font-size:17px;font-weight:400;cursor:pointer;color:#1A1A1A;font-family:'Inter',sans-serif;transition:background .12s;-webkit-tap-highlight-color:transparent;pointer-events:auto}
@@ -10871,40 +10871,41 @@ function showCtx(bEl,m,w,bs,isMine){
   document.getElementById('ctx-unsend-btn').style.display=isMine?'flex':'none';
   document.getElementById('ctx-copy-btn').style.display=(m.isPhoto&&m.img)?'none':'flex';
 
-  var popup=document.getElementById('msg-ctx');
-  var connector=document.getElementById('ctx-connector');
+  var popup    = document.getElementById('msg-ctx');
+  var connector= document.getElementById('ctx-connector');
 
-  // Alignment class
-  if(isMine){popup.classList.add('ctx-right');popup.classList.remove('ctx-left');}
-  else{popup.classList.add('ctx-left');popup.classList.remove('ctx-right');}
-
-  // Show overlay
   document.getElementById('ctx-overlay').style.display='block';
 
-  // Known heights — no measurement needed
   var POPUP_W=260, MARGIN=10, GAP=6;
-  var PILL_H=54, CONN_H=9, CARD_GAP=8, ITEM_H=52;
-  var INPUT_H=80; // keep clear of input bar
+  var PILL_H=54, CONN_H=9, CARD_GAP=8, ITEM_H=52, INPUT_H=80;
   var itemCount=(isMine?3:2)-((m.isPhoto&&m.img)?1:0);
-  var cardH=itemCount*ITEM_H;
-  var totalH=PILL_H+CONN_H+CARD_GAP+cardH;
+  var totalH=PILL_H+CONN_H+CARD_GAP+(itemCount*ITEM_H);
 
   var rect=bEl.getBoundingClientRect();
   var vw=window.innerWidth, vh=window.innerHeight;
   var safeBottom=vh-INPUT_H;
 
-  // Always open BELOW the bubble, shift up only if needed
+  // ── VERTICAL: below bubble, shift up if needed ──
   var top=rect.bottom+GAP;
   if(top+totalH>safeBottom) top=safeBottom-totalH;
   top=Math.max(MARGIN,top);
 
-  // Horizontal: anchor to bubble edge
-  var left=isMine?rect.right-POPUP_W:rect.left;
+  // ── HORIZONTAL ──
+  // For their messages (left): left-align popup to bubble's left edge
+  // For my messages (right): right-align popup to bubble's right edge
+  var left;
+  if(isMine){
+    left=rect.right-POPUP_W;
+  } else {
+    left=rect.left;
+  }
   left=Math.max(MARGIN,Math.min(left,vw-POPUP_W-MARGIN));
 
-  // Connector tip points at bubble center X
-  var connX=(rect.left+rect.width/2)-left-9;
-  connX=Math.max(12,Math.min(connX,POPUP_W-30));
+  // ── CONNECTOR: tip points at bubble horizontal center ──
+  // connX is the connector's left offset within the popup
+  var bubbleMidX=rect.left+(rect.width/2);
+  var connX=bubbleMidX-left-8; // 8 = half of connector width (16px total)
+  connX=Math.max(16,Math.min(connX,POPUP_W-32));
   connector.style.marginLeft=connX+'px';
   connector.style.marginRight='auto';
 
@@ -10913,7 +10914,11 @@ function showCtx(bEl,m,w,bs,isMine){
     e.style.animation='none';void e.offsetWidth;e.style.animation='';
   });
 
-  popup.style.cssText='display:flex;position:fixed;top:'+top+'px;left:'+left+'px;width:'+POPUP_W+'px;flex-direction:column;pointer-events:auto;z-index:999';
+  // Apply — set alignment class for pill/card width fill
+  if(isMine){popup.classList.add('ctx-right');popup.classList.remove('ctx-left');}
+  else{popup.classList.add('ctx-left');popup.classList.remove('ctx-right');}
+
+  popup.style.cssText='display:flex;position:fixed;top:'+top+'px;left:'+left+'px;width:'+POPUP_W+'px;flex-direction:column;pointer-events:auto;z-index:999;transform-origin:top center';
   popup.style.animation='ctxPop .18s cubic-bezier(.34,1.2,.64,1) both';
 }
 function closeCtx(){var p=document.getElementById('msg-ctx');p.style.display='none';p.style.animation='';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
