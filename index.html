@@ -775,8 +775,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .ctx-emoji:active{transform:scale(1.5)}
 /* Triangle connector pointing down from pill to menu */
 #ctx-connector{flex-shrink:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--card);filter:drop-shadow(0 2px 2px rgba(0,0,0,.08))}
-#msg-ctx.ctx-right #ctx-connector{margin-right:24px;margin-left:auto}
-#msg-ctx.ctx-left #ctx-connector{margin-left:24px;margin-right:auto}
+/* ctx-connector margins set dynamically by showCtx JS */
 /* Action menu card */
 #ctx-menu-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.18);width:100%}
 .ctx-item{display:flex;align-items:center;gap:18px;padding:15px 22px;font-size:17px;font-weight:400;cursor:pointer;color:#1A1A1A;font-family:'Inter',sans-serif;transition:background .12s;-webkit-tap-highlight-color:transparent;pointer-events:auto}
@@ -10869,62 +10868,53 @@ function attachHold(el,m,w,bs,isMine){
 }
 function showCtx(bEl,m,w,bs,isMine){
   _ctxMsg=m;_ctxBsEl=bs;_ctxIsMine=isMine;
-  var unsendBtn=document.getElementById('ctx-unsend-btn');
-  var copyBtn=document.getElementById('ctx-copy-btn');
-  unsendBtn.style.display=isMine?'flex':'none';
-  copyBtn.style.display=(m.isPhoto&&m.img)?'none':'flex';
+  document.getElementById('ctx-unsend-btn').style.display=isMine?'flex':'none';
+  document.getElementById('ctx-copy-btn').style.display=(m.isPhoto&&m.img)?'none':'flex';
 
   var popup=document.getElementById('msg-ctx');
   var connector=document.getElementById('ctx-connector');
 
-  // Set alignment class before measuring
+  // Alignment class
   if(isMine){popup.classList.add('ctx-right');popup.classList.remove('ctx-left');}
   else{popup.classList.add('ctx-left');popup.classList.remove('ctx-right');}
 
-  // Reset emoji animations before showing
-  var emojis=popup.querySelectorAll('.ctx-emoji');
-  emojis.forEach(function(e){e.style.animation='none';});
-
-  // Show overlay dim
+  // Show overlay
   document.getElementById('ctx-overlay').style.display='block';
 
-  // Position purely from bubble rect — no height measurement needed.
-  // Known heights: pill=54, connector=8, each menu item=52px
+  // Known heights — no measurement needed
+  var POPUP_W=260, MARGIN=10, GAP=6;
+  var PILL_H=54, CONN_H=9, CARD_GAP=8, ITEM_H=52;
+  var INPUT_H=80; // keep clear of input bar
+  var itemCount=(isMine?3:2)-((m.isPhoto&&m.img)?1:0);
+  var cardH=itemCount*ITEM_H;
+  var totalH=PILL_H+CONN_H+CARD_GAP+cardH;
+
   var rect=bEl.getBoundingClientRect();
   var vw=window.innerWidth, vh=window.innerHeight;
-  var popupW=260, gap=8, margin=10;
-  var pillH=54, connH=8;
-  var itemCount=(isMine?3:2)-((m.isPhoto&&m.img)?1:0); // copy hidden for photos
-  var menuH=itemCount*52+2; // 52px per item + border
-  var totalH=pillH+connH+menuH;
+  var safeBottom=vh-INPUT_H;
 
-  // Prefer positioning ABOVE the bubble (pill floats above, menu hangs below pill)
-  var top, placeAbove;
-  if(rect.top-totalH-gap >= margin){
-    // enough room above
-    top=rect.top-totalH-gap;
-    placeAbove=true;
-  } else if(rect.bottom+totalH+gap <= vh-margin){
-    // enough room below
-    top=rect.bottom+gap;
-    placeAbove=false;
-  } else {
-    // not enough room either way — center on bubble, clamped to viewport
-    top=rect.top+(rect.height/2)-(totalH/2);
-    placeAbove=true;
-  }
-  top=Math.max(margin, Math.min(top, vh-totalH-margin));
+  // Always open BELOW the bubble, shift up only if needed
+  var top=rect.bottom+GAP;
+  if(top+totalH>safeBottom) top=safeBottom-totalH;
+  top=Math.max(MARGIN,top);
 
-  // Horizontal: right-align for own messages, left-align for theirs
-  var left=isMine ? rect.right-popupW : rect.left;
-  left=Math.max(margin, Math.min(left, vw-popupW-margin));
+  // Horizontal: anchor to bubble edge
+  var left=isMine?rect.right-POPUP_W:rect.left;
+  left=Math.max(MARGIN,Math.min(left,vw-POPUP_W-MARGIN));
 
-  // Apply position then show
-  popup.style.cssText='display:flex;position:fixed;visibility:visible;top:'+top+'px;left:'+left+'px;width:'+popupW+'px;flex-direction:column;pointer-events:auto;z-index:999';
+  // Connector tip points at bubble center X
+  var connX=(rect.left+rect.width/2)-left-9;
+  connX=Math.max(12,Math.min(connX,POPUP_W-30));
+  connector.style.marginLeft=connX+'px';
+  connector.style.marginRight='auto';
+
+  // Reset emoji bounce
+  popup.querySelectorAll('.ctx-emoji').forEach(function(e){
+    e.style.animation='none';void e.offsetWidth;e.style.animation='';
+  });
+
+  popup.style.cssText='display:flex;position:fixed;top:'+top+'px;left:'+left+'px;width:'+POPUP_W+'px;flex-direction:column;pointer-events:auto;z-index:999';
   popup.style.animation='ctxPop .18s cubic-bezier(.34,1.2,.64,1) both';
-
-  // Replay emoji bounce
-  emojis.forEach(function(e){void e.offsetWidth;e.style.animation='';});
 }
 function closeCtx(){var p=document.getElementById('msg-ctx');p.style.display='none';p.style.animation='';document.getElementById('ctx-overlay').style.display='none';_ctxMsg=null;_ctxBsEl=null;}
 function ctxReact(emoji){if(!_ctxMsg||!_ctxBsEl)return closeCtx();var m=_ctxMsg,bs=_ctxBsEl,isMine=_ctxIsMine;var removing=m.reaction===emoji;m.reaction=removing?null:emoji;if(!removing)SFX('react');var old=bs.querySelector('.rxn-badge');if(old)old.remove();if(m.reaction)bs.appendChild(makeBadge(m,isMine,bs));closeCtx();if(!removing)T(emoji+' added');_sb.from('messages').update({reaction:m.reaction}).eq('id',m.id).then(function(){});}
