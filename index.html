@@ -3411,6 +3411,8 @@ function trySignup(){
 
 function initApp(userProfile){
   profile = userProfile;
+  // Load previously viewed post IDs so we don't double-count on reopen
+  _loadViewedIds();
   // Restore per-user dark mode preference
   try{
     var _dk=localStorage.getItem('fade_dark_'+profile.id);
@@ -5217,18 +5219,41 @@ function togglePost(id){
 }
 // ── View count helpers ──────────────────────────────────────────────────────
 function fmtCount(n){if(!n||n<1)return'0';if(n>=1000000)return(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';if(n>=1000)return(n/1000).toFixed(1).replace(/\.0$/,'')+'K';return''+n;}
-var _viewedPostIds=new Set(); // session-level dedup
+var _viewedPostIds=new Set(); // in-memory dedup for this session
 var _viewTimers={}; // postId -> timer handle
+
+function _loadViewedIds(){
+  if(!profile)return;
+  try{
+    var raw=localStorage.getItem('fade_viewed_'+profile.id);
+    if(raw){var arr=JSON.parse(raw);arr.forEach(function(id){_viewedPostIds.add(id);});}
+  }catch(e){}
+}
+function _saveViewedId(postId){
+  if(!profile)return;
+  try{
+    var raw=localStorage.getItem('fade_viewed_'+profile.id);
+    var arr=raw?JSON.parse(raw):[];
+    if(arr.indexOf(postId)<0){
+      arr.push(postId);
+      // Keep only last 500 to avoid bloat
+      if(arr.length>500)arr=arr.slice(-500);
+      localStorage.setItem('fade_viewed_'+profile.id,JSON.stringify(arr));
+    }
+  }catch(e){}
+}
+
 function recordView(postId){
   var p=posts.find(function(x){return x.id===postId;});
   if(!p||!profile)return;
   if(p.uid===profile.id)return; // never count own views
-  if(_viewedPostIds.has(postId))return; // already counted this session
+  if(_viewedPostIds.has(postId))return; // already counted — in memory or loaded from localStorage
   _viewedPostIds.add(postId);
-  // Optimistic instant update
+  _saveViewedId(postId); // persist so next app open knows this was already viewed
+  // Optimistic instant update — only runs if truly new view
   p.views=(p.views||0)+1;
   document.querySelectorAll('#vc-'+postId).forEach(function(el){el.textContent=fmtCount(p.views);el.style.display='';});
-  // Upsert to DB — unique constraint on (post_id,user_id) prevents duplicates
+  // Upsert to DB — PRIMARY KEY (post_id,user_id) prevents duplicate rows
   _sb.from('post_views').upsert({post_id:postId,user_id:profile.id},{onConflict:'post_id,user_id',ignoreDuplicates:true}).then(function(){});
 }
 var _viewObserver=null;
