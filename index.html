@@ -158,7 +158,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .actbtn:active{transform:scale(.88)}
 .actbtn.liked{color:#E8352A}
 .actbtn svg{stroke-linecap:round;stroke-linejoin:round}
-.actbtn-views{background:none;border:none;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--sub);font-family:'Inter',sans-serif;pointer-events:none;padding:0}
+.actbtn-views{background:none;border:none;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif;pointer-events:none;padding:0}
 .del-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);opacity:.5;margin-left:auto;display:flex;align-items:center}
 @keyframes heartPop{0%{transform:scale(1)}40%{transform:scale(1.5)}70%{transform:scale(.9)}100%{transform:scale(1)}}
 .heart-pop{animation:heartPop .35s ease forwards}
@@ -605,7 +605,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 #prof-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:650;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #prof-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 #prof-screen.on{display:flex;transform:translateX(0)}
-#fl-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:640;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
+#fl-screen{display:flex;position:fixed;inset:0;background:var(--card);z-index:660;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);will-change:transform;visibility:hidden;pointer-events:none}
 #fl-screen.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 @keyframes flRowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .prof-bar{display:flex;align-items:center;height:54px;padding:0 8px;position:relative}
@@ -2229,7 +2229,7 @@ body {
 var AV_COLORS=['#7C3AED','#DB2777','#0EA5E9','#059669','#D97706','#DC2626','#2563EB','#0D9488','#EA580C'];
 function nc(n){var s=0;for(var i=0;i<(n||'').length;i++)s+=(n||'').charCodeAt(i);return AV_COLORS[s%AV_COLORS.length];}
 function nl(n){return(n||'?').charAt(0).toUpperCase();}
-function avH(url,name){if(url)return'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;opacity:0;transition:opacity .22s ease" onload="this.style.opacity=\'1\'" onerror="this.style.display=\'none\'"/>';return'<div class="lav" style="background:'+nc(name||'?')+'">'+nl(name||'?')+'</div>';}
+function avH(url,name){if(url)return'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\'none\'"/>';return'<div class="lav" style="background:'+nc(name||'?')+'">'+nl(name||'?')+'</div>';}
 function setAv(el,url,name){if(el)el.innerHTML=avH(url,name);}
 
 // -- STATE ---------------------------------------------------------------------
@@ -4892,17 +4892,11 @@ function renderFeed(){
   _feedLoading=false;
   // Tear down previous sentinel observer
   if(_feedSentinelObs){_feedSentinelObs.disconnect();_feedSentinelObs=null;}
-  // Only show skeleton on a true cold load (DOM is empty AND no cached posts).
-  // If we already have content rendered, keep it visible while the fetch runs --
-  // this eliminates the blink on every tab-switch and pull-to-refresh.
+  // Only clear if truly empty — keep existing content while fetch runs
   var hasDOMContent=f.children.length>0;
   var hasCachedPosts=posts.length>0;
   if(!hasDOMContent&&!hasCachedPosts){
-    var skHTML='';
-    for(var si=0;si<4;si++){
-      skHTML+='<div class="skeleton-post" style="opacity:'+(1-si*0.18)+'"><div class="skeleton-post-hd"><div class="skeleton skeleton-avatar" style="width:42px;height:42px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="skeleton skeleton-text" style="width:36%"></div><div class="skeleton skeleton-text" style="width:20%"></div></div></div>'+(si%2===0?'<div class="skeleton skeleton-img" style="width:100%;aspect-ratio:4/5"></div>':'<div class="skeleton skeleton-text" style="width:78%"></div><div class="skeleton skeleton-text" style="width:58%"></div>')+'<div style="display:flex;gap:16px;padding-top:2px"><div class="skeleton skeleton-round" style="width:52px;height:20px"></div><div class="skeleton skeleton-round" style="width:52px;height:20px"></div></div></div>';
-    }
-    f.innerHTML=skHTML;
+    f.innerHTML='';
   }
   // Keep posts array intact so existing DOM stays correct; _loadFeedPage will replace it
   posts=[];
@@ -5048,7 +5042,7 @@ function renderFeedRows(rows,likedIds,isFirst){
 // -- CAROUSEL HELPERS ----------------------------------------------------------
 function _buildCarouselHTML(pid,imgs){
   var slides=imgs.map(function(url,i){
-    return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="'+(i===0?'eager':'lazy')+'"/></div>';
+    return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="eager"/></div>';
   }).join('');
   var dots=imgs.map(function(_,i){
     return '<div class="carousel-dot'+(i===0?' active':'')+'"></div>';
@@ -5142,7 +5136,7 @@ function buildPost(p, showDelete){
       mediaHTML=_buildCarouselHTML(p.id,_imgs);
     } else {
       var _si=_imgs?_imgs[0]:p.img;
-      mediaHTML='<div style="width:100%;overflow:hidden"><img src="'+_si+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="lazy"/></div>';
+      mediaHTML='<div style="width:100%;overflow:hidden"><img src="'+_si+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="eager" decoding="sync"/></div>';
     }
     if(p.text)textHTML='<div class="post-caption">'+E(p.text)+'</div>';
   } else if(p.text){
@@ -5162,7 +5156,7 @@ function buildPost(p, showDelete){
   var canCmt=isOwn||(_ownerCmtPerm==='everyone')||(_ownerCmtPerm==='followers'&&following.has(p.uid));
   var _vcVal=(p.views||0);
   var vc='<span id="vc-'+p.id+'" style="'+ (_vcVal>0?'':'display:none')+'">'+(_vcVal>0?fmtCount(_vcVal):'')+'</span>';
-  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="28" height="28" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'<div class="actbtn-views"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'+vc+'</div></div>';
+  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="28" height="28" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'<div class="actbtn-views"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="14"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="19" y1="20" x2="19" y2="12"/></svg>'+vc+'</div></div>';
   el.innerHTML=hdr+mediaHTML+textHTML+acts;
   // Wire carousel if multi-photo
   var _carouselEl=el.querySelector('.post-carousel');
@@ -7620,17 +7614,18 @@ function scOpenStickers(){
   try{if(navigator.vibrate)navigator.vibrate(8);}catch(e){}
 
   var canvas=document.getElementById('sc-canvas');if(!canvas)return;
+  var creator=document.getElementById('story-creator')||document.body;
 
-  // Dim overlay
+  // Dim overlay — fixed so it covers full screen, not clipped by canvas overflow:hidden
   var dim=document.createElement('div');
   dim.id='sc-sticker-dim';
-  dim.style.cssText='position:absolute;inset:0;z-index:49;background:rgba(0,0,0,0);transition:background .28s ease;';
-  canvas.appendChild(dim);
+  dim.style.cssText='position:fixed;inset:0;z-index:420;background:rgba(0,0,0,0);transition:background .28s ease;';
+  creator.appendChild(dim);
   requestAnimationFrame(function(){dim.style.background='rgba(0,0,0,.45)';});
 
   var sheet=document.createElement('div');
   sheet.id='sc-sticker-sheet';
-  sheet.style.cssText='position:absolute;bottom:0;left:0;right:0;z-index:50;background:rgba(22,22,24,.98);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:22px 22px 0 0;padding:0 0 max(28px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);touch-action:none;';
+  sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:421;background:rgba(22,22,24,.98);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:22px 22px 0 0;padding:0 0 max(28px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);touch-action:none;';
 
   // Categories
   var CATS=[
@@ -7654,7 +7649,7 @@ function scOpenStickers(){
     '<div id="sc-stk-cats" style="display:flex;gap:6px;padding:12px 14px 8px;overflow-x:auto;scrollbar-width:none"></div>'+
     '<div id="sc-stk-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:4px 14px 8px;max-height:48vw;overflow-y:auto;scrollbar-width:none"></div>';
 
-  canvas.appendChild(sheet);
+  creator.appendChild(sheet);
 
   function _buildCats(){
     var row=sheet.querySelector('#sc-stk-cats');
@@ -8085,7 +8080,8 @@ function scShare(){
   });
   var txt=parts.join(' ');
   var pUrl=document.getElementById('sc-canvas-img');var photoUrl=(pUrl.src&&pUrl.classList.contains('on'))?pUrl.src:null;
-  if(!txt&&!photoUrl)return T('Add text or a photo first');
+  var hasSticker=canvas&&!!canvas.querySelector('._sc-sticker');
+  if(!txt&&!photoUrl&&!hasSticker)return T('Add text or a photo first');
   var filterCss=_scActiveFilter&&_scActiveFilter!=='none'?(_scFilters.find(function(f){return f.id===_scActiveFilter;})||{css:'none'}).css:'none';
   var tc=SC_TEXT_COLORS[_scColorIdx]||'#fff';
   // Add locally FIRST before goTab so loadStories() doesn't race-wipe it
@@ -11321,7 +11317,7 @@ function cwRenderMedia(mode){
         grid.innerHTML='';
         photos.forEach(function(r){
           var cell=document.createElement('div');cell.className='cw-media-cell';
-          var img=document.createElement('img');img.src=r.img_url;img.loading='lazy';
+          var img=document.createElement('img');img.src=r.img_url;img.loading='eager';
           img.onclick=function(){openPhotoPreview(r.img_url);};
           cell.appendChild(img);grid.appendChild(cell);
         });
@@ -11335,7 +11331,7 @@ function cwRenderMedia(mode){
         grid.innerHTML='';
         photos.forEach(function(src){
           var cell=document.createElement('div');cell.className='cw-media-cell';
-          var img=document.createElement('img');img.src=src;img.loading='lazy';
+          var img=document.createElement('img');img.src=src;img.loading='eager';
           img.onclick=function(){openPhotoPreview(src);};
           cell.appendChild(img);grid.appendChild(cell);
         });
@@ -17114,7 +17110,7 @@ function _handleDeepLink(){
     // Build image HTML -- carousel for multi, single img for one
     var imgHTML='';
     if(_gImgs.length>1){
-      var slides=_gImgs.map(function(url,i){return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="'+(i===0?'eager':'lazy')+'"/></div>';}).join('');
+      var slides=_gImgs.map(function(url,i){return '<div class="post-carousel-slide"><img src="'+url+'" style="width:100%;aspect-ratio:4/5;display:block;object-fit:cover" draggable="false" loading="eager"/></div>';}).join('');
       var dots=_gImgs.map(function(_,i){return '<div class="carousel-dot'+(i===0?' active':'')+'"></div>';}).join('');
       imgHTML='<div class="post-carousel" style="position:relative;width:100%;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none">'
         +'<div class="post-carousel-track" style="display:flex;transition:transform .28s cubic-bezier(.25,.46,.45,.94);will-change:transform">'+slides+'</div>'
