@@ -153,12 +153,12 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .postbody.clamped{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .post-more-btn{background:none;border:none;font-family:'Inter',sans-serif;font-size:15px;font-weight:400;color:var(--sub);cursor:pointer;padding:4px 16px 2px;display:block;line-height:1.75;-webkit-tap-highlight-color:transparent;width:100%;text-align:left}
 .post-caption{font-size:15px;line-height:1.72;padding:8px 16px 2px;font-weight:400}
-.postacts{display:flex;gap:16px;padding:10px 16px 18px;align-items:center}
-.postacts-views{display:flex;align-items:center;gap:6px;margin-left:auto;color:var(--sub);font-size:13px;font-weight:500;pointer-events:none;user-select:none}
-.actbtn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--text);font-family:'Inter',sans-serif;transition:color .15s,transform .12s}
+.postacts{display:flex;gap:20px;padding:10px 16px 18px;align-items:center}
+.actbtn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif;transition:color .15s,transform .12s}
 .actbtn:active{transform:scale(.88)}
 .actbtn.liked{color:#E8352A}
 .actbtn svg{stroke-linecap:round;stroke-linejoin:round}
+.actbtn-views{background:none;border:none;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--sub);font-family:'Inter',sans-serif;pointer-events:none;padding:0}
 .del-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);opacity:.5;margin-left:auto;display:flex;align-items:center}
 @keyframes heartPop{0%{transform:scale(1)}40%{transform:scale(1.5)}70%{transform:scale(.9)}100%{transform:scale(1)}}
 .heart-pop{animation:heartPop .35s ease forwards}
@@ -5161,8 +5161,8 @@ function buildPost(p, showDelete){
   var _ownerCmtPerm=isOwn?S.cmtPerm:(_postOwner.cmt_perm||'everyone');
   var canCmt=isOwn||(_ownerCmtPerm==='everyone')||(_ownerCmtPerm==='followers'&&following.has(p.uid));
   var _vcVal=(p.views||0);
-  var vc='<span id="vc-'+p.id+'" style="'+ (_vcVal>0?'':'display:none')+'">'+(fmtCount(_vcVal)||'')+'</span>';
-  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="26" height="26" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21.593c-.52-.328-8.5-5.438-8.5-10.593a5.5 5.5 0 0 1 8.5-4.612A5.5 5.5 0 0 1 20.5 11c0 5.155-7.98 10.265-8.5 10.593z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'<div class="postacts-views"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="4" height="8" rx="1"/><rect x="10" y="9" width="4" height="13" rx="1"/><rect x="18" y="4" width="4" height="18" rx="1"/></svg>'+vc+'</div></div>';
+  var vc='<span id="vc-'+p.id+'" style="'+ (_vcVal>0?'':'display:none')+'">'+(_vcVal>0?fmtCount(_vcVal):'')+'</span>';
+  var acts='<div class="postacts"><button class="actbtn'+(p.liked?' liked':'')+'" id="lb-'+p.id+'" onclick="likePost(\''+p.id+'\',this)"><svg id="hi-'+p.id+'" width="28" height="28" fill="'+(p.liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+lc+'</button>'+(canCmt?'<button class="actbtn" onclick="openCS(\''+p.id+'\')"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0-9-9c0 1.68.46 3.25 1.27 4.6L3 21l4.4-1.27A8.96 8.96 0 0 0 12 21z"/></svg>'+cc+'</button>':'')+'<div class="actbtn-views"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'+vc+'</div></div>';
   el.innerHTML=hdr+mediaHTML+textHTML+acts;
   // Wire carousel if multi-photo
   var _carouselEl=el.querySelector('.post-carousel');
