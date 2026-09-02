@@ -12469,73 +12469,217 @@ function openPayReceipt(txId){
   var outgoing=t.sender_id===profile.id;
   var otherName=outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone');
   var when=new Date(t.created_at);
+  var ref='FD-'+t.id.slice(0,8).toUpperCase();
   var b=document.getElementById('pay-body');
-  var html='<div class="pay-receipt-card">';
+  var html='<div class="pay-receipt-card" id="pay-receipt-render">';
   html+='<div class="pay-receipt-check"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>';
   html+='<div style="font-size:13px;color:var(--sub);margin-bottom:2px">'+(outgoing?'Sent to':'Received from')+'</div>';
   html+='<div style="font-family:Georgia,serif;font-style:italic;font-size:30px;margin-bottom:4px">'+_fmtMoney(t.amount_cents)+'</div>';
   html+='<div style="font-size:14px;font-weight:600;margin-bottom:20px">'+E(otherName)+'</div>';
-  html+='<div style="border-top:1px solid var(--border);padding-top:12px;text-align:left">';
-  html+='<div class="pay-receipt-detail"><span>Reference</span><span>'+E(t.id.slice(0,8))+'</span></div>';
+  html+='<div style="border-top:1.5px dashed var(--border);padding-top:14px;text-align:left">';
+  html+='<div class="pay-receipt-detail"><span>Reference</span><span>'+ref+'</span></div>';
   html+='<div class="pay-receipt-detail"><span>Date</span><span>'+when.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span></div>';
+  html+='<div class="pay-receipt-detail"><span>Method</span><span>Fade wallet</span></div>';
   if(t.note)html+='<div class="pay-receipt-detail"><span>Note</span><span>'+E(t.note)+'</span></div>';
-  html+='</div></div>';
-  html+='<div style="padding:0 16px"><button class="btn btn-ghost" onclick="_renderPayHome()">Back to wallet</button></div>';
+  html+='</div>';
+  html+='<div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)"><span style="font-size:10px;color:var(--sub);letter-spacing:0.08em;border:1.5px solid var(--border);border-radius:20px;padding:4px 12px">STAMPED &middot; VERIFIED TRANSFER</span></div>';
+  html+='</div>';
+  html+='<div style="padding:0 16px;display:flex;flex-direction:column;gap:8px"><button class="btn btn-dark" onclick="_sharePayReceipt(\''+txId+'\')">Share receipt</button><button class="btn btn-ghost" onclick="_renderPayHome()">Back to wallet</button></div>';
   b.innerHTML=html;
 }
+function _sharePayReceipt(txId){
+  var t=_payTx.find(function(x){return x.id===txId;});
+  if(!t)return;
+  var outgoing=t.sender_id===profile.id;
+  var otherName=outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone');
+  var when=new Date(t.created_at);
+  var ref='FD-'+t.id.slice(0,8).toUpperCase();
+  var W=640,H=800;
+  var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  var ctx=cv.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#F0F0EE';ctx.lineWidth=2;ctx.strokeRect(24,24,W-48,H-48);
+  ctx.fillStyle='#1A1A1A';ctx.textAlign='center';
+  ctx.font='italic 34px Georgia, serif';ctx.fillText('Fade',W/2,100);
+  ctx.fillStyle='#9A9A95';ctx.font='15px Inter, sans-serif';
+  ctx.fillText(outgoing?'Sent to':'Received from',W/2,180);
+  ctx.fillStyle='#1A1A1A';ctx.font='italic 56px Georgia, serif';
+  ctx.fillText(_fmtMoney(t.amount_cents),W/2,250);
+  ctx.font='600 22px Inter, sans-serif';
+  ctx.fillText(otherName,W/2,300);
+  ctx.strokeStyle='#F0F0EE';ctx.setLineDash([6,6]);
+  ctx.beginPath();ctx.moveTo(64,360);ctx.lineTo(W-64,360);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.textAlign='left';ctx.font='13px Inter, sans-serif';ctx.fillStyle='#9A9A95';
+  var rows=[['Reference',ref],['Date',when.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})],['Method','Fade wallet']];
+  if(t.note)rows.push(['Note',t.note]);
+  var y=410;
+  rows.forEach(function(r){
+    ctx.fillStyle='#9A9A95';ctx.textAlign='left';ctx.fillText(r[0],64,y);
+    ctx.fillStyle='#1A1A1A';ctx.textAlign='right';ctx.fillText(String(r[1]),W-64,y);
+    y+=36;
+  });
+  ctx.strokeStyle='#F0F0EE';ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(64,y+10);ctx.lineTo(W-64,y+10);ctx.stroke();
+  ctx.textAlign='center';ctx.fillStyle='#9A9A95';ctx.font='600 11px Inter, sans-serif';
+  ctx.fillText('STAMPED  \u00b7  VERIFIED TRANSFER',W/2,y+50);
+  cv.toBlob(function(blob){
+    if(!blob){T('Could not create image');return;}
+    var file=new File([blob],'fade-receipt-'+ref+'.png',{type:'image/png'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:'Fade receipt'}).catch(function(){});
+    } else {
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');a.href=url;a.download='fade-receipt-'+ref+'.png';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},1000);
+      T('Receipt saved');
+    }
+  },'image/png');
+}
+var _paySelectedRecipient=null;
 function openPaySend(){
+  _paySelectedRecipient=null;
   var b=document.getElementById('pay-body');
   var html='<div style="padding:20px 16px">';
-  html+='<div class="field" style="margin-bottom:14px"><span class="lbl">To (username)</span><input class="inp" id="pay-send-user" placeholder="username" autocapitalize="none"/></div>';
-  html+='<div class="field" style="margin-bottom:14px"><span class="lbl">Amount</span><input class="inp" id="pay-send-amt" type="number" inputmode="decimal" placeholder="0.00"/></div>';
+  html+='<div class="field" style="margin-bottom:4px;position:relative"><span class="lbl">To</span><input class="inp" id="pay-send-user" placeholder="Search username" autocapitalize="none" autocomplete="off"/><div id="pay-send-matches" style="position:relative"></div></div>';
+  html+='<div id="pay-send-selected" style="display:none;align-items:center;gap:10px;padding:10px 4px;margin-bottom:14px"></div>';
+  html+='<div class="field" style="margin-bottom:14px;margin-top:14px"><span class="lbl">Amount</span><input class="inp" id="pay-send-amt" type="number" inputmode="decimal" placeholder="0.00"/></div>';
   html+='<div class="field" style="margin-bottom:20px"><span class="lbl">Note (optional)</span><input class="inp" id="pay-send-note" placeholder="What\'s this for?"/></div>';
   html+='<button class="btn btn-dark" onclick="_submitPaySend()">Send</button>';
   html+='<div id="pay-send-err" style="color:#E8352A;font-size:13px;margin-top:10px;text-align:center"></div>';
   html+='</div>';
   b.innerHTML=html;
+  var inp=document.getElementById('pay-send-user');
+  var mBox=document.getElementById('pay-send-matches');
+  var selBox=document.getElementById('pay-send-selected');
+  var debounceT=null;
+  inp.addEventListener('input',function(){
+    _paySelectedRecipient=null;
+    selBox.style.display='none';
+    var q=inp.value.trim().replace(/^@/,'');
+    clearTimeout(debounceT);
+    if(!q){mBox.innerHTML='';return;}
+    debounceT=setTimeout(function(){
+      _sb.from('profiles').select('id,username,display_name,avatar_url').ilike('username',q+'%').neq('id',profile.id).limit(5).then(function(r){
+        var rows=(r.data)||[];
+        if(!rows.length){mBox.innerHTML='';return;}
+        var mh='<div style="position:absolute;left:0;right:0;top:2px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;z-index:5">';
+        rows.forEach(function(u){
+          var av=u.avatar_url?'<img src="'+u.avatar_url+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover"/>':'<div class="lav" style="width:32px;height:32px;font-size:13px;background:'+nc(u.display_name||u.username)+'">'+nl(u.display_name||u.username)+'</div>';
+          mh+='<div class="pay-match-row" data-uid="'+u.id+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer">'+av+'<div><div style="font-size:13.5px;font-weight:600;color:var(--text)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub)">@'+E(u.username)+'</div></div></div>';
+        });
+        mh+='</div>';
+        mBox.innerHTML=mh;
+        mBox.querySelectorAll('.pay-match-row').forEach(function(row,idx){
+          row.onclick=function(){
+            var u=rows[idx];
+            _paySelectedRecipient=u;
+            inp.value='';inp.style.display='none';
+            mBox.innerHTML='';
+            var av=u.avatar_url?'<img src="'+u.avatar_url+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover"/>':'<div class="lav" style="width:34px;height:34px;font-size:13px;background:'+nc(u.display_name||u.username)+'">'+nl(u.display_name||u.username)+'</div>';
+            selBox.style.display='flex';
+            selBox.innerHTML=av+'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub)">@'+E(u.username)+'</div></div><button class="ibtn" onclick="_payClearRecipient()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+          };
+        });
+      });
+    },250);
+  });
+}
+function _payClearRecipient(){
+  _paySelectedRecipient=null;
+  var inp=document.getElementById('pay-send-user');
+  var selBox=document.getElementById('pay-send-selected');
+  selBox.style.display='none';selBox.innerHTML='';
+  inp.style.display='';inp.value='';inp.focus();
 }
 function _submitPaySend(){
-  var uname=(document.getElementById('pay-send-user').value||'').trim().replace(/^@/,'');
   var amtStr=(document.getElementById('pay-send-amt').value||'').trim();
   var note=(document.getElementById('pay-send-note').value||'').trim();
   var errEl=document.getElementById('pay-send-err');
   errEl.textContent='';
+  if(!_paySelectedRecipient){errEl.textContent='Choose a recipient from the list';return;}
   var amt=parseFloat(amtStr);
-  if(!uname){errEl.textContent='Enter a username';return;}
   if(!amt||amt<=0){errEl.textContent='Enter a valid amount';return;}
   var cents=Math.round(amt*100);
   if(_payBalance!==null&&cents>_payBalance){errEl.textContent='Insufficient balance';return;}
-  _sb.rpc('send_payment',{p_to_username:uname,p_amount_cents:cents,p_note:note||null}).then(function(r){
+  _sb.rpc('send_payment',{p_to_username:_paySelectedRecipient.username,p_amount_cents:cents,p_note:note||null}).then(function(r){
     if(r.error){errEl.textContent=r.error.message||'Payment failed';return;}
     T('Sent '+_fmtMoney(cents));
+    _paySelectedRecipient=null;
     _loadWallet();
     _renderPayHome();
   });
 }
+var _payReqSelectedFrom=null;
 function openPayRequest(){
+  _payReqSelectedFrom=null;
   var b=document.getElementById('pay-body');
   var html='<div style="padding:20px 16px">';
-  html+='<div class="field" style="margin-bottom:14px"><span class="lbl">From (username)</span><input class="inp" id="pay-req-user" placeholder="username" autocapitalize="none"/></div>';
-  html+='<div class="field" style="margin-bottom:14px"><span class="lbl">Amount</span><input class="inp" id="pay-req-amt" type="number" inputmode="decimal" placeholder="0.00"/></div>';
+  html+='<div class="field" style="margin-bottom:4px;position:relative"><span class="lbl">From</span><input class="inp" id="pay-req-user" placeholder="Search username" autocapitalize="none" autocomplete="off"/><div id="pay-req-matches" style="position:relative"></div></div>';
+  html+='<div id="pay-req-selected" style="display:none;align-items:center;gap:10px;padding:10px 4px;margin-bottom:14px"></div>';
+  html+='<div class="field" style="margin-bottom:14px;margin-top:14px"><span class="lbl">Amount</span><input class="inp" id="pay-req-amt" type="number" inputmode="decimal" placeholder="0.00"/></div>';
   html+='<div class="field" style="margin-bottom:20px"><span class="lbl">Note (optional)</span><input class="inp" id="pay-req-note" placeholder="What\'s this for?"/></div>';
   html+='<button class="btn btn-dark" onclick="_submitPayRequest()">Request</button>';
   html+='<div id="pay-req-err" style="color:#E8352A;font-size:13px;margin-top:10px;text-align:center"></div>';
   html+='</div>';
   b.innerHTML=html;
+  var inp=document.getElementById('pay-req-user');
+  var mBox=document.getElementById('pay-req-matches');
+  var selBox=document.getElementById('pay-req-selected');
+  var debounceT=null;
+  inp.addEventListener('input',function(){
+    _payReqSelectedFrom=null;
+    selBox.style.display='none';
+    var q=inp.value.trim().replace(/^@/,'');
+    clearTimeout(debounceT);
+    if(!q){mBox.innerHTML='';return;}
+    debounceT=setTimeout(function(){
+      _sb.from('profiles').select('id,username,display_name,avatar_url').ilike('username',q+'%').neq('id',profile.id).limit(5).then(function(r){
+        var rows=(r.data)||[];
+        if(!rows.length){mBox.innerHTML='';return;}
+        var mh='<div style="position:absolute;left:0;right:0;top:2px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;z-index:5">';
+        rows.forEach(function(u){
+          var av=u.avatar_url?'<img src="'+u.avatar_url+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover"/>':'<div class="lav" style="width:32px;height:32px;font-size:13px;background:'+nc(u.display_name||u.username)+'">'+nl(u.display_name||u.username)+'</div>';
+          mh+='<div class="pay-match-row" data-uid="'+u.id+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer">'+av+'<div><div style="font-size:13.5px;font-weight:600;color:var(--text)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub)">@'+E(u.username)+'</div></div></div>';
+        });
+        mh+='</div>';
+        mBox.innerHTML=mh;
+        mBox.querySelectorAll('.pay-match-row').forEach(function(row,idx){
+          row.onclick=function(){
+            var u=rows[idx];
+            _payReqSelectedFrom=u;
+            inp.value='';inp.style.display='none';
+            mBox.innerHTML='';
+            var av=u.avatar_url?'<img src="'+u.avatar_url+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover"/>':'<div class="lav" style="width:34px;height:34px;font-size:13px;background:'+nc(u.display_name||u.username)+'">'+nl(u.display_name||u.username)+'</div>';
+            selBox.style.display='flex';
+            selBox.innerHTML=av+'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+E(u.display_name||u.username)+'</div><div style="font-size:12px;color:var(--sub)">@'+E(u.username)+'</div></div><button class="ibtn" onclick="_payReqClearFrom()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+          };
+        });
+      });
+    },250);
+  });
+}
+function _payReqClearFrom(){
+  _payReqSelectedFrom=null;
+  var inp=document.getElementById('pay-req-user');
+  var selBox=document.getElementById('pay-req-selected');
+  selBox.style.display='none';selBox.innerHTML='';
+  inp.style.display='';inp.value='';inp.focus();
 }
 function _submitPayRequest(){
-  var uname=(document.getElementById('pay-req-user').value||'').trim().replace(/^@/,'');
   var amtStr=(document.getElementById('pay-req-amt').value||'').trim();
   var note=(document.getElementById('pay-req-note').value||'').trim();
   var errEl=document.getElementById('pay-req-err');
   errEl.textContent='';
+  if(!_payReqSelectedFrom){errEl.textContent='Choose who to request from';return;}
   var amt=parseFloat(amtStr);
-  if(!uname){errEl.textContent='Enter a username';return;}
   if(!amt||amt<=0){errEl.textContent='Enter a valid amount';return;}
   var cents=Math.round(amt*100);
-  _sb.rpc('request_payment',{p_from_username:uname,p_amount_cents:cents,p_note:note||null}).then(function(r){
+  _sb.rpc('request_payment',{p_from_username:_payReqSelectedFrom.username,p_amount_cents:cents,p_note:note||null}).then(function(r){
     if(r.error){errEl.textContent=r.error.message||'Request failed';return;}
     T('Request sent');
+    _payReqSelectedFrom=null;
     _renderPayHome();
   });
 }
@@ -12972,6 +13116,7 @@ function buildSRoot(){
   var isFounder=profile&&isFounderUser(profile.username);
   var sections=[
     {title:'Account',items:[{ico:IC.person,label:'Account Center',act:function(){soPush('Account Center',buildAccountCenter);}},{ico:IC.key,label:'Change Password',act:function(){soPush('Change Password',buildPWPage);}}]},
+    {title:'Wallet',items:[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>',label:'Wallet',act:function(){closeSettings();setTimeout(openPay,340);}},{ico:IC.shield,label:'Identity Verification',act:function(){soPush('Identity Verification',buildWalletKycPage);}},{ico:IC.verify,label:'Blue Badge Subscription',act:function(){soPush('Blue Badge Subscription',buildBadgeSubPage);}}]},
     // Hide "Get Verified" for founder -- they already have badges automatically
     ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}}]}]),
     {title:'Content',items:[{ico:IC.cal,label:'Scheduled Posts',act:function(){soPush('Scheduled Posts',buildSchedListPage);}},{ico:IC.block,label:'Blocked Users',act:function(){soPush('Blocked Users',buildBlockedPage);}},{ico:IC.chat,label:'Comment Permissions',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="cmt-perm-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.cmtPerm]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Comment Permissions',buildCmtPage);}},{ico:IC.users,label:'Story Audience',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="story-aud-lbl">'+({everyone:'Everyone',followers:'Followers',close_friends:'Close Friends'}[S.storyAudience]||'Followers')+'</span>'+IC.chev;},act:function(){soPush('Story Audience',buildAudSettingsPage);}}]},
@@ -12988,6 +13133,7 @@ function buildSRoot(){
     sections.unshift({title:'Admin',items:[
       {ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',label:'Verification Requests',act:function(){soPush('Verification Requests',buildAdminPanel);}},
       {ico:IC.verify,label:'Manage Verified Users',act:function(){soPush('Manage Verified Users',function(el){el.innerHTML='';buildBadgeManageTab(el);});}},
+      {ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>',label:'Wallet KYC',act:function(){soPush('Wallet KYC',buildAdminWalletKycPanel);}},
       {ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',label:'Reports',act:function(){soPush('Reports',buildReportsPanel);}}
     ]});
   }
@@ -13062,6 +13208,87 @@ function buildPWPage(el){
   var btn=document.createElement('button');btn.className='btn btn-dark';btn.textContent='Update Password';
   btn.onclick=function(){var c=document.getElementById('pw-cur').value;var n=document.getElementById('pw-new').value;var cf=document.getElementById('pw-conf').value;if(!c)return T('Enter your current password');if(!n)return T('Enter a new password');var sc=meter.getScore();if(!sc||sc.lvl<2)return T(sc&&sc.hints.length?sc.hints[0]:'Password is too weak');if(n!==cf)return T('Passwords do not match');T('Password updated');soBack();};
   wrap.appendChild(d0);wrap.appendChild(d1);wrap.appendChild(meter.el);wrap.appendChild(d2);wrap.appendChild(btn);el.appendChild(wrap);
+}
+function buildWalletKycPage(el){
+  el.innerHTML='';
+  var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:60px 0';loading.innerHTML='<div class="ptr-ring"></div>';
+  el.appendChild(loading);
+  _sb.from('wallet_kyc').select('*').eq('user_id',profile.id).order('submitted_at',{ascending:false}).limit(1).then(function(r){
+    el.innerHTML='';
+    var row=(r.data&&r.data[0])||null;
+    var status=row?row.status:'none';
+    var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px';
+    if(status==='approved'){
+      wrap.innerHTML='<div style="text-align:center;padding:20px 0 28px"><div style="width:52px;height:52px;border-radius:50%;background:var(--inp-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><svg width="24" height="24" fill="none" stroke="#1FA855" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px">Identity verified</div><div style="font-size:13.5px;color:var(--sub)">Your Fade Card is unlocked and higher limits are active.</div></div>';
+    } else if(status==='pending'){
+      wrap.innerHTML='<div style="text-align:center;padding:20px 0 28px"><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px">Verification in review</div><div style="font-size:13.5px;color:var(--sub)">This usually takes 1 to 2 days. We will notify you.</div></div>';
+    } else if(status==='rejected'){
+      wrap.innerHTML='<div style="text-align:center;padding:16px 0 20px"><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px">Verification declined</div><div style="font-size:13.5px;color:var(--sub);margin-bottom:20px">'+E(row.reject_reason||'Please check your details and try again.')+'</div></div>'+_kycFormHtml();
+    } else {
+      wrap.innerHTML='<div style="font-size:13.5px;color:var(--sub);line-height:1.5;margin-bottom:20px">Verify your identity to unlock the Fade Card and higher send and request limits.</div>'+_kycFormHtml();
+    }
+    el.appendChild(wrap);
+    var submitBtn=document.getElementById('kyc-submit-btn');
+    if(submitBtn)submitBtn.onclick=_submitWalletKyc;
+  });
+}
+function _kycFormHtml(){
+  var h='<div class="field" style="margin-bottom:14px"><span class="lbl">Full legal name</span><input class="inp" id="kyc-name" placeholder="As shown on your ID"/></div>';
+  h+='<div class="field" style="margin-bottom:14px"><span class="lbl">Country</span><input class="inp" id="kyc-country" placeholder="Country"/></div>';
+  h+='<div class="field" style="margin-bottom:20px"><span class="lbl">ID number</span><input class="inp" id="kyc-idnum" placeholder="National ID or passport number"/></div>';
+  h+='<button class="btn btn-dark" id="kyc-submit-btn">Submit for review</button>';
+  h+='<div id="kyc-err" style="color:#E8352A;font-size:13px;margin-top:10px;text-align:center"></div>';
+  return h;
+}
+function _submitWalletKyc(){
+  var name=(document.getElementById('kyc-name').value||'').trim();
+  var country=(document.getElementById('kyc-country').value||'').trim();
+  var idnum=(document.getElementById('kyc-idnum').value||'').trim();
+  var errEl=document.getElementById('kyc-err');
+  errEl.textContent='';
+  if(!name){errEl.textContent='Enter your full legal name';return;}
+  if(!country){errEl.textContent='Enter your country';return;}
+  if(!idnum){errEl.textContent='Enter your ID number';return;}
+  _sb.from('wallet_kyc').insert({user_id:profile.id,full_name:name,country:country,id_number:idnum,status:'pending'}).then(function(r){
+    if(r.error){errEl.textContent=r.error.message||'Submission failed';return;}
+    T('Submitted for review');
+    soBack();
+  });
+}
+function buildBadgeSubPage(el){
+  el.innerHTML='';
+  var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:60px 0';loading.innerHTML='<div class="ptr-ring"></div>';
+  el.appendChild(loading);
+  _sb.from('badge_subscriptions').select('*').eq('user_id',profile.id).eq('status','active').order('started_at',{ascending:false}).limit(1).then(function(r){
+    el.innerHTML='';
+    var sub=(r.data&&r.data[0])||null;
+    var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px';
+    if(sub){
+      var renews=new Date(sub.current_period_end).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      wrap.innerHTML='<div style="text-align:center;padding:12px 0 24px">'+BADGE_BLUE_SVG+'<div style="font-size:16px;font-weight:600;color:var(--text);margin:10px 0 4px">Blue badge active</div><div style="font-size:13.5px;color:var(--sub)">Renews '+renews+'</div></div><button class="btn btn-ghost" id="badge-cancel-btn">Cancel subscription</button><div id="badge-err" style="color:#E8352A;font-size:13px;margin-top:10px;text-align:center"></div>';
+      el.appendChild(wrap);
+      document.getElementById('badge-cancel-btn').onclick=function(){
+        _sb.from('badge_subscriptions').update({status:'cancelled'}).eq('id',sub.id).then(function(r2){
+          if(r2.error){document.getElementById('badge-err').textContent=r2.error.message||'Could not cancel';return;}
+          T('Subscription cancelled');
+          buildBadgeSubPage(el);
+        });
+      };
+    } else {
+      wrap.innerHTML='<div style="text-align:center;padding:12px 0 20px">'+BADGE_BLUE_SVG+'<div style="font-size:16px;font-weight:600;color:var(--text);margin:10px 0 4px">Get the blue badge</div><div style="font-size:13.5px;color:var(--sub);line-height:1.5">$4.99 per month, billed from your Fade wallet. Cancel anytime.</div></div><button class="btn btn-dark" id="badge-sub-btn">Subscribe &middot; $4.99/mo</button><div id="badge-err" style="color:#E8352A;font-size:13px;margin-top:10px;text-align:center"></div>';
+      el.appendChild(wrap);
+      document.getElementById('badge-sub-btn').onclick=function(){
+        var errEl=document.getElementById('badge-err');errEl.textContent='';
+        if(_payBalance!==null&&_payBalance<499){errEl.textContent='Insufficient wallet balance';return;}
+        _sb.rpc('subscribe_badge').then(function(r2){
+          if(r2.error){errEl.textContent=r2.error.message||'Subscription failed';return;}
+          T('Blue badge active');
+          profile.badge_type='blue';
+          buildBadgeSubPage(el);
+        });
+      };
+    }
+  });
 }
 function buildVerifyPage(el){
   el.innerHTML='';
@@ -14142,6 +14369,81 @@ function _adminBuildRequestCard(req, u, onMoved){
   return card;
 }
 
+function buildAdminWalletKycPanel(el){
+  el.innerHTML='';
+  var loading=document.createElement('div');loading.style.cssText='display:flex;justify-content:center;padding:40px';loading.innerHTML='<div class="ptr-ring"></div>';
+  el.appendChild(loading);
+  _sb.from('wallet_kyc').select('*').order('submitted_at',{ascending:false}).then(function(res){
+    el.innerHTML='';
+    if(res.error){el.innerHTML='<div class="empty"><div class="empt">Access error</div><div class="emps">Run the founder RLS policy for wallet_kyc in Supabase.</div></div>';return;}
+    var rows=res.data||[];
+    var uids=[...new Set(rows.map(function(r){return r.user_id;}).filter(Boolean))];
+    if(!uids.length){el.innerHTML='<div class="empty"><div class="empt">No submissions</div><div class="emps">Wallet KYC requests will appear here.</div></div>';return;}
+    _sb.from('profiles').select('id,username,display_name,avatar_url,badge_type').in('id',uids).then(function(pr){
+      var pmap={};(pr.data||[]).forEach(function(p){pmap[p.id]=p;});
+      var pending=rows.filter(function(r){return r.status==='pending';});
+      var others=rows.filter(function(r){return r.status!=='pending';});
+      var list=document.createElement('div');list.style.cssText='padding-bottom:24px';
+      if(!pending.length&&!others.length){
+        list.innerHTML='<div class="empty"><div class="empt">No submissions</div><div class="emps">Wallet KYC requests will appear here.</div></div>';
+      }
+      pending.concat(others).forEach(function(req){
+        var u=pmap[req.user_id]||{};
+        list.appendChild(_adminBuildWalletKycCard(req,u));
+      });
+      el.appendChild(list);
+    });
+  });
+}
+function _adminBuildWalletKycCard(req,u){
+  var card=document.createElement('div');
+  card.style.cssText='background:var(--card);margin:12px 14px;border-radius:16px;border:1.5px solid var(--border);overflow:hidden';
+  var hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:12px;padding:16px 16px 14px';
+  var av=document.createElement('div');av.style.cssText='width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;background:'+nc(u.display_name||u.username||'?');
+  av.innerHTML=avH(u.avatar_url,u.display_name||u.username||'?');
+  var meta=document.createElement('div');meta.style.cssText='flex:1;min-width:0';
+  meta.innerHTML='<div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(u.display_name||u.username||'Unknown')+'</div><div style="font-size:12px;color:var(--sub);margin-top:1px">@'+E(u.username||'')+'</div>';
+  var sColor=req.status==='pending'?'#92400E':req.status==='approved'?'#15803D':'#991B1B';
+  var sBg=req.status==='pending'?'#FEF3C7':req.status==='approved'?'#DCFCE7':'#FEE2E2';
+  var pill=document.createElement('div');pill.style.cssText='font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:'+sBg+';color:'+sColor+';text-transform:capitalize;flex-shrink:0';
+  pill.textContent=req.status;
+  hdr.appendChild(av);hdr.appendChild(meta);hdr.appendChild(pill);
+  card.appendChild(hdr);
+  card.appendChild(Object.assign(document.createElement('div'),{style:'height:1px;background:var(--border)'}));
+  var details=document.createElement('div');details.style.cssText='padding:14px 16px;display:flex;flex-direction:column;gap:12px';
+  var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  [['Full name',req.full_name||'--'],['Country',req.country||'--'],['ID number',req.id_number||'--'],['Submitted',req.submitted_at?new Date(req.submitted_at).toLocaleDateString([],{day:'numeric',month:'short'}):'--']].forEach(function(pair){
+    var cell=document.createElement('div');cell.style.cssText='background:var(--inp-bg);border-radius:10px;padding:10px 12px';
+    cell.innerHTML='<div style="font-size:10px;color:var(--sub);font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">'+pair[0]+'</div><div style="font-size:13px;font-weight:600;color:var(--text)">'+E(String(pair[1]))+'</div>';
+    grid.appendChild(cell);
+  });
+  details.appendChild(grid);
+  if(req.status==='pending'){
+    var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px';
+    var approveBtn=document.createElement('button');approveBtn.className='btn btn-dark';approveBtn.style.flex='1';approveBtn.textContent='Approve';
+    var rejectBtn=document.createElement('button');rejectBtn.className='btn btn-ghost';rejectBtn.style.flex='1';rejectBtn.textContent='Reject';
+    approveBtn.onclick=function(){
+      _sb.from('wallet_kyc').update({status:'approved',reviewed_at:new Date().toISOString()}).eq('id',req.id).then(function(r){
+        if(r.error){T('Could not approve');return;}
+        pill.textContent='approved';pill.style.background='#DCFCE7';pill.style.color='#15803D';
+        btnRow.remove();
+        T('Verified '+(u.username||''));
+      });
+    };
+    rejectBtn.onclick=function(){
+      _sb.from('wallet_kyc').update({status:'rejected',reject_reason:'Could not verify the details provided.',reviewed_at:new Date().toISOString()}).eq('id',req.id).then(function(r){
+        if(r.error){T('Could not reject');return;}
+        pill.textContent='rejected';pill.style.background='#FEE2E2';pill.style.color='#991B1B';
+        btnRow.remove();
+        T('Rejected');
+      });
+    };
+    btnRow.appendChild(approveBtn);btnRow.appendChild(rejectBtn);
+    details.appendChild(btnRow);
+  }
+  card.appendChild(details);
+  return card;
+}
 function buildAdminPanel(el){
   el.innerHTML='';
   var wrap=document.createElement('div');wrap.style.cssText='padding:0;display:flex;flex-direction:column;min-height:100%';
