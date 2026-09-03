@@ -636,10 +636,11 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .wnbtn.on{color:var(--text)}
 .wnbtn.on .wnbtn-label{font-weight:700}
 .wnbtn-icon{display:flex;align-items:center;justify-content:center}
-.wcard-track{overflow:hidden;margin:16px;border-radius:16px}
-.wcard-face{background:#1A1A1A;border-radius:16px;padding:20px;aspect-ratio:1.586;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .2s,background .32s ease;touch-action:pan-y}
+.wcard-track{position:relative;overflow:hidden;margin:16px;border-radius:16px}
+.wcard-face{position:relative;background:#1A1A1A;border-radius:16px;padding:20px;aspect-ratio:1.586;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .2s,background .32s ease,transform .24s cubic-bezier(.2,.7,.3,1);touch-action:pan-y}
 .wcard-face.blocked{opacity:.35}
 .wcard-face.dragging{transition:none}
+.wcard-face.incoming{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2}
 .wcard-status-badge{font-size:10px;color:#8a8a86;letter-spacing:.05em}
 .wcard-dots{display:flex;justify-content:center;gap:6px;margin:2px 0 18px}
 .wcard-dot{width:5px;height:5px;border-radius:50%;background:var(--border);transition:background .2s ease,transform .2s ease}
@@ -12526,16 +12527,24 @@ function _renderWHome(){
 var WCARD_COLORS=['#1A1A1A','#2B2E2C','#1E2A38','#3A2226','#F5F5F3'];
 var _wCardColorIdx=0;
 function _wCardTextColor(idx){ return idx===WCARD_COLORS.length-1 ? '#1A1A1A' : '#fff'; }
+/* Builds the inner content of one card face for a given color index.
+   Shared by the resting render and the live "incoming" card built during swipe,
+   so both always show a real, fully-rendered card -- never a blank/interpolated one. */
+function _wCardFaceInnerHTML(idx){
+  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
+  var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
+  var fg=_wCardTextColor(idx);
+  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(_wCardBlocked?'blocked':'active')+'</div></div></div>';
+  html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:'+fg+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
+  return html;
+}
 function _renderWCard(){
   var b=document.getElementById('pay-body');
   if(!b)return;
-  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
-  var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
   var idx=_wCardColorIdx;
-  var fg=_wCardTextColor(idx);
+  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
   var html='<div class="wcard-track"><div class="wcard-face'+(_wCardBlocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(_wCardBlocked?'blocked':'active')+'</div></div></div>';
-  html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:'+fg+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
+  html+=_wCardFaceInnerHTML(idx);
   html+='</div></div>';
   html+='<div class="wcard-dots" id="wcard-dots">';
   WCARD_COLORS.forEach(function(c,i){ html+='<div class="wcard-dot'+(i===idx?' on':'')+'" data-i="'+i+'"></div>'; });
@@ -12557,10 +12566,11 @@ function _toggleCardBlock(){
   _renderWCard();
   T(_wCardBlocked?'Card blocked':'Card unblocked');
 }
-/* ---- card color swipe (isolated from tab swipe / wallet is a fixed overlay, no conflict) ---- */
+/* ---- card color swipe: true 2-card deck (isolated from tab swipe / wallet is a fixed overlay, no conflict) ---- */
 function _wireCardSwipe(){
   var face=document.getElementById('wcard-face');
   if(!face)return;
+  var track=face.parentElement; // .wcard-track -- positioning context for the incoming face
   var dots=document.getElementById('wcard-dots');
   if(dots){
     dots.querySelectorAll('.wcard-dot').forEach(function(d){
@@ -12572,27 +12582,85 @@ function _wireCardSwipe(){
     });
   }
   var startX=0,startY=0,dx=0,dragging=false;
+  var incoming=null,incomingIdx=-1,dir=0; // dir: -1 = dragging toward next card, 1 = toward previous card
+
+  function buildIncoming(targetIdx){
+    var el=document.createElement('div');
+    el.className='wcard-face incoming'+(_wCardBlocked?' blocked':'');
+    el.style.background=WCARD_COLORS[targetIdx];
+    // Starts fully off to the side we're dragging toward, slides in as dx grows.
+    el.style.transform='translateX('+(dir<0?100:-100)+'%)';
+    el.innerHTML=_wCardFaceInnerHTML(targetIdx);
+    track.insertBefore(el,face);
+    return el;
+  }
+  function cleanupIncoming(){
+    if(incoming&&incoming.parentNode)incoming.parentNode.removeChild(incoming);
+    incoming=null;incomingIdx=-1;dir=0;
+  }
+
   face.addEventListener('touchstart',function(e){
     startX=e.touches[0].clientX;startY=e.touches[0].clientY;dx=0;dragging=false;
   },{passive:true});
   face.addEventListener('touchmove',function(e){
     var cx=e.touches[0].clientX-startX;
     var cy=e.touches[0].clientY-startY;
-    if(!dragging&&Math.abs(cx)>6&&Math.abs(cx)>Math.abs(cy)*1.3){dragging=true;face.classList.add('dragging');}
-    if(dragging){dx=cx;face.style.transform='translateX('+(dx*0.5)+'px)';}
+    if(!dragging&&Math.abs(cx)>6&&Math.abs(cx)>Math.abs(cy)*1.3){
+      dragging=true;face.classList.add('dragging');
+    }
+    if(!dragging)return;
+    dx=cx;
+    var wantDir=dx<0?-1:1;
+    var wantIdx=wantDir<0?_wCardColorIdx+1:_wCardColorIdx-1;
+    var hasNeighbor=wantIdx>=0&&wantIdx<WCARD_COLORS.length;
+    if(hasNeighbor){
+      if(incoming&&(incomingIdx!==wantIdx||dir!==wantDir)){cleanupIncoming();}
+      if(!incoming){dir=wantDir;incomingIdx=wantIdx;incoming=buildIncoming(wantIdx);}
+      incoming.classList.add('dragging');
+      face.style.transform='translateX('+dx+'px)';
+      incoming.style.transform='translateX(calc('+(dir<0?100:-100)+'% + '+dx+'px))';
+    } else {
+      // No neighbor that way (already at first/last card) -- resist, no incoming card.
+      if(incoming)cleanupIncoming();
+      face.style.transform='translateX('+(dx*0.25)+'px)';
+    }
   },{passive:true});
   face.addEventListener('touchend',function(){
     if(!dragging){return;}
     face.classList.remove('dragging');
+    if(incoming)incoming.classList.remove('dragging');
     var threshold=44;
-    if(dx<=-threshold&&_wCardColorIdx<WCARD_COLORS.length-1){_wCardColorIdx++;_persistCardColor();}
-    else if(dx>=threshold&&_wCardColorIdx>0){_wCardColorIdx--;_persistCardColor();}
-    face.style.transform='';
-    dragging=false;dx=0;
-    _renderWCard();
+    var committed=incoming&&Math.abs(dx)>=threshold;
+    if(committed){
+      var exitPct=dir<0?-100:100;
+      face.style.transform='translateX('+exitPct+'%)';
+      incoming.style.transform='translateX(0)';
+      var settledIdx=incomingIdx;
+      incoming=null; // hand off ownership; DOM cleanup happens via _renderWCard's rebuild below
+      dragging=false;dx=0;
+      setTimeout(function(){
+        _wCardColorIdx=settledIdx;_persistCardColor();
+        // _renderWCard() rebuilds #wcard-face and #wcard-dots from scratch at the new
+        // color, and removes this whole track's old innerHTML (old face + incoming) with it --
+        // no separate cleanup needed, and no gap because the incoming face was already
+        // sitting at translateX(0) showing the final color when this fires.
+        _renderWCard();
+      },240);
+    } else {
+      face.style.transform='';
+      if(incoming)incoming.style.transform='translateX('+(dir<0?100:-100)+'%)';
+      var staleIncoming=incoming;
+      incoming=null;
+      setTimeout(function(){
+        if(staleIncoming&&staleIncoming.parentNode)staleIncoming.parentNode.removeChild(staleIncoming);
+      },240);
+      dragging=false;dx=0;incomingIdx=-1;dir=0;
+    }
   },{passive:true});
   face.addEventListener('touchcancel',function(){
-    face.classList.remove('dragging');face.style.transform='';dragging=false;dx=0;
+    face.classList.remove('dragging');face.style.transform='';
+    if(incoming)cleanupIncoming();
+    dragging=false;dx=0;
   },{passive:true});
 }
 function _persistCardColor(){
