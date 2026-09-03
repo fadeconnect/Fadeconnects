@@ -12445,7 +12445,7 @@ function openProf(u){
 /* ================= WALLET ================= */
 var _payBalance=null,_payTx=[];
 var _wCurrentTab='home';
-var _wCardBlocked=false;
+var _fadeCard=null; // null = not yet unlocked; {card_number,security_code,card_color,blocked} once loaded
 var _paySelectedRecipient=null,_payReqSelectedFrom=null;
 
 function openPay(){
@@ -12453,7 +12453,7 @@ function openPay(){
   ps.style.display='';ps.style.visibility='';ps.style.pointerEvents='';ps.classList.add('on');
   goWTab('home');
   _loadWallet();
-  _loadCardColor();
+  _loadFadeCard();
 }
 function closePay(){
   var ps=document.getElementById('pay-screen');
@@ -12525,39 +12525,90 @@ function _renderWHome(){
 /* ---- CARD ---- */
 var WCARD_COLORS=['#1A1A1A','#2B2E2C','#1E2A38','#3A2226','#F5F5F3'];
 var _wCardColorIdx=0;
+var WCARD_UNLOCK_FEE_CENTS=100;
 function _wCardTextColor(idx){ return idx===WCARD_COLORS.length-1 ? '#1A1A1A' : '#fff'; }
 /* Builds the inner content of one card face for a given color index.
    Shared by the resting render and the resting peek cards on either side,
    so both always show a real, fully-rendered card -- never a blank/interpolated one. */
 function _wCardFaceInnerHTML(idx){
-  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
+  var blocked=!!(_fadeCard&&_fadeCard.blocked);
+  var last4=(_fadeCard&&_fadeCard.card_number)?_fadeCard.card_number.slice(-4):'0000';
   var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
   var fg=_wCardTextColor(idx);
-  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(_wCardBlocked?'blocked':'active')+'</div></div></div>';
+  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(blocked?'blocked':'active')+'</div></div></div>';
   html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:'+fg+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
   return html;
+}
+function _loadFadeCard(){
+  if(!profile)return;
+  _sb.from('fade_cards').select('*').eq('user_id',profile.id).single().then(function(r){
+    _fadeCard=(r.data)||null;
+    if(_fadeCard&&_fadeCard.card_color){
+      var i=WCARD_COLORS.indexOf(_fadeCard.card_color);
+      _wCardColorIdx=i>=0?i:0;
+    }
+    if(_wCurrentTab==='card')_renderWCard();
+  });
 }
 function _renderWCard(){
   var b=document.getElementById('pay-body');
   if(!b)return;
+  if(!_fadeCard){ return _renderWCardUnlock(b); }
+  _renderWCardIssued(b);
+}
+function _renderWCardUnlock(b){
+  var affordable=_payBalance!==null&&_payBalance>=WCARD_UNLOCK_FEE_CENTS;
+  var html='<div class="wcard-face" style="background:'+WCARD_COLORS[0]+';opacity:.5;filter:grayscale(.4)">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:#fff;font-size:20px">Fade</span><div class="wcard-status-badge">card</div></div>';
+  html+='<div><div style="color:#fff;font-size:15px;letter-spacing:2px">FD04 •••• •••• ••••</div></div>';
+  html+='</div>';
+  html+='<div style="padding:0 16px;text-align:center;margin-top:8px">';
+  html+='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Unlock the Fade Card</div>';
+  html+='<div style="font-size:12.5px;color:var(--sub);margin-bottom:16px">A one-time fee issues your own card number and security code, and lets you choose a color. It only spends inside Fade, on ads and boosts.</div>';
+  html+='<div style="border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--sub)">Unlock fee</span><span style="font-family:Georgia,serif;font-style:italic;font-size:20px;color:var(--text)">'+_fmtMoney(WCARD_UNLOCK_FEE_CENTS)+'</span></div>';
+  html+='<button class="btn btn-dark" id="wcard-unlock-btn" onclick="_unlockFadeCard()">Unlock card</button>';
+  html+='<div id="wcard-unlock-err" style="color:#E8352A;font-size:13px;margin-top:10px">'+(affordable?'':'Insufficient wallet balance')+'</div>';
+  html+='</div>';
+  b.innerHTML=html;
+}
+function _unlockFadeCard(){
+  var errEl=document.getElementById('wcard-unlock-err');
+  var btn=document.getElementById('wcard-unlock-btn');
+  if(_payBalance!==null&&_payBalance<WCARD_UNLOCK_FEE_CENTS){
+    errEl.textContent='Insufficient wallet balance';
+    return;
+  }
+  errEl.textContent='';
+  btn.disabled=true;btn.textContent='Unlocking…';
+  _sb.rpc('unlock_fade_card',{p_color:WCARD_COLORS[0],p_fee_cents:WCARD_UNLOCK_FEE_CENTS}).then(function(r){
+    if(r.error){
+      errEl.textContent=r.error.message||'Could not unlock card';
+      btn.disabled=false;btn.textContent='Unlock card';
+      return;
+    }
+    T('Card unlocked');
+    _loadWallet();
+    _loadFadeCard();
+  });
+}
+function _renderWCardIssued(b){
   var idx=_wCardColorIdx;
-  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
   var html='<div class="wcard-track" id="wcard-track">';
   if(idx>0){
     html+='<div class="wcard-face wcard-peek wcard-peek-l" style="background:'+WCARD_COLORS[idx-1]+'">'+_wCardFaceInnerHTML(idx-1)+'</div>';
   }
-  html+='<div class="wcard-face'+(_wCardBlocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
+  html+='<div class="wcard-face'+(_fadeCard.blocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
   html+=_wCardFaceInnerHTML(idx);
   html+='</div>';
   if(idx<WCARD_COLORS.length-1){
     html+='<div class="wcard-face wcard-peek wcard-peek-r" style="background:'+WCARD_COLORS[idx+1]+'">'+_wCardFaceInnerHTML(idx+1)+'</div>';
   }
   html+='</div>';
-  html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn '+(_wCardBlocked?'btn-dark':'btn-ghost')+'" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(_wCardBlocked?'Unblock card':'Block card')+'</button></div>';
+  html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn '+(_fadeCard.blocked?'btn-dark':'btn-ghost')+'" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(_fadeCard.blocked?'Unblock card':'Block card')+'</button></div>';
   html+='<div class="pay-section-lbl">Card details</div>';
   html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Card ID</span><span style="font-size:13px;color:var(--text);font-weight:500">FD04-'+last4+'</span></div>';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Security code</span><span style="font-size:13px;color:var(--text);font-weight:500">•••</span></div>';
+  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Card number</span><span style="font-size:13px;color:var(--text);font-weight:500">'+E(_fadeCard.card_number)+'</span></div>';
+  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Security code</span><span style="font-size:13px;color:var(--text);font-weight:500" id="wcard-cvv">•••</span> <button class="ibtn" style="width:auto;padding:0 4px" onclick="_revealCVV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>';
   html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Spend scope</span><span style="font-size:13px;color:var(--text);font-weight:500">Fade ads only</span></div>';
   html+='</div>';
   html+='<div class="pay-section-lbl">About this card</div>';
@@ -12565,10 +12616,27 @@ function _renderWCard(){
   b.innerHTML=html;
   _wireCardSwipe();
 }
+function _revealCVV(){
+  var el=document.getElementById('wcard-cvv');
+  if(!el||!_fadeCard)return;
+  el.textContent=_fadeCard.security_code;
+  setTimeout(function(){ if(el)el.textContent='•••'; },4000);
+}
 function _toggleCardBlock(){
-  _wCardBlocked=!_wCardBlocked;
+  if(!_fadeCard)return;
+  var newBlocked=!_fadeCard.blocked;
+  var prev=_fadeCard.blocked;
+  _fadeCard.blocked=newBlocked; // optimistic
   _renderWCard();
-  T(_wCardBlocked?'Card blocked':'Card unblocked');
+  _sb.from('fade_cards').update({blocked:newBlocked}).eq('user_id',profile.id).then(function(r){
+    if(r.error){
+      _fadeCard.blocked=prev; // revert on failure
+      _renderWCard();
+      T('Could not update card');
+      return;
+    }
+    T(newBlocked?'Card blocked':'Card unblocked');
+  });
 }
 /* ---- card color swipe: peeking deck like RedotPay (isolated from tab swipe / wallet is a fixed overlay, no conflict) ---- */
 function _wireCardSwipe(){
@@ -12658,19 +12726,10 @@ function _wireCardSwipe(){
   },{passive:true});
 }
 function _persistCardColor(){
-  if(!profile)return;
+  if(!profile||!_fadeCard)return;
+  _fadeCard.card_color=WCARD_COLORS[_wCardColorIdx];
   _sb.from('fade_cards').update({card_color:WCARD_COLORS[_wCardColorIdx]}).eq('user_id',profile.id).then(function(){});
 }
-function _loadCardColor(){
-  if(!profile)return;
-  _sb.from('fade_cards').select('card_color').eq('user_id',profile.id).single().then(function(r){
-    var saved=r.data&&r.data.card_color;
-    var i=saved?WCARD_COLORS.indexOf(saved):0;
-    _wCardColorIdx=i>=0?i:0;
-    if(_wCurrentTab==='card')_renderWCard();
-  });
-}
-
 /* ---- ACTIVITY ---- */
 function _renderWActivity(){
   var b=document.getElementById('pay-body');
@@ -12684,25 +12743,33 @@ function _renderWActivity(){
   b.innerHTML=html;
 }
 function _wTxRowHtml(t){
+  var isTreasury=!t.sender_id&&t.source&&t.source.indexOf('treasury')===0;
   var outgoing=t.sender_id===profile.id;
-  var otherName=outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone');
+  var otherName=isTreasury?_treasuryLabel(t.source):(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
   var sign=outgoing?'-':'+';
   var color=outgoing?'var(--text)':'#1FA855';
   var when=new Date(t.created_at);
   var timeStr=when.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   return '<div class="pay-tx-row" onclick="openPayReceipt(\''+t.id+'\')"><div class="pay-tx-info"><div class="pay-tx-name">'+E(otherName)+'</div>'+(t.note?'<div class="pay-tx-note">'+E(t.note)+'</div>':'')+'</div><div style="text-align:right"><div class="pay-tx-amt" style="color:'+color+'">'+sign+_fmtMoney(t.amount_cents)+'</div><div class="pay-tx-time">'+timeStr+'</div></div></div>';
 }
+function _treasuryLabel(source){
+  if(source==='treasury_signup')return 'Fade Treasury · Welcome grant';
+  if(source==='treasury_allowance')return 'Fade Treasury · Weekly allowance';
+  if(source==='treasury_milestone')return 'Fade Treasury · Milestone';
+  return 'Fade Treasury';
+}
 function openPayReceipt(txId){
   var t=_payTx.find(function(x){return x.id===txId;});
   if(!t)return;
+  var isTreasury=!t.sender_id&&t.source&&t.source.indexOf('treasury')===0;
   var outgoing=t.sender_id===profile.id;
-  var otherName=outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone');
+  var otherName=isTreasury?_treasuryLabel(t.source):(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
   var when=new Date(t.created_at);
   var ref='FD-'+t.id.slice(0,8).toUpperCase();
   var b=document.getElementById('pay-body');
   var html='<div class="pay-receipt-card" id="wreceipt-render">';
   html+='<div class="pay-receipt-check"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>';
-  html+='<div style="font-size:13px;color:var(--sub);margin-bottom:2px">'+(outgoing?'Sent to':'Received from')+'</div>';
+  html+='<div style="font-size:13px;color:var(--sub);margin-bottom:2px">'+(isTreasury?'Issued by':(outgoing?'Sent to':'Received from'))+'</div>';
   html+='<div style="font-family:Georgia,serif;font-style:italic;font-size:30px;margin-bottom:4px">'+_fmtMoney(t.amount_cents)+'</div>';
   html+='<div style="font-size:14px;font-weight:600;margin-bottom:20px">'+E(otherName)+'</div>';
   html+='<div style="border-top:1.5px dashed var(--border);padding-top:14px;text-align:left">';
@@ -12774,7 +12841,29 @@ function _renderWSettings(){
   html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
   html+='<div class="wsetting-row"><div><div class="wsetting-lbl">Identity verification</div><div class="wsetting-sub">Required to unlock the Fade Card</div></div><span class="wsetting-val">Not started</span></div>';
   html+='</div>';
+  html+='<div class="pay-section-lbl">Fade Treasury</div>';
+  html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 8px" id="w-treasury-box">';
+  html+='<div class="wsetting-row"><div><div class="wsetting-lbl">This week\'s standing</div><div class="wsetting-sub" id="w-treasury-sub">Loading…</div></div><span class="wsetting-val" id="w-treasury-tier">···</span></div>';
+  html+='</div>';
+  html+='<div style="padding:0 16px 20px;font-size:12px;color:var(--sub);line-height:1.6">Post, comment, and open Fade on 3 or more days this week to reach the top tier. Payouts run automatically every Monday.</div>';
   b.innerHTML=html;
+  _loadTreasuryStanding();
+}
+function _loadTreasuryStanding(){
+  if(!profile)return;
+  _sb.from('treasury_standing').select('*').eq('user_id',profile.id).single().then(function(r){
+    var tierEl=document.getElementById('w-treasury-tier');
+    var subEl=document.getElementById('w-treasury-sub');
+    if(!tierEl||!subEl)return; // user navigated away before this resolved
+    if(r.error||!r.data){
+      tierEl.textContent=_fmtMoney(0);
+      subEl.textContent='No activity logged yet this week';
+      return;
+    }
+    var d=r.data;
+    tierEl.textContent=_fmtMoney((d.tier_amount_cents)||0);
+    subEl.textContent='Score '+d.score+'/100 · next payout Monday';
+  });
 }
 
 /* ---- SEND ---- */
