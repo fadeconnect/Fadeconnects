@@ -2830,7 +2830,7 @@ function getBadgeInline(uid, badgeType, isVerified){
   var uname = uid===( profile&&profile.id) ? (profile&&profile.username) : ((USERS.find(function(x){return x.id===uid;})||{}).username);
   if(isFounderUser(uname)) return BADGE_FOUNDER_INLINE+BADGE_BLUE_INLINE;
   if(badgeType==='gold') return BADGE_GOLD_INLINE;
-  if(badgeType==='blue'||isVerified) return BADGE_BLUE_INLINE;
+  if(badgeType==='blue') return BADGE_BLUE_INLINE;
   return '';
 }
 function getBadgeSVG(uid, badgeType, isVerified){
@@ -2838,7 +2838,7 @@ function getBadgeSVG(uid, badgeType, isVerified){
   var uname = uid===(profile&&profile.id) ? (profile&&profile.username) : ((USERS.find(function(x){return x.id===uid;})||{}).username);
   if(isFounderUser(uname)) return BADGE_FOUNDER_SVG+BADGE_BLUE_SVG;
   if(badgeType==='gold') return BADGE_GOLD_SVG;
-  if(badgeType==='blue'||isVerified) return BADGE_BLUE_SVG;
+  if(badgeType==='blue') return BADGE_BLUE_SVG;
   return '';
 }
 
@@ -3033,14 +3033,14 @@ function badgeFor(uid){
     if(isFounderUser(profile.username)) return BADGE_FOUNDER_INLINE+BADGE_BLUE_INLINE;
     var bt=profile.badge_type;
     if(bt==='gold') return BADGE_GOLD_INLINE;
-    if(bt==='blue'||profile.is_verified||verificationState.status==='approved') return BADGE_BLUE_INLINE;
+    if(bt==='blue'&&_blueBadgeActive()) return BADGE_BLUE_INLINE;
     return '';
   }
   var u=USERS.find(function(x){return x.id===uid;});
   if(!u) return '';
   if(isFounderUser(u.username)) return BADGE_FOUNDER_INLINE+BADGE_BLUE_INLINE;
   if(u.badge_type==='gold') return BADGE_GOLD_INLINE;
-  if(u.badge_type==='blue'||u.is_verified) return BADGE_BLUE_INLINE;
+  if(u.badge_type==='blue') return BADGE_BLUE_INLINE;
   return '';
 }
 function badgeSVGFor(uid){
@@ -3049,14 +3049,14 @@ function badgeSVGFor(uid){
     if(isFounderUser(profile.username)) return BADGE_FOUNDER_SVG+BADGE_BLUE_SVG;
     var bt=profile.badge_type;
     if(bt==='gold') return BADGE_GOLD_SVG;
-    if(bt==='blue'||profile.is_verified||verificationState.status==='approved') return BADGE_BLUE_SVG;
+    if(bt==='blue'&&_blueBadgeActive()) return BADGE_BLUE_SVG;
     return '';
   }
   var u=USERS.find(function(x){return x.id===uid;});
   if(!u) return '';
   if(isFounderUser(u.username)) return BADGE_FOUNDER_SVG+BADGE_BLUE_SVG;
   if(u.badge_type==='gold') return BADGE_GOLD_SVG;
-  if(u.badge_type==='blue'||u.is_verified) return BADGE_BLUE_SVG;
+  if(u.badge_type==='blue') return BADGE_BLUE_SVG;
   return '';
 }
 function applyDark(on, skipSave){
@@ -3494,6 +3494,7 @@ function initApp(userProfile){
     else{applyDark(false,true);}
   }catch(e){applyDark(false,true);}
   loadVerificationState();
+  _loadBlueSub();
   _sb.auth.getUser().then(function(res){
     var u = res.data && res.data.user;
     if(u){
@@ -12766,6 +12767,105 @@ function _wireRecipientSearch(inputId,matchesId,selectedId,onSelect,clearFnName)
   });
 }
 /* ================= END WALLET ================= */
+
+/* ================= FADE BLUE (paid badge subscription) ================= */
+var FADE_BLUE_PRICE_CENTS=499;
+var _blueSub=null; // {status:'active'|'canceled'|'expired', expires_at, created_at} or null
+
+function _blueBadgeActive(){
+  if(!profile)return false;
+  if(isFounderUser(profile.username))return true; // founder bypass, always
+  if(!_blueSub)return false;
+  if(_blueSub.status!=='active')return false;
+  return new Date(_blueSub.expires_at).getTime()>Date.now();
+}
+function _loadBlueSub(){
+  if(!profile)return;
+  _sb.from('badge_subscriptions').select('*').eq('user_id',profile.id).order('created_at',{ascending:false}).limit(1).then(function(r){
+    _blueSub=(r.data&&r.data[0])||null;
+    // Subscription lapsed -- clear the stored badge_type so other render
+    // paths (which trust profiles.badge_type for other users) go stale-safe.
+    if(_blueSub&&_blueSub.status==='active'&&new Date(_blueSub.expires_at).getTime()<=Date.now()){
+      _sb.from('profiles').update({badge_type:null}).eq('id',profile.id).then(function(){});
+      _sb.from('badge_subscriptions').update({status:'expired'}).eq('id',_blueSub.id).then(function(){});
+      if(profile.badge_type==='blue')profile.badge_type=null;
+      _blueSub.status='expired';
+    }
+    renderFeed();
+    if(curTab==='me')renderMe();
+  });
+}
+function openFadeBlue(el){
+  el.innerHTML='';
+  var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px';
+  var nidOk=!!(profile&&profile.nid_approved);
+  var active=_blueBadgeActive();
+
+  var head=document.createElement('div');head.style.cssText='text-align:center;margin-bottom:24px';
+  head.innerHTML='<div style="margin-bottom:10px">'+BADGE_BLUE_SVG+'</div><div style="font-family:Georgia,serif;font-style:italic;font-size:22px;color:var(--text)">Fade Blue</div><div style="font-size:13px;color:var(--sub);margin-top:4px">$4.99 / month</div>';
+  wrap.appendChild(head);
+
+  if(active){
+    var statusBox=document.createElement('div');
+    statusBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px';
+    var renews=new Date(_blueSub.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    statusBox.innerHTML='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">Active</div><div style="font-size:12.5px;color:var(--sub)">Renews '+renews+'</div>';
+    wrap.appendChild(statusBox);
+    var cancelBtn=document.createElement('button');cancelBtn.className='btn btn-ghost';cancelBtn.textContent='Cancel subscription';
+    cancelBtn.onclick=function(){_cancelFadeBlue(el);};
+    wrap.appendChild(cancelBtn);
+  } else if(!nidOk){
+    var lockBox=document.createElement('div');
+    lockBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center';
+    lockBox.innerHTML='<div style="font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:4px">Identity verification required</div><div style="font-size:12.5px;color:var(--sub)">Complete Get Verified before subscribing to Fade Blue.</div>';
+    wrap.appendChild(lockBox);
+    var goVerifyBtn=document.createElement('button');goVerifyBtn.className='btn btn-dark';goVerifyBtn.textContent='Get verified';
+    goVerifyBtn.onclick=function(){soPush('Get Verified',buildVerifyPage);};
+    wrap.appendChild(goVerifyBtn);
+  } else {
+    var infoBox=document.createElement('div');
+    infoBox.style.cssText='font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:16px';
+    infoBox.textContent='Your identity is verified. Subscribe to unlock the blue badge across your profile, posts, and comments. Billed monthly from your wallet balance.';
+    wrap.appendChild(infoBox);
+    var subBtn=document.createElement('button');subBtn.className='btn btn-dark';subBtn.textContent='Subscribe — $4.99/mo';
+    subBtn.onclick=function(){_subscribeFadeBlue(el);};
+    wrap.appendChild(subBtn);
+    var errEl=document.createElement('div');errEl.id='blue-sub-err';errEl.style.cssText='color:#E8352A;font-size:13px;margin-top:10px;text-align:center';
+    wrap.appendChild(errEl);
+  }
+  el.appendChild(wrap);
+}
+function _subscribeFadeBlue(el){
+  var errEl=document.getElementById('blue-sub-err');
+  if(errEl)errEl.textContent='';
+  if(_payBalance===null||_payBalance<FADE_BLUE_PRICE_CENTS){
+    if(errEl)errEl.textContent='Insufficient wallet balance';
+    return;
+  }
+  _sb.rpc('subscribe_fade_blue',{}).then(function(r){
+    if(r.error){
+      if(errEl)errEl.textContent=r.error.message||'Subscription failed';
+      return;
+    }
+    _sb.from('profiles').update({badge_type:'blue'}).eq('id',profile.id).then(function(){
+      profile.badge_type='blue';
+      T('Fade Blue activated');
+      _loadWallet();
+      _loadBlueSub();
+      openFadeBlue(el);
+    });
+  });
+}
+function _cancelFadeBlue(el){
+  if(!_blueSub)return;
+  _sb.from('badge_subscriptions').update({status:'canceled'}).eq('id',_blueSub.id).then(function(r){
+    if(r.error){T('Could not cancel');return;}
+    T('Subscription canceled. Badge stays active until it expires.');
+    _loadBlueSub();
+    openFadeBlue(el);
+  });
+}
+/* ================= END FADE BLUE ================= */
 function closeProf(){
   var ps=document.getElementById('prof-screen');
   ps.style.transform='translateX(100%)';
@@ -13199,7 +13299,7 @@ function buildSRoot(){
   var sections=[
     {title:'Account',items:[{ico:IC.person,label:'Account Center',act:function(){soPush('Account Center',buildAccountCenter);}},{ico:IC.key,label:'Change Password',act:function(){soPush('Change Password',buildPWPage);}}]},
     // Hide "Get Verified" for founder -- they already have badges automatically
-    ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}}]}]),
+    ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}},{ico:IC.verify,label:'Fade Blue',right:function(){return _blueBadgeActive()?'<span style="font-size:13px;color:var(--sub);margin-right:6px">Active</span>'+IC.chev:IC.chev;},act:function(){soPush('Fade Blue',openFadeBlue);}}]}]),
     {title:'Content',items:[{ico:IC.cal,label:'Scheduled Posts',act:function(){soPush('Scheduled Posts',buildSchedListPage);}},{ico:IC.block,label:'Blocked Users',act:function(){soPush('Blocked Users',buildBlockedPage);}},{ico:IC.chat,label:'Comment Permissions',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="cmt-perm-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.cmtPerm]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Comment Permissions',buildCmtPage);}},{ico:IC.users,label:'Story Audience',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="story-aud-lbl">'+({everyone:'Everyone',followers:'Followers',close_friends:'Close Friends'}[S.storyAudience]||'Followers')+'</span>'+IC.chev;},act:function(){soPush('Story Audience',buildAudSettingsPage);}}]},
     {title:'Privacy',items:[{ico:IC.shield,label:'Private Account',tog:'private'},{ico:IC.shield,label:'Hide Like Counts',tog:'hideLikes'},{ico:IC.star,label:'Close Friends',act:function(){soPush('Close Friends',buildCFPage);}},{ico:IC.chat,label:'Activity Status',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="activity-vis-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.activityVisible]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Activity Status',buildActivityPage);}},
     ...(S.private?[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',label:'Follow Requests',act:function(){soPush('Follow Requests',buildPendingRequestsPage);}}]:[])
@@ -13558,10 +13658,14 @@ function applyVerificationResult(result, reason, badgeType){
   if(result==='rejected'){verificationState.reapplyAt=Date.now()+15*24*3600*1000;}
   SFX('notif');
   if(result==='approved'){
-    // Apply badge to local profile immediately
+    // NID approval on its own no longer grants the blue badge -- it only
+    // clears identity review. Blue badge additionally requires an active
+    // Fade Blue subscription (see _blueBadgeActive / openFadeBlue).
+    // Gold is an admin-assigned distinction and is unaffected by this gate.
+    profile.nid_approved=true;
     profile.is_verified=true;
-    profile.badge_type=badgeType||profile.badge_type||'blue';
-    // Re-render feed + me tab so badge shows everywhere
+    if(badgeType==='gold'){profile.badge_type='gold';}
+    // Re-render feed + me tab so badge state (or lack of it) shows everywhere
     renderFeed();
     if(curTab==='me')renderMe();
     else renderMe(); // always refresh me-body badge
@@ -13581,7 +13685,7 @@ function applyVerificationResult(result, reason, badgeType){
     else buildVerifyRejected(openVerifyEl);
   }
   saveVerificationState();
-  T(result==='approved'?'Approved! Your badge is live.':'Verification not approved.');
+  T(result==='approved'?'Verified. Subscribe to Fade Blue to get your badge.':'Verification not approved.');
 }
 function buildPhotoUpload(id){
   var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
