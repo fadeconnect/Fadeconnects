@@ -12440,14 +12440,30 @@ function openProf(u){
 /* ================= WALLET ================= */
 var _payBalance=null,_payTx=[];
 var _wCurrentTab='home';
-var _wCardBlocked=false;
 var _paySelectedRecipient=null,_payReqSelectedFrom=null;
+var CARD_UNLOCK_FEE_CENTS=100; // $1 one-time unlock fee
+var CARD_COLORS=[
+  {id:'black',label:'Black',bg:'#1A1A1A'},
+  {id:'white',label:'White',bg:'#F5F5F3'},
+  {id:'purple',label:'Purple',bg:'linear-gradient(135deg,#7C3AED,#5B21B6)'},
+  {id:'gold',label:'Gold',bg:'linear-gradient(135deg,#FFD700,#C8860A)'}
+];
+var _myCard=null; // row from fade_cards, or null if not unlocked
+var _cardColorPickIdx=0;
+function _loadMyCard(){
+  if(!profile)return;
+  _sb.from('fade_cards').select('*').eq('user_id',profile.id).single().then(function(r){
+    _myCard=(r.data)||null;
+    if(_wCurrentTab==='card')_renderWCard();
+  });
+}
 
 function openPay(){
   var ps=document.getElementById('pay-screen');
   ps.style.display='';ps.style.visibility='';ps.style.pointerEvents='';ps.classList.add('on');
   goWTab('home');
   _loadWallet();
+  _loadMyCard();
 }
 function closePay(){
   var ps=document.getElementById('pay-screen');
@@ -12520,27 +12536,117 @@ function _renderWHome(){
 function _renderWCard(){
   var b=document.getElementById('pay-body');
   if(!b)return;
-  var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
+  var verified=!!(profile&&profile.is_verified);
+  if(!verified){ b.innerHTML=''; b.appendChild(_buildCardLockedView()); return; }
+  if(!_myCard){ b.innerHTML=''; b.appendChild(_buildCardUnlockView()); return; }
+  b.innerHTML=''; b.appendChild(_buildCardActiveView());
+}
+
+// -- locked: not verified yet -------------------------------------------------
+function _buildCardLockedView(){
+  var wrap=document.createElement('div');
+  var lockedFace=document.createElement('div');lockedFace.className='wcard-face blocked';
+  lockedFace.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:#fff;font-size:20px">Fade</span><div class="wcard-status-badge">locked</div></div><div><div style="color:#fff;font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• ••••</div><div style="font-size:9px;color:#8a8a86">card holder</div><div style="color:#fff;font-size:12px;font-weight:500">UNVERIFIED</div></div>';
+  wrap.appendChild(lockedFace);
+  var box=document.createElement('div');box.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:20px;margin:0 16px 20px;text-align:center';
+  box.innerHTML='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Get verified to unlock the Fade Card</div><div style="font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:16px">The Fade Card is only available to verified accounts. Verification is $4.99/mo and includes your blue badge.</div>';
+  wrap.appendChild(box);
+  var btn=document.createElement('button');btn.className='btn btn-dark';btn.style.cssText='margin:0 16px;width:calc(100% - 32px)';btn.textContent='Get verified';
+  btn.onclick=function(){ closePay(); setTimeout(function(){ openSettings(); soPush('Get Verified',buildVerifyPage); },340); };
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+// -- verified, not yet unlocked: $1 fee + color pick --------------------------
+function _buildCardUnlockView(){
+  var wrap=document.createElement('div');
+  var previewFace=document.createElement('div');previewFace.id='wcard-preview-face';previewFace.className='wcard-face';
+  wrap.appendChild(previewFace);
+  _renderCardPreview(previewFace,CARD_COLORS[_cardColorPickIdx]);
+
+  var swWrap=document.createElement('div');swWrap.style.cssText='display:flex;gap:12px;justify-content:center;padding:16px';
+  CARD_COLORS.forEach(function(c,idx){
+    var sw=document.createElement('div');
+    sw.style.cssText='width:36px;height:36px;border-radius:50%;cursor:pointer;background:'+c.bg+';border:2.5px solid '+(idx===_cardColorPickIdx?'var(--text)':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.12)';
+    sw.onclick=function(){
+      _cardColorPickIdx=idx;
+      Array.prototype.forEach.call(swWrap.children,function(el,i){el.style.borderColor=i===idx?'var(--text)':'var(--border)';});
+      _renderCardPreview(previewFace,c);
+    };
+    swWrap.appendChild(sw);
+  });
+  wrap.appendChild(swWrap);
+
+  var box=document.createElement('div');box.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;margin:0 16px 16px;text-align:center';
+  box.innerHTML='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Unlock your Fade Card</div><div style="font-size:12.5px;color:var(--sub);line-height:1.6">One-time $1.00 fee, charged from your wallet balance. Pick a color above.</div>';
+  wrap.appendChild(box);
+
+  var errEl=document.createElement('div');errEl.id='card-unlock-err';errEl.style.cssText='color:#E8352A;font-size:13px;text-align:center;margin-bottom:8px';
+  wrap.appendChild(errEl);
+
+  var btn=document.createElement('button');btn.className='btn btn-dark';btn.style.cssText='margin:0 16px 20px;width:calc(100% - 32px)';btn.textContent='Unlock for $1.00';
+  btn.onclick=function(){ _unlockCard(btn,errEl); };
+  wrap.appendChild(btn);
+  return wrap;
+}
+function _renderCardPreview(el,color){
+  el.style.background=color.bg;
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+(color.id==='white'?'#1A1A1A':'#fff')+';font-size:20px">Fade</span><div class="wcard-status-badge" style="color:'+(color.id==='white'?'#6a6a66':'#8a8a86')+'">'+E(color.label)+'</div></div><div><div style="color:'+(color.id==='white'?'#1A1A1A':'#fff')+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• ••••</div></div>';
+}
+function _unlockCard(btn,errEl){
+  errEl.textContent='';
+  if(_payBalance===null||_payBalance<CARD_UNLOCK_FEE_CENTS){errEl.textContent='Insufficient wallet balance';return;}
+  btn.textContent='Unlocking...';btn.disabled=true;
+  var color=CARD_COLORS[_cardColorPickIdx];
+  _sb.rpc('unlock_fade_card',{p_color:color.id}).then(function(r){
+    if(r.error){
+      btn.textContent='Unlock for $1.00';btn.disabled=false;
+      errEl.textContent=r.error.message||'Could not unlock card';
+      return;
+    }
+    _loadWallet();
+    _loadMyCard();
+    T('Fade Card unlocked!');
+  });
+}
+
+// -- unlocked: real card, using fade_cards row ---------------------------------
+function _buildCardActiveView(){
+  var wrap=document.createElement('div');
+  var color=CARD_COLORS.find(function(c){return c.id===_myCard.color;})||CARD_COLORS[0];
   var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
-  var html='<div class="wcard-face'+(_wCardBlocked?' blocked':'')+'" id="wcard-face">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:#fff;font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(_wCardBlocked?'blocked':'active')+'</div></div></div>';
-  html+='<div><div style="color:#fff;font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:#fff;font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:#fff;font-size:12px;font-weight:500">while verified</div></div></div></div>';
-  html+='</div>';
-  html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn '+(_wCardBlocked?'btn-dark':'btn-ghost')+'" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(_wCardBlocked?'Unblock card':'Block card')+'</button></div>';
-  html+='<div class="pay-section-lbl">Card details</div>';
-  html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Card ID</span><span style="font-size:13px;color:var(--text);font-weight:500">FD04-'+last4+'</span></div>';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Security code</span><span style="font-size:13px;color:var(--text);font-weight:500">•••</span></div>';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Spend scope</span><span style="font-size:13px;color:var(--text);font-weight:500">Fade ads only</span></div>';
-  html+='</div>';
-  html+='<div class="pay-section-lbl">About this card</div>';
-  html+='<div style="padding:0 16px;font-size:12.5px;color:var(--sub);line-height:1.6">The Fade Card only works inside Fade, for boosting posts and running campaigns. It draws directly from your wallet balance and stays active as long as your account is verified.</div>';
-  b.innerHTML=html;
+  var last4=(_myCard.card_number||'').slice(-4)||'0000';
+  var blocked=!!_myCard.blocked;
+  var textColor=color.id==='white'?'#1A1A1A':'#fff';
+  var subColor=color.id==='white'?'#6a6a66':'#8a8a86';
+
+  var face=document.createElement('div');face.className='wcard-face'+(blocked?' blocked':'');face.style.background=color.bg;
+  face.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+textColor+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge" style="color:'+subColor+'">card</div><div class="wcard-status-badge" style="color:'+subColor+'">'+(blocked?'blocked':'active')+'</div></div></div><div><div style="color:'+textColor+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+E(last4)+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:'+subColor+';margin-bottom:2px">card holder</div><div style="color:'+textColor+';font-size:12px;font-weight:500">'+E(holder||'VERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:'+subColor+';margin-bottom:2px">renews</div><div style="color:'+textColor+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
+  wrap.appendChild(face);
+
+  var toggleBtn=document.createElement('button');toggleBtn.className='btn '+(blocked?'btn-dark':'btn-ghost');toggleBtn.style.cssText='margin:0 16px 20px;width:calc(100% - 32px)';toggleBtn.textContent=blocked?'Unblock card':'Block card';
+  toggleBtn.onclick=function(){ _toggleCardBlock(); };
+  wrap.appendChild(toggleBtn);
+
+  var lbl1=document.createElement('div');lbl1.className='pay-section-lbl';lbl1.textContent='Card details';wrap.appendChild(lbl1);
+  var detailsBox=document.createElement('div');detailsBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px';
+  detailsBox.innerHTML='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Card ID</span><span style="font-size:13px;color:var(--text);font-weight:500">FD04-'+E(last4)+'</span></div><div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Security code</span><span style="font-size:13px;color:var(--text);font-weight:500">•••</span></div><div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Color</span><span style="font-size:13px;color:var(--text);font-weight:500">'+E(color.label)+'</span></div><div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Spend scope</span><span style="font-size:13px;color:var(--text);font-weight:500">Fade ads only</span></div>';
+  wrap.appendChild(detailsBox);
+
+  var lbl2=document.createElement('div');lbl2.className='pay-section-lbl';lbl2.textContent='About this card';wrap.appendChild(lbl2);
+  var about=document.createElement('div');about.style.cssText='padding:0 16px;font-size:12.5px;color:var(--sub);line-height:1.6';about.textContent='The Fade Card only works inside Fade, for boosting posts and running campaigns. It draws directly from your wallet balance and stays active as long as your account is verified.';
+  wrap.appendChild(about);
+  return wrap;
 }
 function _toggleCardBlock(){
-  _wCardBlocked=!_wCardBlocked;
-  _renderWCard();
-  T(_wCardBlocked?'Card blocked':'Card unblocked');
+  if(!_myCard)return;
+  var newBlocked=!_myCard.blocked;
+  _sb.from('fade_cards').update({blocked:newBlocked}).eq('id',_myCard.id).then(function(r){
+    if(r.error){T('Could not update card');return;}
+    _myCard.blocked=newBlocked;
+    _renderWCard();
+    T(newBlocked?'Card blocked':'Card unblocked');
+  });
 }
 
 /* ---- ACTIVITY ---- */
@@ -12634,19 +12740,64 @@ function _shareWReceipt(txId){
 }
 
 /* ---- SETTINGS ---- */
+var WALLET_COUNTRIES=[
+  {code:'US',name:'United States',currency:'USD',currencyName:'US Dollar'},
+  {code:'BD',name:'Bangladesh',currency:'BDT',currencyName:'Bangladeshi Taka'},
+  {code:'GB',name:'United Kingdom',currency:'GBP',currencyName:'British Pound'},
+  {code:'CA',name:'Canada',currency:'CAD',currencyName:'Canadian Dollar'},
+  {code:'AU',name:'Australia',currency:'AUD',currencyName:'Australian Dollar'},
+  {code:'IN',name:'India',currency:'INR',currencyName:'Indian Rupee'},
+  {code:'PK',name:'Pakistan',currency:'PKR',currencyName:'Pakistani Rupee'},
+  {code:'AE',name:'United Arab Emirates',currency:'AED',currencyName:'UAE Dirham'},
+  {code:'DE',name:'Germany',currency:'EUR',currencyName:'Euro'},
+  {code:'FR',name:'France',currency:'EUR',currencyName:'Euro'},
+  {code:'SG',name:'Singapore',currency:'SGD',currencyName:'Singapore Dollar'},
+  {code:'MY',name:'Malaysia',currency:'MYR',currencyName:'Malaysian Ringgit'}
+];
 function _renderWSettings(){
   var b=document.getElementById('pay-body');
   if(!b)return;
+  var country=WALLET_COUNTRIES.find(function(c){return c.code===(profile&&profile.country);})||null;
   var html='<div class="pay-section-lbl" style="margin-top:16px">Preferences</div>';
   html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
-  html+='<div class="wsetting-row"><div><div class="wsetting-lbl">Currency</div><div class="wsetting-sub">USD · United States Dollar</div></div><i class="ti" style="color:var(--sub)"></i></div>';
-  html+='<div class="wsetting-row"><div><div class="wsetting-lbl">Country</div><div class="wsetting-sub">Used to set your default currency</div></div><span class="wsetting-val">Not set</span></div>';
+  html+='<div class="wsetting-row" onclick="_openCountryPicker()" style="cursor:pointer"><div><div class="wsetting-lbl">Currency</div><div class="wsetting-sub">'+(country?(E(country.currency)+' · '+E(country.currencyName)):'Set your country to choose a currency')+'</div></div>'+IC.chev+'</div>';
+  html+='<div class="wsetting-row" onclick="_openCountryPicker()" style="cursor:pointer"><div><div class="wsetting-lbl">Country</div><div class="wsetting-sub">Used to set your default currency</div></div><span class="wsetting-val">'+(country?E(country.name):'Not set')+'</span></div>';
   html+='</div>';
   html+='<div class="pay-section-lbl">Verification</div>';
   html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
-  html+='<div class="wsetting-row"><div><div class="wsetting-lbl">Identity verification</div><div class="wsetting-sub">Required to unlock the Fade Card</div></div><span class="wsetting-val">Not started</span></div>';
+  var verified=!!(profile&&profile.is_verified);
+  var vStatus=verified?'Verified':(verificationState.status==='pending'?'In review':(verificationState.status==='rejected'?'Not approved':'Not started'));
+  html+='<div class="wsetting-row" onclick="_openWalletVerification()" style="cursor:pointer"><div><div class="wsetting-lbl">Identity verification</div><div class="wsetting-sub">Required to unlock the Fade Card</div></div><span class="wsetting-val">'+E(vStatus)+'</span></div>';
   html+='</div>';
   b.innerHTML=html;
+}
+function _openWalletVerification(){
+  closePay();
+  setTimeout(function(){ openSettings(); soPush('Get Verified',buildVerifyPage); },340);
+}
+function _openCountryPicker(){
+  var b=document.getElementById('pay-body');
+  if(!b)return;
+  var wrap=document.createElement('div');wrap.style.cssText='padding:8px 0';
+  var backRow=document.createElement('div');backRow.className='drow';backRow.style.cssText='color:var(--sub);font-size:13px';backRow.innerHTML='← Back to Settings';
+  backRow.onclick=function(){_renderWSettings();};
+  wrap.appendChild(backRow);
+  WALLET_COUNTRIES.forEach(function(c){
+    var row=document.createElement('div');row.className='drow';
+    var sel=profile&&profile.country===c.code;
+    row.innerHTML='<div class="drowl"><div style="display:flex;flex-direction:column;gap:1px"><span style="font-size:14.5px;font-weight:'+(sel?'600':'400')+';color:var(--text)">'+E(c.name)+'</span><span style="font-size:12px;color:var(--sub)">'+E(c.currency)+' · '+E(c.currencyName)+'</span></div></div>'+(sel?'<svg width="18" height="18" fill="none" stroke="var(--text)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>':'');
+    row.onclick=function(){
+      if(!profile)return;
+      _sb.from('profiles').update({country:c.code,currency:c.currency}).eq('id',profile.id).then(function(r){
+        if(r.error){T('Could not save');return;}
+        profile.country=c.code;profile.currency=c.currency;
+        T('Currency set to '+c.currency);
+        _renderWSettings();
+      });
+    };
+    wrap.appendChild(row);
+  });
+  b.innerHTML='';b.appendChild(wrap);
 }
 
 /* ---- SEND ---- */
@@ -12768,7 +12919,10 @@ function _wireRecipientSearch(inputId,matchesId,selectedId,onSelect,clearFnName)
 }
 /* ================= END WALLET ================= */
 
-/* ================= FADE BLUE (paid badge subscription) ================= */
+/* ================= VERIFICATION SUBSCRIPTION (recurring $4.99/mo badge fee) =================
+   This used to be a separate "Fade Blue" product; it is now folded into the
+   Get Verified flow itself -- one status, one Settings entry. The badge
+   stays active only while this subscription is active and unexpired. */
 var FADE_BLUE_PRICE_CENTS=499;
 var _blueSub=null; // {status:'active'|'canceled'|'expired', expires_at, created_at} or null
 
@@ -12795,77 +12949,16 @@ function _loadBlueSub(){
     if(curTab==='me')renderMe();
   });
 }
-function openFadeBlue(el){
-  el.innerHTML='';
-  var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px';
-  var nidOk=!!(profile&&profile.nid_approved);
-  var active=_blueBadgeActive();
-
-  var head=document.createElement('div');head.style.cssText='text-align:center;margin-bottom:24px';
-  head.innerHTML='<div style="margin-bottom:10px">'+BADGE_BLUE_SVG+'</div><div style="font-family:Georgia,serif;font-style:italic;font-size:22px;color:var(--text)">Fade Blue</div><div style="font-size:13px;color:var(--sub);margin-top:4px">$4.99 / month</div>';
-  wrap.appendChild(head);
-
-  if(active){
-    var statusBox=document.createElement('div');
-    statusBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px';
-    var renews=new Date(_blueSub.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    statusBox.innerHTML='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">Active</div><div style="font-size:12.5px;color:var(--sub)">Renews '+renews+'</div>';
-    wrap.appendChild(statusBox);
-    var cancelBtn=document.createElement('button');cancelBtn.className='btn btn-ghost';cancelBtn.textContent='Cancel subscription';
-    cancelBtn.onclick=function(){_cancelFadeBlue(el);};
-    wrap.appendChild(cancelBtn);
-  } else if(!nidOk){
-    var lockBox=document.createElement('div');
-    lockBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center';
-    lockBox.innerHTML='<div style="font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:4px">Identity verification required</div><div style="font-size:12.5px;color:var(--sub)">Complete Get Verified before subscribing to Fade Blue.</div>';
-    wrap.appendChild(lockBox);
-    var goVerifyBtn=document.createElement('button');goVerifyBtn.className='btn btn-dark';goVerifyBtn.textContent='Get verified';
-    goVerifyBtn.onclick=function(){soPush('Get Verified',buildVerifyPage);};
-    wrap.appendChild(goVerifyBtn);
-  } else {
-    var infoBox=document.createElement('div');
-    infoBox.style.cssText='font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:16px';
-    infoBox.textContent='Your identity is verified. Subscribe to unlock the blue badge across your profile, posts, and comments. Billed monthly from your wallet balance.';
-    wrap.appendChild(infoBox);
-    var subBtn=document.createElement('button');subBtn.className='btn btn-dark';subBtn.textContent='Subscribe — $4.99/mo';
-    subBtn.onclick=function(){_subscribeFadeBlue(el);};
-    wrap.appendChild(subBtn);
-    var errEl=document.createElement('div');errEl.id='blue-sub-err';errEl.style.cssText='color:#E8352A;font-size:13px;margin-top:10px;text-align:center';
-    wrap.appendChild(errEl);
-  }
-  el.appendChild(wrap);
-}
-function _subscribeFadeBlue(el){
-  var errEl=document.getElementById('blue-sub-err');
-  if(errEl)errEl.textContent='';
-  if(_payBalance===null||_payBalance<FADE_BLUE_PRICE_CENTS){
-    if(errEl)errEl.textContent='Insufficient wallet balance';
-    return;
-  }
-  _sb.rpc('subscribe_fade_blue',{}).then(function(r){
-    if(r.error){
-      if(errEl)errEl.textContent=r.error.message||'Subscription failed';
-      return;
-    }
-    _sb.from('profiles').update({badge_type:'blue'}).eq('id',profile.id).then(function(){
-      profile.badge_type='blue';
-      T('Fade Blue activated');
-      _loadWallet();
-      _loadBlueSub();
-      openFadeBlue(el);
-    });
-  });
-}
-function _cancelFadeBlue(el){
+function _cancelVerificationSub(el){
   if(!_blueSub)return;
   _sb.from('badge_subscriptions').update({status:'canceled'}).eq('id',_blueSub.id).then(function(r){
     if(r.error){T('Could not cancel');return;}
     T('Subscription canceled. Badge stays active until it expires.');
     _loadBlueSub();
-    openFadeBlue(el);
+    if(el){el.innerHTML='';buildVerifyApproved(el);}
   });
 }
-/* ================= END FADE BLUE ================= */
+/* ================= END VERIFICATION SUBSCRIPTION ================= */
 function closeProf(){
   var ps=document.getElementById('prof-screen');
   ps.style.transform='translateX(100%)';
@@ -13299,7 +13392,7 @@ function buildSRoot(){
   var sections=[
     {title:'Account',items:[{ico:IC.person,label:'Account Center',act:function(){soPush('Account Center',buildAccountCenter);}},{ico:IC.key,label:'Change Password',act:function(){soPush('Change Password',buildPWPage);}}]},
     // Hide "Get Verified" for founder -- they already have badges automatically
-    ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',act:function(){soPush('Get Verified',buildVerifyPage);}},{ico:IC.verify,label:'Fade Blue',right:function(){return _blueBadgeActive()?'<span style="font-size:13px;color:var(--sub);margin-right:6px">Active</span>'+IC.chev:IC.chev;},act:function(){soPush('Fade Blue',openFadeBlue);}}]}]),
+    ...(isFounder?[]:[{title:'Verification',items:[{ico:IC.verify,label:'Get Verified',right:function(){return _blueBadgeActive()?'<span style="font-size:13px;color:var(--sub);margin-right:6px">Active</span>'+IC.chev:IC.chev;},act:function(){soPush('Get Verified',buildVerifyPage);}}]}]),
     {title:'Content',items:[{ico:IC.cal,label:'Scheduled Posts',act:function(){soPush('Scheduled Posts',buildSchedListPage);}},{ico:IC.block,label:'Blocked Users',act:function(){soPush('Blocked Users',buildBlockedPage);}},{ico:IC.chat,label:'Comment Permissions',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="cmt-perm-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.cmtPerm]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Comment Permissions',buildCmtPage);}},{ico:IC.users,label:'Story Audience',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="story-aud-lbl">'+({everyone:'Everyone',followers:'Followers',close_friends:'Close Friends'}[S.storyAudience]||'Followers')+'</span>'+IC.chev;},act:function(){soPush('Story Audience',buildAudSettingsPage);}}]},
     {title:'Privacy',items:[{ico:IC.shield,label:'Private Account',tog:'private'},{ico:IC.shield,label:'Hide Like Counts',tog:'hideLikes'},{ico:IC.star,label:'Close Friends',act:function(){soPush('Close Friends',buildCFPage);}},{ico:IC.chat,label:'Activity Status',right:function(){return'<span style="font-size:13px;color:var(--sub);margin-right:6px" id="activity-vis-lbl">'+({everyone:'Everyone',followers:'Followers',nobody:'Nobody'}[S.activityVisible]||'Everyone')+'</span>'+IC.chev;},act:function(){soPush('Activity Status',buildActivityPage);}},
     ...(S.private?[{ico:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',label:'Follow Requests',act:function(){soPush('Follow Requests',buildPendingRequestsPage);}}]:[])
@@ -13395,6 +13488,7 @@ function buildVerifyPage(el){
   loading.style.cssText='display:flex;align-items:center;justify-content:center;padding:60px 0';
   loading.innerHTML='<div class="ptr-ring"></div>';
   el.appendChild(loading);
+  _loadBlueSub();
 
   // Fetch both profiles row AND verification_requests in parallel -- avoids race with loadVerificationState
   Promise.all([
@@ -13456,98 +13550,112 @@ function buildVerifyPage(el){
 // -- status: null -> submission form -------------------------------------------
 function buildVerifyForm(el){
   var wrap=document.createElement('div');wrap.style.cssText='padding:20px 16px;display:flex;flex-direction:column;gap:18px';
-  var info=document.createElement('div');info.className='snote';info.innerHTML='<strong>How it works</strong>1. Enter your full name and birthday<br>2. Upload front and back of your NID<br>3. Your name and birthday need to match your NID<br>4. We review it within 24 to 48 hours<br>5. Once approved, you get the blue badge';wrap.appendChild(info);
-  var f1=document.createElement('div');f1.className='field';f1.innerHTML='<label class="lbl">Full Name (must match NID)</label><div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--inp-bg);border-radius:14px;border:1.5px solid var(--inp-border)"><span style="font-size:15px;color:var(--sub)">'+(profile&&profile.display_name||'--')+'</span><svg width="15" height="15" fill="none" stroke="var(--sub)" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div style="font-size:12px;color:var(--sub);margin-top:5px;padding-left:2px">This is your registered name and cannot be changed here.</div>';wrap.appendChild(f1);
+  var info=document.createElement('div');info.className='snote';info.innerHTML='<strong>How it works</strong>1. Enter your full name, birthday, and ID number<br>2. Pay the $4.99/mo verification fee<br>3. We review it within 24 to 48 hours<br>4. If not approved, the $4.99 is refunded to your wallet<br>5. Once approved, you get the blue badge and it renews monthly';wrap.appendChild(info);
+  var f1=document.createElement('div');f1.className='field';f1.innerHTML='<label class="lbl">Full Name (must match your ID)</label><div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--inp-bg);border-radius:14px;border:1.5px solid var(--inp-border)"><span style="font-size:15px;color:var(--sub)">'+(profile&&profile.display_name||'--')+'</span><svg width="15" height="15" fill="none" stroke="var(--sub)" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div style="font-size:12px;color:var(--sub);margin-top:5px;padding-left:2px">This is your registered name and cannot be changed here.</div>';wrap.appendChild(f1);
   var f2=document.createElement('div');f2.className='field';f2.innerHTML='<label class="lbl">Date of Birth</label>';
   var dobWrap=document.createElement('div');dobWrap.style.cssText='position:relative';var dobInp=document.createElement('input');dobInp.type='date';dobInp.id='vfy-dob';dobInp.className='inp';dobInp.max=new Date(Date.now()-18*365.25*86400000).toISOString().slice(0,10);dobInp.style.cssText='padding-left:42px;color:transparent';var dobIco=document.createElement('span');dobIco.style.cssText='position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;color:var(--inp-ph)';dobIco.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';var dobPh=document.createElement('div');dobPh.style.cssText='position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 42px;pointer-events:none;font-size:15px;color:var(--inp-ph);font-family:Inter,sans-serif';dobPh.textContent='Select your date of birth';
   dobInp.addEventListener('change',function(){dobPh.style.display=this.value?'none':'flex';this.style.color=this.value?'var(--inp-text)':'transparent';});
   dobWrap.appendChild(dobInp);dobWrap.appendChild(dobIco);dobWrap.appendChild(dobPh);f2.appendChild(dobWrap);wrap.appendChild(f2);
-  var f3=document.createElement('div');f3.className='field';f3.innerHTML='<label class="lbl">NID Front Side</label>';var fr=buildPhotoUpload('vfy-front');f3.appendChild(fr.row);wrap.appendChild(f3);
-  var f4=document.createElement('div');f4.className='field';f4.innerHTML='<label class="lbl">NID Back Side</label>';var br=buildPhotoUpload('vfy-back');f4.appendChild(br.row);wrap.appendChild(f4);
-  var note=document.createElement('div');note.className='snote';note.innerHTML='<strong>Your info is safe</strong>NID photos are only used for verification and deleted after review.';wrap.appendChild(note);
-  var btn=document.createElement('button');btn.className='btn btn-dark';btn.textContent='Submit for Verification';
+  var f3=document.createElement('div');f3.className='field';f3.innerHTML='<label class="lbl">ID Type</label>';
+  var idTypeSel=document.createElement('select');idTypeSel.className='inp';idTypeSel.id='vfy-id-type';
+  [['national_id','National ID'],['passport','Passport'],['driving_license','Driving License']].forEach(function(o){var opt=document.createElement('option');opt.value=o[0];opt.textContent=o[1];idTypeSel.appendChild(opt);});
+  f3.appendChild(idTypeSel);wrap.appendChild(f3);
+  var f4=document.createElement('div');f4.className='field';f4.innerHTML='<label class="lbl">ID Number</label>';
+  var idNumInp=document.createElement('input');idNumInp.className='inp';idNumInp.id='vfy-id-number';idNumInp.placeholder='Enter your ID number';idNumInp.autocomplete='off';
+  f4.appendChild(idNumInp);wrap.appendChild(f4);
+  var note=document.createElement('div');note.className='snote';note.innerHTML='<strong>Your info is safe</strong>Your ID number is only used to confirm your submission and is not shared publicly.';wrap.appendChild(note);
+  var btn=document.createElement('button');btn.className='btn btn-dark';btn.textContent='Continue to Payment — $4.99';
   btn.onclick=function(){
     var name=profile&&profile.display_name;
     var dob=document.getElementById('vfy-dob').value;
+    var idType=idTypeSel.value;
+    var idNumber=idNumInp.value.trim();
     if(!name)return T('No name found on your account');
     if(!dob)return T('Select your date of birth');
-    if(!fr.hasImg())return T('Upload front of your NID');
-    if(!br.hasImg())return T('Upload back of your NID');
-    btn.textContent='Submitting...';btn.disabled=true;
-    function uploadNID(inputId, side, cb){
-      var inp=document.getElementById(inputId+'-inp');
-      var file=inp&&inp.files&&inp.files[0];
-      if(!file){cb(null);return;}
-      function toBase64(f, done){
-        var reader=new FileReader();
-        reader.onload=function(ev){done(ev.target.result);};
-        reader.onerror=function(){done(null);};
-        reader.readAsDataURL(f);
-      }
-      var path=profile.id+'/nid_'+side+'_'+Date.now()+'.jpg';
-      // NID needs high quality so text stays readable — 1600px / 92%
-      compressImage(file,1600,0.92).then(function(compressed){
-        _sb.storage.from('verification-docs').upload(path,compressed,{contentType:'image/jpeg',upsert:true}).then(function(sr){
-          if(sr.error){
-            toBase64(file, function(b64){cb(b64);});
-          } else {
-            var pub=_sb.storage.from('verification-docs').getPublicUrl(path);
-            var url=pub.data&&pub.data.publicUrl||null;
-            if(url){cb(url);}else{toBase64(file,function(b64){cb(b64);});}
-          }
-        }).catch(function(){
-          toBase64(file, function(b64){cb(b64);});
-        });
-      });
+    if(!idNumber)return T('Enter your ID number');
+    _pendingVerifySubmission={full_name:name,dob:dob,id_type:idType,id_number:idNumber};
+    el.innerHTML='';
+    buildVerifyPayment(el);
+  };
+  wrap.appendChild(btn);
+  var spacer=document.createElement('div');spacer.style.height='20px';wrap.appendChild(spacer);
+  el.appendChild(wrap);
+}
+
+// -- payment step: charge $4.99, then create pending request -------------------
+var _pendingVerifySubmission=null;
+function buildVerifyPayment(el){
+  var wrap=document.createElement('div');wrap.style.cssText='padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:20px';
+  var head=document.createElement('div');head.style.cssText='text-align:center';
+  head.innerHTML='<div style="margin-bottom:10px">'+BADGE_BLUE_SVG+'</div><div style="font-family:Georgia,serif;font-style:italic;font-size:22px;color:var(--text)">Verification fee</div><div style="font-size:13px;color:var(--sub);margin-top:4px">$4.99 / month, refunded in full if not approved</div>';
+  wrap.appendChild(head);
+  var balBox=document.createElement('div');balBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;width:100%;max-width:320px;display:flex;justify-content:space-between;align-items:center';
+  balBox.innerHTML='<span style="font-size:13.5px;color:var(--sub)">Wallet balance</span><span style="font-size:15px;font-weight:700;color:var(--text)">'+_fmtMoney(_payBalance)+'</span>';
+  wrap.appendChild(balBox);
+  var payBtn=document.createElement('button');payBtn.className='btn btn-dark';payBtn.style.cssText='width:100%;max-width:320px';payBtn.textContent='Pay $4.99 and submit';
+  var backBtn=document.createElement('button');backBtn.className='btn btn-ghost';backBtn.style.cssText='width:100%;max-width:320px';backBtn.textContent='Back';
+  backBtn.onclick=function(){el.innerHTML='';buildVerifyForm(el);};
+  var errEl=document.createElement('div');errEl.style.cssText='color:#E8352A;font-size:13px;text-align:center';
+  payBtn.onclick=function(){
+    errEl.textContent='';
+    if(_payBalance===null||_payBalance<FADE_BLUE_PRICE_CENTS){
+      errEl.textContent='Insufficient wallet balance';
+      return;
     }
-    uploadNID('vfy-front','front',function(frontUrl){
-      uploadNID('vfy-back','back',function(backUrl){
-        // Delete any existing request for this user first
-        _sb.from('verification_requests').delete().eq('user_id',profile.id).then(function(){
-          _sb.from('verification_requests').insert({
-            user_id:profile.id,
-            full_name:name,
-            dob:dob,
-            nid_front_url:frontUrl||null,
-            nid_back_url:backUrl||null,
-            status:'pending'
-          }).then(function(res){
-            btn.textContent='Submit for Verification';btn.disabled=false;
-            if(res.error){
-              console.error('verification_requests insert error:',res.error);
-              T('Submission saved locally -- check Supabase RLS on verification_requests');
+    if(!_pendingVerifySubmission){errEl.textContent='Something went wrong, go back and try again';return;}
+    payBtn.textContent='Processing...';payBtn.disabled=true;backBtn.disabled=true;
+    _sb.rpc('charge_verification_fee',{}).then(function(r){
+      if(r.error){
+        payBtn.textContent='Pay $4.99 and submit';payBtn.disabled=false;backBtn.disabled=false;
+        errEl.textContent=r.error.message||'Payment failed';
+        return;
+      }
+      _loadWallet();
+      var sub=_pendingVerifySubmission;
+      _sb.from('verification_requests').delete().eq('user_id',profile.id).then(function(){
+        _sb.from('verification_requests').insert({
+          user_id:profile.id,
+          full_name:sub.full_name,
+          dob:sub.dob,
+          id_type:sub.id_type,
+          id_number:sub.id_number,
+          fee_paid_cents:FADE_BLUE_PRICE_CENTS,
+          fee_status:'paid',
+          status:'pending'
+        }).then(function(res){
+          if(res.error){
+            console.error('verification_requests insert error:',res.error);
+            T('Submission saved locally -- check Supabase RLS on verification_requests');
+          }
+          _sb.from('profiles').select('id').eq('username',FOUNDER_USERNAME).single().then(function(fr){
+            if(fr.data&&fr.data.id&&fr.data.id!==profile.id){
+              _sb.from('notifications').insert({
+                user_id:fr.data.id,
+                actor_id:profile.id,
+                type:'admin_verify_request',
+                post_id:null,
+                extra:{full_name:sub.full_name},
+                is_read:false
+              }).then(function(){});
             }
-            // Notify admin (founder) about the new verification request
-            _sb.from('profiles').select('id').eq('username',FOUNDER_USERNAME).single().then(function(fr){
-              if(fr.data&&fr.data.id&&fr.data.id!==profile.id){
-                _sb.from('notifications').insert({
-                  user_id:fr.data.id,
-                  actor_id:profile.id,
-                  type:'admin_verify_request',
-                  post_id:null,
-                  extra:{full_name:name},
-                  is_read:false
-                }).then(function(){});
-              }
-            });
-            verificationState.status='pending';
-            verificationState.submittedAt=Date.now();
-            verificationState.reviewedAt=null;
-            verificationState.reapplyAt=null;
-            saveVerificationState();
-            verificationState.rejectReason=null;
-            // Clear el and render pending directly -- don't call buildVerifyPage
-            // which would re-query DB and might race
-            el.innerHTML='';
-            buildVerifyPending(el);
-            T('Submitted! Review takes 24-48 hours.');
           });
+          verificationState.status='pending';
+          verificationState.submittedAt=Date.now();
+          verificationState.reviewedAt=null;
+          verificationState.reapplyAt=null;
+          verificationState.rejectReason=null;
+          saveVerificationState();
+          _pendingVerifySubmission=null;
+          el.innerHTML='';
+          buildVerifyPending(el);
+          T('Submitted! Review takes 24-48 hours.');
         });
       });
     });
   };
-  wrap.appendChild(btn);
-  var spacer=document.createElement('div');spacer.style.height='20px';wrap.appendChild(spacer);
+  wrap.appendChild(payBtn);
+  wrap.appendChild(backBtn);
+  wrap.appendChild(errEl);
   el.appendChild(wrap);
 }
 
@@ -13606,6 +13714,20 @@ function buildVerifyApproved(el){
     pill.innerHTML='<svg width="14" height="14" fill="none" stroke="#1A6FFF" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Approved '+new Date(verificationState.reviewedAt).toLocaleDateString([],{month:'short',day:'numeric'});
     wrap.appendChild(pill);
   }
+  if(_blueSub&&_blueSub.status==='active'){
+    var subBox=document.createElement('div');subBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;width:100%;max-width:320px';
+    var renews=new Date(_blueSub.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    subBox.innerHTML='<div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px">$4.99/mo — Active</div><div style="font-size:12.5px;color:var(--sub)">Renews '+renews+'. The blue badge and Fade Card stay active while this is on.</div>';
+    wrap.appendChild(subBox);
+    var cancelBtn=document.createElement('button');cancelBtn.className='btn btn-ghost';cancelBtn.style.cssText='width:100%;max-width:320px';cancelBtn.textContent='Cancel subscription';
+    cancelBtn.onclick=function(){_cancelVerificationSub(el);};
+    wrap.appendChild(cancelBtn);
+  } else if(_blueSub&&_blueSub.status==='canceled'){
+    var canceledBox=document.createElement('div');canceledBox.style.cssText='border:1.5px solid var(--border);border-radius:14px;padding:16px;width:100%;max-width:320px;text-align:center';
+    var expires=new Date(_blueSub.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    canceledBox.innerHTML='<div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px">Subscription canceled</div><div style="font-size:12.5px;color:var(--sub)">Badge and Fade Card stay active until '+expires+'.</div>';
+    wrap.appendChild(canceledBox);
+  }
   el.appendChild(wrap);
 }
 
@@ -13658,9 +13780,8 @@ function applyVerificationResult(result, reason, badgeType){
   if(result==='rejected'){verificationState.reapplyAt=Date.now()+15*24*3600*1000;}
   SFX('notif');
   if(result==='approved'){
-    // NID approval on its own no longer grants the blue badge -- it only
-    // clears identity review. Blue badge additionally requires an active
-    // Fade Blue subscription (see _blueBadgeActive / openFadeBlue).
+    // Approval grants the blue badge directly and starts the recurring
+    // $4.99/mo subscription clock (see _blueBadgeActive / _loadBlueSub).
     // Gold is an admin-assigned distinction and is unaffected by this gate.
     profile.nid_approved=true;
     profile.is_verified=true;
@@ -13685,7 +13806,7 @@ function applyVerificationResult(result, reason, badgeType){
     else buildVerifyRejected(openVerifyEl);
   }
   saveVerificationState();
-  T(result==='approved'?'Verified. Subscribe to Fade Blue to get your badge.':'Verification not approved.');
+  T(result==='approved'?'Verified! Your blue badge is now active.':'Verification not approved.');
 }
 function buildPhotoUpload(id){
   var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
@@ -14348,18 +14469,14 @@ function _adminBuildRequestCard(req, u, onMoved){
   // Details
   var details=document.createElement('div');details.style.cssText='padding:14px 16px;display:flex;flex-direction:column;gap:12px';
 
+  var idTypeLabels={national_id:'National ID',passport:'Passport',driving_license:'Driving License'};
   var infoGrid=document.createElement('div');infoGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
-  [['Full name',req.full_name||'--'],['Date of birth',req.dob?new Date(req.dob+'T00:00:00').toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}):'--'],['Submitted',req.submitted_at?new Date(req.submitted_at).toLocaleDateString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'--'],['Badge',u.badge_type?(u.badge_type.charAt(0).toUpperCase()+u.badge_type.slice(1)):'None']].forEach(function(pair){
+  [['Full name',req.full_name||'--'],['Date of birth',req.dob?new Date(req.dob+'T00:00:00').toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}):'--'],['ID type',idTypeLabels[req.id_type]||req.id_type||'--'],['ID number',req.id_number||'--'],['Submitted',req.submitted_at?new Date(req.submitted_at).toLocaleDateString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'--'],['Fee',req.fee_paid_cents?(_fmtMoney(req.fee_paid_cents)+' ('+(req.fee_status||'paid')+')'):'--'],['Badge',u.badge_type?(u.badge_type.charAt(0).toUpperCase()+u.badge_type.slice(1)):'None']].forEach(function(pair){
     var cell=document.createElement('div');cell.style.cssText='background:var(--inp-bg);border-radius:10px;padding:10px 12px';
     cell.innerHTML='<div style="font-size:10px;color:var(--sub);font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">'+pair[0]+'</div><div style="font-size:13px;font-weight:600;color:var(--text)">'+E(String(pair[1]))+'</div>';
     infoGrid.appendChild(cell);
   });
   details.appendChild(infoGrid);
-
-  var imgRow=document.createElement('div');imgRow.style.cssText='display:flex;gap:10px';
-  imgRow.appendChild(_adminBuildImgBox(req.nid_front_url,'Front'));
-  imgRow.appendChild(_adminBuildImgBox(req.nid_back_url,'Back'));
-  details.appendChild(imgRow);
 
   if(req.status==='pending'){
     details.appendChild(Object.assign(document.createElement('div'),{style:'height:1px;background:var(--border)'}));
@@ -14435,18 +14552,29 @@ function _adminBuildRequestCard(req, u, onMoved){
       }
       rejectBtn.textContent='...';rejectBtn.disabled=true;approveBtn.disabled=true;
       var reason=reasonTA.value.trim()||'Your verification was not approved this time.';
-      _sb.from('profiles').update({is_verified:false,badge_type:null}).eq('id',req.user_id).then(function(){
-        _sb.from('verification_requests').update({status:'rejected',reviewed_at:new Date().toISOString(),reject_reason:reason}).eq('id',req.id).then(function(){
-          _sb.from('notifications').insert({user_id:req.user_id,type:'verification',extra:{result:'rejected',msg:reason},is_read:false}).then(function(){});
-          var lu=USERS.find(function(x){return x.id===req.user_id;});if(lu){lu.is_verified=false;lu.badge_type=null;}
-          req.status='rejected';req.reviewed_at=new Date().toISOString();
-          T('Rejected.');
-          if(onMoved)onMoved(req,'rejected');
-          card.style.transition='opacity .22s ease,max-height .28s ease .18s';card.style.opacity='0';
-          setTimeout(function(){card.style.maxHeight='0';card.style.overflow='hidden';card.style.margin='0';},220);
-          setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);},460);
+      function finishReject(){
+        _sb.from('profiles').update({is_verified:false,badge_type:null}).eq('id',req.user_id).then(function(){
+          _sb.from('verification_requests').update({status:'rejected',reviewed_at:new Date().toISOString(),reject_reason:reason,fee_status:'refunded'}).eq('id',req.id).then(function(){
+            _sb.from('notifications').insert({user_id:req.user_id,type:'verification',extra:{result:'rejected',msg:reason+' Your $4.99 fee has been refunded to your wallet.'},is_read:false}).then(function(){});
+            var lu=USERS.find(function(x){return x.id===req.user_id;});if(lu){lu.is_verified=false;lu.badge_type=null;}
+            req.status='rejected';req.reviewed_at=new Date().toISOString();req.fee_status='refunded';
+            T('Rejected — fee refunded.');
+            if(onMoved)onMoved(req,'rejected');
+            card.style.transition='opacity .22s ease,max-height .28s ease .18s';card.style.opacity='0';
+            setTimeout(function(){card.style.maxHeight='0';card.style.overflow='hidden';card.style.margin='0';},220);
+            setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);},460);
+          });
         });
-      });
+      }
+      // Refund the verification fee back to the user's wallet before finalizing rejection
+      if(req.fee_paid_cents&&req.fee_status==='paid'){
+        _sb.rpc('refund_verification_fee',{p_request_id:req.id}).then(function(rr){
+          if(rr.error)console.error('refund_verification_fee error:',rr.error);
+          finishReject();
+        });
+      } else {
+        finishReject();
+      }
     };
     approveBtn.onclick=function(){
       approveBtn.textContent='...';approveBtn.disabled=true;rejectBtn.disabled=true;
@@ -14455,6 +14583,9 @@ function _adminBuildRequestCard(req, u, onMoved){
       var realBadge=bType==='both'?'gold':bType;
       _sb.from('profiles').update({is_verified:true,badge_type:realBadge}).eq('id',req.user_id).then(function(){
         _sb.from('verification_requests').update({status:'approved',reviewed_at:new Date().toISOString()}).eq('id',req.id).then(function(){
+          // Start the recurring $4.99/mo subscription clock now that the fee has been kept
+          var expires=new Date(Date.now()+30*24*3600*1000).toISOString();
+          _sb.from('badge_subscriptions').insert({user_id:req.user_id,status:'active',expires_at:expires,verification_request_id:req.id}).then(function(){});
           _sb.from('notifications').insert({user_id:req.user_id,type:'verification',extra:{result:'approved',badge_type:realBadge,msg:'Your account has been verified! You now have a '+(bType==='both'?'blue and gold badge':bType+' badge')+'.'},is_read:false}).then(function(){});
           var lu=USERS.find(function(x){return x.id===req.user_id;});if(lu){lu.is_verified=true;lu.badge_type=realBadge;}
           req.status='approved';req.reviewed_at=new Date().toISOString();
