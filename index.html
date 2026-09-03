@@ -641,8 +641,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .wcard-face.blocked{opacity:.35}
 .wcard-face.dragging{transition:none}
 .wcard-face.wcard-peek{position:absolute;top:0;width:calc(100% - 30px);z-index:0;pointer-events:none;transition:transform .38s cubic-bezier(.22,.61,.36,1),opacity .38s ease}
-.wcard-peek-l{left:-15px;transform:translateX(0) scale(.94);opacity:.9}
-.wcard-peek-r{right:-15px;transform:translateX(0) scale(.94);opacity:.9}
+.wcard-peek-l{left:-15px;transform:translateX(-88%) scale(.94);opacity:.9}
+.wcard-peek-r{right:-15px;transform:translateX(88%) scale(.94);opacity:.9}
 .wcard-status-badge{font-size:10px;color:#8a8a86;letter-spacing:.05em}
 .wsetting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
 .wsetting-row:last-child{border-bottom:none}
@@ -12607,7 +12607,8 @@ function _wireCardSwipe(){
     var ap=Math.abs(p);
     face.style.transform='translateX('+dx+'px)';
     // active peek: travels from its resting slot toward center, scaling up to 1
-    var restX=goingLeft?(W-GAP):(-(W-GAP));
+    var peekW=W-GAP*2;
+    var restX=goingLeft?(peekW*0.88):(-(peekW*0.88));
     var travel=restX*(1-ap);
     var scale=SCALE+(1-SCALE)*ap;
     active.style.transform='translateX('+travel+'px) scale('+scale+')';
