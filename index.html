@@ -12641,6 +12641,7 @@ function _wireCardSwipe(){
         _renderWCard();
       },380);
     } else {
+      void face.offsetHeight; // force reflow so the transition (re-enabled above) is active before we change transform
       face.style.transform='';
       if(peekL){peekL.style.transform='';peekL.style.opacity='';}
       if(peekR){peekR.style.transform='';peekR.style.opacity='';}
@@ -12648,7 +12649,9 @@ function _wireCardSwipe(){
     }
   },{passive:true});
   face.addEventListener('touchcancel',function(){
-    face.classList.remove('dragging');face.style.transform='';
+    face.classList.remove('dragging');
+    void face.offsetHeight; // force reflow so the transition is active before we change transform
+    face.style.transform='';
     if(peekL){peekL.classList.remove('dragging');peekL.style.transform='';peekL.style.opacity='';}
     if(peekR){peekR.classList.remove('dragging');peekR.style.transform='';peekR.style.opacity='';}
     dragging=false;dx=0;
