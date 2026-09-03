@@ -12559,12 +12559,13 @@ function _wCardTextColor(idx){ return idx===WCARD_COLORS.length-1 ? '#1A1A1A' : 
    Shared by the resting render and the resting peek cards on either side,
    so both always show a real, fully-rendered card -- never a blank/interpolated one. */
 function _wCardFaceInnerHTML(idx){
-  var blocked=!!(_fadeCard&&_fadeCard.blocked);
-  var last4=(_fadeCard&&_fadeCard.card_number)?_fadeCard.card_number.slice(-4):'0000';
+  var isIssued=!!_fadeCard;
+  var blocked=isIssued&&_fadeCard.blocked;
+  var last4=(isIssued&&_fadeCard.card_number)?_fadeCard.card_number.slice(-4):'••••';
   var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
   var fg=_wCardTextColor(idx);
-  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div><div class="wcard-status-badge" id="wcard-status-lbl">'+(blocked?'blocked':'active')+'</div></div></div>';
-  html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:'+fg+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
+  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div style="text-align:right"><div class="wcard-status-badge">card</div>'+(isIssued?'<div class="wcard-status-badge" id="wcard-status-lbl">'+(blocked?'blocked':'active')+'</div>':'')+'</div></div>';
+  html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">FD04 •••• •••• '+last4+'</div><div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+(isIssued?E(holder||'UNVERIFIED'):'UNLOCK TO REVEAL')+'</div></div><div style="text-align:right"><div style="font-size:9px;color:#8a8a86;margin-bottom:2px">renews</div><div style="color:'+fg+';font-size:12px;font-weight:500">while verified</div></div></div></div>';
   return html;
 }
 function _loadFadeCard(){
@@ -12586,18 +12587,28 @@ function _renderWCard(){
 }
 function _renderWCardUnlock(b){
   var affordable=_payBalance!==null&&_payBalance>=WCARD_UNLOCK_FEE_CENTS;
-  var html='<div class="wcard-face" style="background:'+WCARD_COLORS[0]+';opacity:.5;filter:grayscale(.4)">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:#fff;font-size:20px">Fade</span><div class="wcard-status-badge">card</div></div>';
-  html+='<div><div style="color:#fff;font-size:15px;letter-spacing:2px">FD04 •••• •••• ••••</div></div>';
+  var idx=_wCardColorIdx;
+  var html='<div class="wcard-track" id="wcard-track">';
+  if(idx>0){
+    html+='<div class="wcard-face wcard-peek wcard-peek-l" style="background:'+WCARD_COLORS[idx-1]+'">'+_wCardFaceInnerHTML(idx-1)+'</div>';
+  }
+  html+='<div class="wcard-face" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
+  html+=_wCardFaceInnerHTML(idx);
   html+='</div>';
-  html+='<div style="padding:0 16px;text-align:center;margin-top:8px">';
+  if(idx<WCARD_COLORS.length-1){
+    html+='<div class="wcard-face wcard-peek wcard-peek-r" style="background:'+WCARD_COLORS[idx+1]+'">'+_wCardFaceInnerHTML(idx+1)+'</div>';
+  }
+  html+='</div>';
+  html+='<div style="text-align:center;font-size:12px;color:var(--sub);margin:2px 0 20px">Swipe to preview colors</div>';
+  html+='<div style="padding:0 16px;text-align:center">';
   html+='<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Unlock the Fade Card</div>';
-  html+='<div style="font-size:12.5px;color:var(--sub);margin-bottom:16px">A one-time fee issues your own card number and security code, and lets you choose a color. It only spends inside Fade, on ads and boosts.</div>';
+  html+='<div style="font-size:12.5px;color:var(--sub);margin-bottom:16px">A one-time fee issues your own card number and security code in the color you pick above. It only spends inside Fade, on ads and boosts.</div>';
   html+='<div style="border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--sub)">Unlock fee</span><span style="font-family:Georgia,serif;font-style:italic;font-size:20px;color:var(--text)">'+_fmtMoney(WCARD_UNLOCK_FEE_CENTS)+'</span></div>';
   html+='<button class="btn btn-dark" id="wcard-unlock-btn" onclick="_unlockFadeCard()">Unlock card</button>';
   html+='<div id="wcard-unlock-err" style="color:#E8352A;font-size:13px;margin-top:10px">'+(affordable?'':'Insufficient wallet balance')+'</div>';
   html+='</div>';
   b.innerHTML=html;
+  _wireCardSwipe();
 }
 function _unlockFadeCard(){
   var errEl=document.getElementById('wcard-unlock-err');
@@ -12608,7 +12619,7 @@ function _unlockFadeCard(){
   }
   errEl.textContent='';
   btn.disabled=true;btn.textContent='Unlocking…';
-  _sb.rpc('unlock_fade_card',{p_color:WCARD_COLORS[0],p_fee_cents:WCARD_UNLOCK_FEE_CENTS}).then(function(r){
+  _sb.rpc('unlock_fade_card',{p_color:WCARD_COLORS[_wCardColorIdx],p_fee_cents:WCARD_UNLOCK_FEE_CENTS}).then(function(r){
     if(r.error){
       errEl.textContent=r.error.message||'Could not unlock card';
       btn.disabled=false;btn.textContent='Unlock card';
