@@ -636,15 +636,14 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .wnbtn.on{color:var(--text)}
 .wnbtn.on .wnbtn-label{font-weight:700}
 .wnbtn-icon{display:flex;align-items:center;justify-content:center}
-.wcard-track{position:relative;overflow:hidden;margin:16px;border-radius:16px}
-.wcard-face{position:relative;background:#1A1A1A;border-radius:16px;padding:20px;aspect-ratio:1.586;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .2s,background .32s ease,transform .24s cubic-bezier(.2,.7,.3,1);touch-action:pan-y}
+.wcard-track{position:relative;overflow:hidden;margin:16px 0;padding:0 15px;border-radius:16px}
+.wcard-face{position:relative;background:#1A1A1A;border-radius:16px;padding:20px;aspect-ratio:1.586;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .2s,background .32s ease,transform .38s cubic-bezier(.22,.61,.36,1);touch-action:pan-y;will-change:transform}
 .wcard-face.blocked{opacity:.35}
 .wcard-face.dragging{transition:none}
-.wcard-face.incoming{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2}
+.wcard-face.wcard-peek{position:absolute;top:0;width:calc(100% - 30px);z-index:0;pointer-events:none;transition:transform .38s cubic-bezier(.22,.61,.36,1),opacity .38s ease}
+.wcard-peek-l{left:-15px;transform:translateX(0) scale(.94);opacity:.9}
+.wcard-peek-r{right:-15px;transform:translateX(0) scale(.94);opacity:.9}
 .wcard-status-badge{font-size:10px;color:#8a8a86;letter-spacing:.05em}
-.wcard-dots{display:flex;justify-content:center;gap:6px;margin:2px 0 18px}
-.wcard-dot{width:5px;height:5px;border-radius:50%;background:var(--border);transition:background .2s ease,transform .2s ease}
-.wcard-dot.on{background:var(--text);transform:scale(1.3)}
 .wsetting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
 .wsetting-row:last-child{border-bottom:none}
 .wsetting-lbl{font-size:14px;color:var(--text);font-weight:500}
@@ -12528,7 +12527,7 @@ var WCARD_COLORS=['#1A1A1A','#2B2E2C','#1E2A38','#3A2226','#F5F5F3'];
 var _wCardColorIdx=0;
 function _wCardTextColor(idx){ return idx===WCARD_COLORS.length-1 ? '#1A1A1A' : '#fff'; }
 /* Builds the inner content of one card face for a given color index.
-   Shared by the resting render and the live "incoming" card built during swipe,
+   Shared by the resting render and the resting peek cards on either side,
    so both always show a real, fully-rendered card -- never a blank/interpolated one. */
 function _wCardFaceInnerHTML(idx){
   var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
@@ -12543,11 +12542,16 @@ function _renderWCard(){
   if(!b)return;
   var idx=_wCardColorIdx;
   var last4=profile&&profile.id?String(profile.id).replace(/-/g,'').slice(-4).toUpperCase():'0000';
-  var html='<div class="wcard-track"><div class="wcard-face'+(_wCardBlocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
+  var html='<div class="wcard-track" id="wcard-track">';
+  if(idx>0){
+    html+='<div class="wcard-face wcard-peek wcard-peek-l" style="background:'+WCARD_COLORS[idx-1]+'">'+_wCardFaceInnerHTML(idx-1)+'</div>';
+  }
+  html+='<div class="wcard-face'+(_wCardBlocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
   html+=_wCardFaceInnerHTML(idx);
-  html+='</div></div>';
-  html+='<div class="wcard-dots" id="wcard-dots">';
-  WCARD_COLORS.forEach(function(c,i){ html+='<div class="wcard-dot'+(i===idx?' on':'')+'" data-i="'+i+'"></div>'; });
+  html+='</div>';
+  if(idx<WCARD_COLORS.length-1){
+    html+='<div class="wcard-face wcard-peek wcard-peek-r" style="background:'+WCARD_COLORS[idx+1]+'">'+_wCardFaceInnerHTML(idx+1)+'</div>';
+  }
   html+='</div>';
   html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn '+(_wCardBlocked?'btn-dark':'btn-ghost')+'" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(_wCardBlocked?'Unblock card':'Block card')+'</button></div>';
   html+='<div class="pay-section-lbl">Card details</div>';
@@ -12566,38 +12570,17 @@ function _toggleCardBlock(){
   _renderWCard();
   T(_wCardBlocked?'Card blocked':'Card unblocked');
 }
-/* ---- card color swipe: true 2-card deck (isolated from tab swipe / wallet is a fixed overlay, no conflict) ---- */
+/* ---- card color swipe: peeking deck like RedotPay (isolated from tab swipe / wallet is a fixed overlay, no conflict) ---- */
 function _wireCardSwipe(){
   var face=document.getElementById('wcard-face');
   if(!face)return;
-  var track=face.parentElement; // .wcard-track -- positioning context for the incoming face
-  var dots=document.getElementById('wcard-dots');
-  if(dots){
-    dots.querySelectorAll('.wcard-dot').forEach(function(d){
-      d.onclick=function(){
-        var i=parseInt(d.getAttribute('data-i'),10);
-        if(i===_wCardColorIdx)return;
-        _wCardColorIdx=i;_persistCardColor();_renderWCard();
-      };
-    });
-  }
-  var startX=0,startY=0,dx=0,dragging=false;
-  var incoming=null,incomingIdx=-1,dir=0; // dir: -1 = dragging toward next card, 1 = toward previous card
+  var track=document.getElementById('wcard-track');
+  var peekL=track.querySelector('.wcard-peek-l');
+  var peekR=track.querySelector('.wcard-peek-r');
+  var W=track.clientWidth||300;
+  var GAP=15,SCALE=.94;
 
-  function buildIncoming(targetIdx){
-    var el=document.createElement('div');
-    el.className='wcard-face incoming'+(_wCardBlocked?' blocked':'');
-    el.style.background=WCARD_COLORS[targetIdx];
-    // Starts fully off to the side we're dragging toward, slides in as dx grows.
-    el.style.transform='translateX('+(dir<0?100:-100)+'%)';
-    el.innerHTML=_wCardFaceInnerHTML(targetIdx);
-    track.insertBefore(el,face);
-    return el;
-  }
-  function cleanupIncoming(){
-    if(incoming&&incoming.parentNode)incoming.parentNode.removeChild(incoming);
-    incoming=null;incomingIdx=-1;dir=0;
-  }
+  var startX=0,startY=0,dx=0,dragging=false;
 
   face.addEventListener('touchstart',function(e){
     startX=e.touches[0].clientX;startY=e.touches[0].clientY;dx=0;dragging=false;
@@ -12607,59 +12590,66 @@ function _wireCardSwipe(){
     var cy=e.touches[0].clientY-startY;
     if(!dragging&&Math.abs(cx)>6&&Math.abs(cx)>Math.abs(cy)*1.3){
       dragging=true;face.classList.add('dragging');
+      if(peekL)peekL.classList.add('dragging');
+      if(peekR)peekR.classList.add('dragging');
     }
     if(!dragging)return;
     dx=cx;
-    var wantDir=dx<0?-1:1;
-    var wantIdx=wantDir<0?_wCardColorIdx+1:_wCardColorIdx-1;
-    var hasNeighbor=wantIdx>=0&&wantIdx<WCARD_COLORS.length;
-    if(hasNeighbor){
-      if(incoming&&(incomingIdx!==wantIdx||dir!==wantDir)){cleanupIncoming();}
-      if(!incoming){dir=wantDir;incomingIdx=wantIdx;incoming=buildIncoming(wantIdx);}
-      incoming.classList.add('dragging');
-      face.style.transform='translateX('+dx+'px)';
-      incoming.style.transform='translateX(calc('+(dir<0?100:-100)+'% + '+dx+'px))';
-    } else {
-      // No neighbor that way (already at first/last card) -- resist, no incoming card.
-      if(incoming)cleanupIncoming();
+    var goingLeft=dx<0; // revealing the right (next) card
+    var active=goingLeft?peekR:peekL;
+    var resist=goingLeft?!peekR:!peekL;
+    if(resist){
+      // No neighbor that way (already at first/last card) -- resist.
       face.style.transform='translateX('+(dx*0.25)+'px)';
+      return;
     }
+    var p=Math.max(-1,Math.min(1,dx/W)); // -1..1 progress toward committing
+    var ap=Math.abs(p);
+    face.style.transform='translateX('+dx+'px)';
+    // active peek: travels from its resting slot toward center, scaling up to 1
+    var restX=goingLeft?(W-GAP):(-(W-GAP));
+    var travel=restX*(1-ap);
+    var scale=SCALE+(1-SCALE)*ap;
+    active.style.transform='translateX('+travel+'px) scale('+scale+')';
+    active.style.opacity=String(.9+.1*ap);
+    // the other (opposite side) peek stays put, just fades slightly as focus shifts away
+    var other=goingLeft?peekL:peekR;
+    if(other){other.style.opacity=String(.9-.35*ap);}
   },{passive:true});
   face.addEventListener('touchend',function(){
     if(!dragging){return;}
     face.classList.remove('dragging');
-    if(incoming)incoming.classList.remove('dragging');
+    if(peekL)peekL.classList.remove('dragging');
+    if(peekR)peekR.classList.remove('dragging');
     var threshold=44;
-    var committed=incoming&&Math.abs(dx)>=threshold;
+    var goingLeft=dx<0;
+    var active=goingLeft?peekR:peekL;
+    var committed=active&&Math.abs(dx)>=threshold;
     if(committed){
-      var exitPct=dir<0?-100:100;
-      face.style.transform='translateX('+exitPct+'%)';
-      incoming.style.transform='translateX(0)';
-      var settledIdx=incomingIdx;
-      incoming=null; // hand off ownership; DOM cleanup happens via _renderWCard's rebuild below
+      var exitX=goingLeft?-W:W;
+      face.style.transform='translateX('+exitX+'px)';
+      active.style.transform='translateX(0) scale(1)';
+      active.style.opacity='1';
+      var settledIdx=_wCardColorIdx+(goingLeft?1:-1);
       dragging=false;dx=0;
       setTimeout(function(){
         _wCardColorIdx=settledIdx;_persistCardColor();
-        // _renderWCard() rebuilds #wcard-face and #wcard-dots from scratch at the new
-        // color, and removes this whole track's old innerHTML (old face + incoming) with it --
-        // no separate cleanup needed, and no gap because the incoming face was already
-        // sitting at translateX(0) showing the final color when this fires.
+        // Rebuilds #wcard-track from scratch at the new color/peek layout --
+        // the active peek was already visually settled at the final position
+        // when this fires, so the swap reads as continuous, not a cut.
         _renderWCard();
-      },240);
+      },380);
     } else {
       face.style.transform='';
-      if(incoming)incoming.style.transform='translateX('+(dir<0?100:-100)+'%)';
-      var staleIncoming=incoming;
-      incoming=null;
-      setTimeout(function(){
-        if(staleIncoming&&staleIncoming.parentNode)staleIncoming.parentNode.removeChild(staleIncoming);
-      },240);
-      dragging=false;dx=0;incomingIdx=-1;dir=0;
+      if(peekL){peekL.style.transform='';peekL.style.opacity='';}
+      if(peekR){peekR.style.transform='';peekR.style.opacity='';}
+      dragging=false;dx=0;
     }
   },{passive:true});
   face.addEventListener('touchcancel',function(){
     face.classList.remove('dragging');face.style.transform='';
-    if(incoming)cleanupIncoming();
+    if(peekL){peekL.classList.remove('dragging');peekL.style.transform='';peekL.style.opacity='';}
+    if(peekR){peekR.classList.remove('dragging');peekR.style.transform='';peekR.style.opacity='';}
     dragging=false;dx=0;
   },{passive:true});
 }
