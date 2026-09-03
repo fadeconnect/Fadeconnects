@@ -619,6 +619,8 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .pay-action-lbl{font-size:12.5px;font-weight:600;color:var(--text)}
 .pay-section-lbl{font-size:12px;font-weight:600;color:var(--sub);letter-spacing:.4px;text-transform:uppercase;padding:0 16px;margin:8px 0 8px}
 .pay-tx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.pay-tx-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.pay-tx-av-treasury{background:#1A1A1A;display:flex;align-items:center;justify-content:center}
 .pay-tx-info{flex:1;min-width:0}
 .pay-tx-name{font-size:14px;font-weight:600;color:var(--text)}
 .pay-tx-note{font-size:12.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -12484,7 +12486,33 @@ function _loadWallet(){
   _sb.from('wallet_transactions').select('*').or('sender_id.eq.'+profile.id+',receiver_id.eq.'+profile.id).order('created_at',{ascending:false}).limit(20).then(function(r){
     _payTx=(r.data)||[];
     if(_wCurrentTab==='home'||_wCurrentTab==='activity')_renderWTab(_wCurrentTab);
+    _loadTxAvatars();
   });
+}
+var _txAvatarCache={}; // uid -> avatar_url|null, filled as counterparties are looked up
+function _loadTxAvatars(){
+  var ids=[];
+  _payTx.forEach(function(t){
+    var other=t.sender_id===profile.id?t.receiver_id:t.sender_id;
+    if(other&&!(other in _txAvatarCache)&&ids.indexOf(other)===-1)ids.push(other);
+  });
+  if(!ids.length)return;
+  _sb.from('profiles').select('id,avatar_url').in('id',ids).then(function(r){
+    (r.data||[]).forEach(function(u){ _txAvatarCache[u.id]=u.avatar_url||null; });
+    ids.forEach(function(id){ if(!(id in _txAvatarCache))_txAvatarCache[id]=null; });
+    if(_wCurrentTab==='home'||_wCurrentTab==='activity')_renderWTab(_wCurrentTab);
+  });
+}
+function _wTxAvatarHTML(t){
+  var isTreasury=!t.sender_id&&t.source&&t.source.indexOf('treasury')===0;
+  if(isTreasury){
+    return '<div class="pay-tx-av pay-tx-av-treasury"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg></div>';
+  }
+  var otherId=t.sender_id===profile.id?t.receiver_id:t.sender_id;
+  var name=t.sender_id===profile.id?(t.receiver_name||'?'):(t.sender_name||'?');
+  var av=otherId?_txAvatarCache[otherId]:null;
+  if(av)return '<img class="pay-tx-av" src="'+av+'" alt=""/>';
+  return '<div class="pay-tx-av" style="background:'+nc(name)+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600">'+E(nl(name))+'</div>';
 }
 
 /* ---- sub-nav routing ---- */
@@ -12745,25 +12773,26 @@ function _renderWActivity(){
 function _wTxRowHtml(t){
   var isTreasury=!t.sender_id&&t.source&&t.source.indexOf('treasury')===0;
   var outgoing=t.sender_id===profile.id;
-  var otherName=isTreasury?_treasuryLabel(t.source):(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
+  var title=isTreasury?'Fade Treasury':(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
+  var subtitle=isTreasury?_treasurySubtitle(t.source):t.note;
   var sign=outgoing?'-':'+';
   var color=outgoing?'var(--text)':'#1FA855';
   var when=new Date(t.created_at);
   var timeStr=when.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  return '<div class="pay-tx-row" onclick="openPayReceipt(\''+t.id+'\')"><div class="pay-tx-info"><div class="pay-tx-name">'+E(otherName)+'</div>'+(t.note?'<div class="pay-tx-note">'+E(t.note)+'</div>':'')+'</div><div style="text-align:right"><div class="pay-tx-amt" style="color:'+color+'">'+sign+_fmtMoney(t.amount_cents)+'</div><div class="pay-tx-time">'+timeStr+'</div></div></div>';
+  return '<div class="pay-tx-row" onclick="openPayReceipt(\''+t.id+'\')">'+_wTxAvatarHTML(t)+'<div class="pay-tx-info"><div class="pay-tx-name">'+E(title)+'</div>'+(subtitle?'<div class="pay-tx-note">'+E(subtitle)+'</div>':'')+'</div><div style="text-align:right"><div class="pay-tx-amt" style="color:'+color+'">'+sign+_fmtMoney(t.amount_cents)+'</div><div class="pay-tx-time">'+timeStr+'</div></div></div>';
 }
-function _treasuryLabel(source){
-  if(source==='treasury_signup')return 'Fade Treasury · Welcome grant';
-  if(source==='treasury_allowance')return 'Fade Treasury · Weekly allowance';
-  if(source==='treasury_milestone')return 'Fade Treasury · Milestone';
-  return 'Fade Treasury';
+function _treasurySubtitle(source){
+  if(source==='treasury_signup')return 'Welcome to Fade';
+  if(source==='treasury_allowance')return 'Weekly allowance';
+  if(source==='treasury_milestone')return 'Milestone reward';
+  return null;
 }
 function openPayReceipt(txId){
   var t=_payTx.find(function(x){return x.id===txId;});
   if(!t)return;
   var isTreasury=!t.sender_id&&t.source&&t.source.indexOf('treasury')===0;
   var outgoing=t.sender_id===profile.id;
-  var otherName=isTreasury?_treasuryLabel(t.source):(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
+  var otherName=isTreasury?'Fade Treasury':(outgoing?(t.receiver_name||'Someone'):(t.sender_name||'Someone'));
   var when=new Date(t.created_at);
   var ref='FD-'+t.id.slice(0,8).toUpperCase();
   var b=document.getElementById('pay-body');
