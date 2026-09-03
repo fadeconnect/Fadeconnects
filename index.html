@@ -640,6 +640,11 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg width='10' height='6'
 .wnbtn-icon{display:flex;align-items:center;justify-content:center}
 .wcard-track{position:relative;overflow:hidden;margin:16px 0;padding:0 15px;border-radius:16px}
 .wcard-face{position:relative;background:#1A1A1A;border-radius:16px;padding:20px;aspect-ratio:1.586;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .2s,background .32s ease,transform .38s cubic-bezier(.22,.61,.36,1);touch-action:pan-y;will-change:transform}
+.wcard-flip-wrap{margin:16px;aspect-ratio:1.586;perspective:1200px;cursor:pointer}
+.wcard-flip-inner{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.25,.46,.45,.94);transform-style:preserve-3d}
+.wcard-flip-inner.flipped{transform:rotateY(180deg)}
+.wcard-flip-face{position:absolute;inset:0;margin:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.wcard-flip-back{transform:rotateY(180deg)}
 .wcard-face.blocked{opacity:.35}
 .wcard-face.dragging{transition:none}
 .wcard-face.wcard-peek{position:absolute;top:0;width:calc(100% - 30px);z-index:0;pointer-events:none;transition:transform .38s cubic-bezier(.22,.61,.36,1),opacity .38s ease}
@@ -12631,35 +12636,68 @@ function _unlockFadeCard(){
   });
 }
 function _renderWCardIssued(b){
-  var idx=_wCardColorIdx;
-  var html='<div class="wcard-track" id="wcard-track">';
-  if(idx>0){
-    html+='<div class="wcard-face wcard-peek wcard-peek-l" style="background:'+WCARD_COLORS[idx-1]+'">'+_wCardFaceInnerHTML(idx-1)+'</div>';
+  var c=_fadeCard;
+  var colorDef_idx=WCARD_COLORS.indexOf(c.card_color);
+  var color=colorDef_idx>=0?c.card_color:WCARD_COLORS[0];
+  var fg=_wCardTextColor(colorDef_idx>=0?colorDef_idx:0);
+  var revealed=!!_wCardRevealed;
+  var last4=c.card_number.slice(-4);
+  var maskedNum='FD04 •••• •••• '+last4;
+  var fullNum=c.card_number.match(/.{1,4}/g).join(' ');
+  var holder=(profile&&(profile.display_name||profile.username)||'').toUpperCase();
+
+  var html='<div class="wcard-flip-wrap" id="wcard-flip-wrap"><div class="wcard-flip-inner" id="wcard-flip-inner">';
+  // FRONT
+  html+='<div class="wcard-face wcard-flip-face'+(c.blocked?' blocked':'')+'" style="background:'+color+'">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Georgia,serif;font-style:italic;color:'+fg+';font-size:20px">Fade</span><div class="wcard-status-badge" style="color:'+fg+';opacity:.65">'+(c.blocked?'blocked':'active')+'</div></div>';
+  html+='<div><div style="color:'+fg+';font-size:15px;letter-spacing:2px;margin-bottom:12px">'+(revealed?fullNum:maskedNum)+'</div><div><div style="font-size:9px;color:'+fg+';opacity:.55;margin-bottom:2px">card holder</div><div style="color:'+fg+';font-size:12px;font-weight:500">'+E(holder||'UNVERIFIED')+'</div></div></div>';
+  html+='</div>';
+  // BACK
+  html+='<div class="wcard-face wcard-flip-face wcard-flip-back'+(c.blocked?' blocked':'')+'" style="background:'+color+'">';
+  html+='<div style="height:32px;background:rgba(0,0,0,.35);margin:-20px -20px 16px"></div>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:10px;color:'+fg+';opacity:.6;letter-spacing:.05em">security code</span><span style="font-size:15px;color:'+fg+';font-weight:600;letter-spacing:2px">'+(revealed?c.security_code:'•••')+'</span></div>';
+  html+='<div style="margin-top:auto"><div style="font-size:9px;color:'+fg+';opacity:.55;margin-bottom:2px">spend scope</div><div style="font-size:12px;color:'+fg+';font-weight:500">Fade ads only</div></div>';
+  html+='</div>';
+  html+='</div></div>';
+
+  html+='<div style="text-align:center;font-size:11.5px;color:var(--sub);margin:10px 0 20px">Tap card to flip</div>';
+  html+='<div style="padding:0 16px;display:flex;gap:10px;margin-bottom:20px">';
+  html+='<button class="btn btn-ghost" style="flex:1" id="wcard-view-btn" onclick="_toggleCardReveal()">'+(revealed?'Hide':'View')+'</button>';
+  html+='<button class="btn '+(c.blocked?'btn-dark':'btn-ghost')+'" style="flex:1" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(c.blocked?'Unblock':'Block')+'</button>';
+  html+='</div>';
+  if(revealed){
+    html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn btn-ghost" id="wcard-copy-btn" onclick="_copyCardNumber()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy card number</button></div>';
   }
-  html+='<div class="wcard-face'+(_fadeCard.blocked?' blocked':'')+'" id="wcard-face" style="background:'+WCARD_COLORS[idx]+'">';
-  html+=_wCardFaceInnerHTML(idx);
-  html+='</div>';
-  if(idx<WCARD_COLORS.length-1){
-    html+='<div class="wcard-face wcard-peek wcard-peek-r" style="background:'+WCARD_COLORS[idx+1]+'">'+_wCardFaceInnerHTML(idx+1)+'</div>';
-  }
-  html+='</div>';
-  html+='<div style="padding:0 16px;margin-bottom:20px"><button class="btn '+(_fadeCard.blocked?'btn-dark':'btn-ghost')+'" id="wcard-toggle-btn" onclick="_toggleCardBlock()">'+(_fadeCard.blocked?'Unblock card':'Block card')+'</button></div>';
-  html+='<div class="pay-section-lbl">Card details</div>';
-  html+='<div style="border:1.5px solid var(--border);border-radius:14px;margin:0 16px 20px">';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Card number</span><span style="font-size:13px;color:var(--text);font-weight:500">'+E(_fadeCard.card_number)+'</span></div>';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Security code</span><span style="font-size:13px;color:var(--text);font-weight:500" id="wcard-cvv">•••</span> <button class="ibtn" style="width:auto;padding:0 4px" onclick="_revealCVV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>';
-  html+='<div class="wcard-detail-row"><span style="font-size:13px;color:var(--sub)">Spend scope</span><span style="font-size:13px;color:var(--text);font-weight:500">Fade ads only</span></div>';
-  html+='</div>';
   html+='<div class="pay-section-lbl">About this card</div>';
   html+='<div style="padding:0 16px;font-size:12.5px;color:var(--sub);line-height:1.6">The Fade Card only works inside Fade, for boosting posts and running campaigns. It draws directly from your wallet balance and stays active as long as your account is verified.</div>';
   b.innerHTML=html;
-  _wireCardSwipe();
+  _wireCardFlip();
 }
-function _revealCVV(){
-  var el=document.getElementById('wcard-cvv');
-  if(!el||!_fadeCard)return;
-  el.textContent=_fadeCard.security_code;
-  setTimeout(function(){ if(el)el.textContent='•••'; },4000);
+var _wCardRevealed=false;
+var _wCardFlipped=false;
+function _toggleCardReveal(){
+  _wCardRevealed=!_wCardRevealed;
+  if(!_wCardRevealed)_wCardFlipped=false; // hiding always resets to front, matches "hide always wins"
+  _renderWCard();
+}
+function _wireCardFlip(){
+  var wrap=document.getElementById('wcard-flip-wrap');
+  var inner=document.getElementById('wcard-flip-inner');
+  if(!wrap||!inner)return;
+  if(_wCardFlipped)inner.classList.add('flipped');
+  wrap.addEventListener('click',function(){
+    _wCardFlipped=!_wCardFlipped;
+    inner.classList.toggle('flipped',_wCardFlipped);
+  });
+}
+function _copyCardNumber(){
+  if(!_fadeCard)return;
+  var num=_fadeCard.card_number;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(num).then(function(){ T('Card number copied'); }).catch(function(){ T('Could not copy'); });
+  } else {
+    T('Could not copy');
+  }
 }
 function _toggleCardBlock(){
   if(!_fadeCard)return;
